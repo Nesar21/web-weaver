@@ -10,6 +10,11 @@
       margin: 0;
     }
     h3 { margin: 0 0 16px 0; color: #1a73e8; }
+    .button-group { 
+      display: flex; 
+      gap: 8px; 
+      margin-bottom: 8px; 
+    }
     button { 
       background: #1a73e8; 
       color: white; 
@@ -22,9 +27,21 @@
     }
     button:hover { background: #1557b0; }
     button:disabled { background: #dadce0; cursor: not-allowed; }
+    .data-section {
+      margin-bottom: 12px;
+      padding: 8px;
+      background: #f9f9f9;
+      border-radius: 4px;
+    }
+    .section-title {
+      font-weight: bold;
+      color: #1a73e8;
+      margin-bottom: 4px;
+    }
     .output { 
       margin-top: 16px; 
-      font-size: 11px; 
+      font-size: 10px;
+      line-height: 1.4;
       font-family: 'Courier New', monospace;
       background: #f8f9fa; 
       padding: 12px; 
@@ -41,9 +58,16 @@
   </style>
 </head>
 <body>
-  <h3>Web Weaver v0.1</h3>
+  <h3>Web Weaver v0.2</h3>
   <button id="extractBtn">Extract Page Data</button>
   <div id="status" class="status">Ready to extract...</div>
+  <div class="button-group">
+    <button id="exportCSV" disabled>Export CSV</button>
+    <button id="exportJSON" disabled>Export JSON</button>
+  </div>
+  <div style="margin-bottom: 8px;">
+    <input type="text" id="searchBox" placeholder="Search extracted data..." style="width: 100%; padding: 8px; border: 1px solid #dadce0; border-radius: 4px;">
+  </div>
   <div id="output" class="output" style="display: none;"></div>
   
   <script src="popup.js"></script>
