@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Web Weaver",
   "description": "Transforms any webpage into a structured JSON API with enhanced data extraction.",
-  "version": "0.2",
+  "version": "0.3",
   "permissions": ["scripting", "activeTab", "downloads"],
   "background": { "service_worker": "background.js" },
   "action": { "default_popup": "popup.html" }

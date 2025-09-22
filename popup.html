@@ -24,20 +24,42 @@
       cursor: pointer;
       font-size: 14px;
       width: 100%;
+      position: relative;
     }
     button:hover { background: #1557b0; }
     button:disabled { background: #dadce0; cursor: not-allowed; }
-    .data-section {
-      margin-bottom: 12px;
-      padding: 8px;
-      background: #f9f9f9;
-      border-radius: 4px;
+    
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
     }
-    .section-title {
-      font-weight: bold;
-      color: #1a73e8;
-      margin-bottom: 4px;
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
+    
+    .status { 
+      margin-top: 8px; 
+      font-size: 12px; 
+      color: #5f6368; 
+      min-height: 16px;
+    }
+    
+    .status.error {
+      color: #d93025;
+      font-weight: 500;
+    }
+    
+    .status.success {
+      color: #137333;
+    }
+    
     .output { 
       margin-top: 16px; 
       font-size: 10px;
@@ -50,24 +72,77 @@
       overflow-y: auto;
       border: 1px solid #dadce0;
     }
-    .status { 
-      margin-top: 8px; 
-      font-size: 12px; 
-      color: #5f6368; 
+    
+    .reset-btn {
+      background: #ea4335;
+      font-size: 12px;
+      padding: 6px 12px;
+      margin-left: 8px;
+    }
+    
+    .reset-btn:hover {
+      background: #d33b2c;
+    }
+    
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 120px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -60px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 11px;
+    }
+    
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
     }
   </style>
 </head>
 <body>
-  <h3>Web Weaver v0.2</h3>
-  <button id="extractBtn">Extract Page Data</button>
+  <h3>Web Weaver v0.3</h3>
+  <div style="display: flex; align-items: center;">
+    <button id="extractBtn">Extract Page Data</button>
+    <button id="resetBtn" class="reset-btn" disabled>Reset</button>
+  </div>
   <div id="status" class="status">Ready to extract...</div>
+  
   <div class="button-group">
-    <button id="exportCSV" disabled>Export CSV</button>
-    <button id="exportJSON" disabled>Export JSON</button>
+    <div class="tooltip">
+      <button id="exportCSV" disabled>Export CSV</button>
+      <span class="tooltiptext">Download as CSV file</span>
+    </div>
+    <div class="tooltip">
+      <button id="exportJSON" disabled>Export JSON</button>
+      <span class="tooltiptext">Download as JSON file</span>
+    </div>
   </div>
+  
+  <div class="button-group">
+    <div class="tooltip">
+      <button id="copyBtn" disabled>Copy JSON</button>
+      <span class="tooltiptext">Copy to clipboard</span>
+    </div>
+  </div>
+  
   <div style="margin-bottom: 8px;">
-    <input type="text" id="searchBox" placeholder="Search extracted data..." style="width: 100%; padding: 8px; border: 1px solid #dadce0; border-radius: 4px;">
+    <input type="text" id="searchBox" placeholder="Search extracted data..." disabled style="width: 100%; padding: 8px; border: 1px solid #dadce0; border-radius: 4px;">
   </div>
+  
   <div id="output" class="output" style="display: none;"></div>
   
   <script src="popup.js"></script>
