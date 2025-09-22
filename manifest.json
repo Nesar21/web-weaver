@@ -1,9 +1,54 @@
 {
   "manifest_version": 3,
-  "name": "Web Weaver",
-  "description": "Transforms any webpage into a structured JSON API with enhanced data extraction.",
-  "version": "0.3",
-  "permissions": ["scripting", "activeTab", "downloads"],
-  "background": { "service_worker": "background.js" },
-  "action": { "default_popup": "popup.html" }
+  "name": "Web Weaver Lightning",
+  "short_name": "WebWeaver", 
+  "description": "Extract any webpage into clean JSON/CSV with smart AI tagging & dynamic content detection.",
+  "version": "1.0.0",
+  "author": "Web Weaver Team",
+  
+  "permissions": [
+    "scripting",
+    "activeTab",
+    "downloads", 
+    "storage",
+    "contextMenus",
+    "alarms"
+  ],
+  
+  "background": { 
+    "service_worker": "background.js"
+  },
+  
+  "action": { 
+    "default_popup": "popup.html",
+    "default_title": "Web Weaver Lightning - Extract Page Data",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png", 
+      "128": "icon128.png"
+    }
+  },
+  
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline';"
+  },
+  
+  "minimum_chrome_version": "88",
+  
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E" 
+      }
+    }
+  }
 }
