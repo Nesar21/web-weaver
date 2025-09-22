@@ -1,8 +1,9 @@
-// Prevent multiple injections
-if (window.webWeaverInjected) {
+// Prevent multiple injections with reset capability
+if (window.webWeaverInjected && !window.webWeaverAllowReinject) {
   console.log("Web Weaver already injected, skipping...");
 } else {
   window.webWeaverInjected = true;
+  window.webWeaverAllowReinject = false;
   
   console.log("Web Weaver injected:", window.location.href);
 

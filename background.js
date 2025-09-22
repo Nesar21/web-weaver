@@ -6,14 +6,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "extractData") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]?.id) {
+        // Clear injection flag first to allow re-injection
         chrome.scripting.executeScript({
           target: { tabId: tabs[0].id },
-          files: ["content.js"]
-        })
-        .then(() => {
+          func: () => { window.webWeaverAllowReinject = true; }
+        }).then(() => {
+          return chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            files: ["content.js"]
+          });
+        }).then(() => {
           sendResponse({ status: "injection_successful" });
-        })
-        .catch(err => {
+        }).catch(err => {
           console.error("Injection failed:", err);
           sendResponse({ error: err.message });
         });

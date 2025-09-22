@@ -65,7 +65,7 @@ function setUiState(state, message) {
   }
 }
 
-// Event Listeners
+// Event Listeners with Safeguarding
 extractBtn.addEventListener('click', () => {
   if (isExtracting) return;
   
@@ -80,10 +80,17 @@ extractBtn.addEventListener('click', () => {
   // Set timeout handler
   extractTimeout = setTimeout(() => {
     if (isExtracting) {
-      setUiState('error', 'Extraction timeout - try again');
+      setUiState('error', 'Extraction timeout - please wait a few seconds and try again');
       extractTimeout = null;
     }
   }, 10000);
+  
+  // Safety delay to prevent rapid-fire extractions
+  setTimeout(() => {
+    if (!isExtracting) {
+      extractBtn.disabled = false;
+    }
+  }, 1000);
 });
 
 resetBtn.addEventListener('click', () => {
@@ -176,7 +183,6 @@ function downloadAsCSV(data) {
       url: url,
       filename: `webpage_data_${Date.now()}.csv`
     }, (downloadId) => {
-      // Clean up the object URL after download starts
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       
       if (chrome.runtime.lastError) {
@@ -202,7 +208,6 @@ function downloadAsJSON(data) {
       url: url,
       filename: `webpage_data_${Date.now()}.json`
     }, (downloadId) => {
-      // Clean up the object URL after download starts
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       
       if (chrome.runtime.lastError) {
@@ -222,11 +227,9 @@ function copyToClipboard(data) {
   const jsonString = JSON.stringify(data, null, 2);
   navigator.clipboard.writeText(jsonString).then(() => {
     const currentState = isExtracting ? 'loading' : 'success';
-    const currentMessage = status.textContent;
     
     setUiState('success', 'Copied to clipboard!');
     
-    // Restore previous state after 2 seconds
     setTimeout(() => {
       if (!isExtracting && lastExtractedData) {
         setUiState('success', 'Data extracted successfully!');
@@ -323,7 +326,6 @@ function copyAsCurl(data) {
   navigator.clipboard.writeText(curlCommand).then(() => {
     setUiState('success', 'cURL command copied to clipboard!');
     
-    // Restore previous state after 2 seconds
     setTimeout(() => {
       if (!isExtracting && lastExtractedData) {
         setUiState('success', 'Data extracted successfully!');
