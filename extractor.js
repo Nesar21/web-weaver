@@ -1,4 +1,4 @@
-// Day 4 AI Extraction Engine - Battle-tested with error handling
+// Day 4 AI Extraction Engine - FREE Gemini 2.0 Flash
 const SCHEMA_FIELDS = ['title', 'description', 'author', 'date', 'content', 'links', 'images', 'category'];
 
 // Schema enforcement - ensures consistent JSON structure
@@ -16,12 +16,12 @@ function enforceSchema(data) {
   return cleanedData;
 }
 
-// Main AI extraction function with robust error handling
+// Main AI extraction function with Google Gemini 2.0 Flash (100% FREE)
 async function extractWithAI(pageContent, apiConfig) {
   const startTime = Date.now();
   
   try {
-    console.log('[Extractor] Starting AI extraction...');
+    console.log('[Extractor] Starting FREE Gemini 2.0 Flash extraction...');
     
     if (!apiConfig.apiKey) {
       throw new Error('API key not configured');
@@ -31,7 +31,7 @@ async function extractWithAI(pageContent, apiConfig) {
       throw new Error('Insufficient content for extraction');
     }
     
-    // Truncate content to avoid token limits
+    // Truncate content to avoid limits
     const truncatedContent = pageContent.slice(0, 8000);
     
     const prompt = `Extract structured information from this webpage content and return ONLY valid JSON with these exact fields:
@@ -44,41 +44,40 @@ Content: ${truncatedContent}
 
 Return only the JSON object, no explanation or additional text.`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Google Gemini 2.0 Flash API call (100% FREE with generous limits)
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiConfig.apiKey}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiConfig.apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: apiConfig.model || 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a precise web content extractor. Return only valid JSON with the requested fields.'
-          },
-          {
-            role: 'user',
-            content: prompt
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 1000,
+          thinkingConfig: {
+            thinkingBudget: 0  // Disable thinking for faster/cheaper responses
           }
-        ],
-        temperature: 0.1,
-        max_tokens: apiConfig.maxTokens || 2000
+        }
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`API request failed: ${response.status} - ${errorText}`);
+      throw new Error(`Gemini API request failed: ${response.status} - ${errorText}`);
     }
 
     const responseData = await response.json();
     
-    if (!responseData.choices || !responseData.choices[0] || !responseData.choices[0].message) {
-      throw new Error('Invalid API response structure');
+    if (!responseData.candidates || !responseData.candidates[0] || !responseData.candidates[0].content) {
+      throw new Error('Invalid Gemini API response structure');
     }
 
-    const content = responseData.choices[0].message.content.trim();
+    const content = responseData.candidates[0].content.parts[0].text.trim();
     
     // Remove markdown code blocks if present
     const cleanContent = content.replace(/``````/g, '').trim();
@@ -96,9 +95,9 @@ Return only the JSON object, no explanation or additional text.`;
     
     const duration = Date.now() - startTime;
     
-    console.log('[Extractor] Success:', {
+    console.log('[Extractor] Gemini 2.0 Flash Success:', {
       duration: `${duration}ms`,
-      tokensUsed: responseData.usage?.total_tokens || 'unknown',
+      model: 'gemini-2.0-flash',
       fieldsExtracted: Object.keys(validatedData).filter(k => validatedData[k] !== null).length
     });
 
@@ -107,15 +106,15 @@ Return only the JSON object, no explanation or additional text.`;
       data: validatedData,
       metadata: {
         extractionTime: duration,
-        tokensUsed: responseData.usage?.total_tokens || 0,
-        model: apiConfig.model || 'gpt-4o-mini'
+        model: 'gemini-2.0-flash',
+        free: true
       }
     };
 
   } catch (error) {
     const duration = Date.now() - startTime;
     
-    console.error('[Extractor] Failed:', {
+    console.error('[Extractor] Gemini Failed:', {
       error: error.message,
       duration: `${duration}ms`,
       contentLength: pageContent?.length || 0

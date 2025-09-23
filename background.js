@@ -3,15 +3,15 @@ console.log('Web Weaver Lightning Background v1.0 Day 4 - Starting...');
 
 // AI Configuration Management
 let AI_CONFIG = {
-  model: 'gpt-4o-mini',
+  model: 'gemini-2.0-flash',
   maxTokens: 2000,
   apiKey: null
 };
 
 // Load API key from storage on startup
-chrome.storage.local.get(['openaiApiKey'], (result) => {
-  if (result.openaiApiKey) {
-    AI_CONFIG.apiKey = result.openaiApiKey;
+chrome.storage.local.get(['geminiApiKey'], (result) => {
+  if (result.geminiApiKey) {
+    AI_CONFIG.apiKey = result.geminiApiKey;
     console.log('[Background] API key loaded from storage');
   } else {
     console.log('[Background] No API key found - please configure');
@@ -59,7 +59,7 @@ function updateMetrics(success, duration, tokensUsed = 0) {
   performanceMetrics.averageTime = 
     (performanceMetrics.averageTime * (performanceMetrics.totalExtractions - 1) + duration) / 
     performanceMetrics.totalExtractions;
-  
+    
   console.log('[Background] Updated metrics:', performanceMetrics);
 }
 
@@ -69,7 +69,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   // Handle API key configuration
   if (request.action === "setApiKey") {
-    chrome.storage.local.set({ openaiApiKey: request.apiKey }, () => {
+    chrome.storage.local.set({ geminiApiKey: request.apiKey }, () => {
       AI_CONFIG.apiKey = request.apiKey;
       console.log('[Background] API key updated');
       sendResponse({ success: true });
@@ -101,9 +101,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   // Handle performance metrics requests
   if (request.action === "getMetrics") {
-    sendResponse({ 
-      success: true, 
-      metrics: performanceMetrics 
+    sendResponse({
+      success: true,
+      metrics: performanceMetrics
     });
     return false;
   }
@@ -115,7 +115,7 @@ async function handleAIExtraction(request, sender, sendResponse, startTime) {
     console.log('[Background] Starting AI extraction...');
     
     if (!AI_CONFIG.apiKey) {
-      throw new Error('API key not configured. Please set your OpenAI API key.');
+      throw new Error('API key not configured. Please set your Gemini API key.');
     }
     
     if (!request.pageContent) {
@@ -127,7 +127,6 @@ async function handleAIExtraction(request, sender, sendResponse, startTime) {
     
     // Perform AI extraction
     const result = await extractWithAI(request.pageContent, AI_CONFIG);
-    
     const duration = Date.now() - startTime;
     
     if (result.success) {
@@ -149,7 +148,6 @@ async function handleAIExtraction(request, sender, sendResponse, startTime) {
       });
     } else {
       updateMetrics(false, duration);
-      
       console.error('[Background] AI extraction failed:', result.error);
       
       sendResponse({
@@ -271,8 +269,8 @@ chrome.runtime.onInstalled.addListener((details) => {
   console.log('[Background] Web Weaver Lightning installed:', details.reason);
   
   // Set default settings
-  chrome.storage.local.get(['openaiApiKey'], (result) => {
-    if (!result.openaiApiKey) {
+  chrome.storage.local.get(['geminiApiKey'], (result) => {
+    if (!result.geminiApiKey) {
       console.log('[Background] First install - API key setup required');
     }
   });

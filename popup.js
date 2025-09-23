@@ -60,7 +60,6 @@ class UIState {
     const extractBtn = document.getElementById('extractBtn');
     const status = document.getElementById('status');
     const loading = document.getElementById('loading');
-    const error = document.getElementById('error');
     const configSection = document.getElementById('configSection');
     
     if (extractBtn) {
@@ -78,7 +77,7 @@ class UIState {
         status.textContent = '🚀 Ready: Click "Extract with AI" to start!';
         status.className = 'status default';
       } else {
-        status.textContent = '⚠️ Configure API key for AI extraction';
+        status.textContent = '⚠️ Configure Gemini API key for AI extraction';
         status.className = 'status warning';
       }
     }
@@ -115,20 +114,25 @@ class UIState {
     const error = document.getElementById('error');
     
     if (!apiKeyInput || !apiKeyInput.value.trim()) {
-      this.showError('Please enter a valid API key');
+      this.showError('Please enter a valid Gemini API key');
       return;
     }
     
     const apiKey = apiKeyInput.value.trim();
     
-    // Basic validation
-    if (!apiKey.startsWith('sk-')) {
-      this.showError('OpenAI API keys should start with "sk-"');
+    // ✅ FIXED: Basic validation for Gemini API key
+    if (!apiKey.startsWith('AIza')) {
+      this.showError('Gemini API keys should start with "AIza"');
+      return;
+    }
+    
+    if (apiKey.length < 20) {
+      this.showError('Invalid Gemini API key format. Key appears too short.');
       return;
     }
     
     try {
-      this.showStatus('Saving API key...', 'loading');
+      this.showStatus('Saving Gemini API key...', 'loading');
       
       const response = await chrome.runtime.sendMessage({
         action: "setApiKey",
@@ -137,7 +141,7 @@ class UIState {
       
       if (response.success) {
         this.apiKeyConfigured = true;
-        this.showStatus('API key saved successfully!', 'success');
+        this.showStatus('Gemini API key saved successfully!', 'success');
         
         // Clear input and hide config
         apiKeyInput.value = '';
@@ -160,7 +164,7 @@ class UIState {
     
     this.isExtracting = true;
     this.updateUI();
-    this.showStatus('Starting extraction...', 'loading');
+    this.showStatus('Starting AI extraction...', 'loading');
     
     try {
       console.log('[Popup] Starting extraction...');
@@ -174,8 +178,8 @@ class UIState {
         this.displayResults(response.data);
         
         const aiStatus = response.data.enhancedWithAI ? 
-          'AI-enhanced extraction complete!' : 
-          'Basic extraction complete (configure API key for AI features)';
+          '🎉 AI-enhanced extraction complete!' : 
+          'Basic extraction complete (configure Gemini API key for AI features)';
           
         this.showStatus(aiStatus, 'success');
         
@@ -215,7 +219,7 @@ class UIState {
     // AI-enhanced results
     if (data.ai && data.enhancedWithAI) {
       html += '<div class="result-section ai-results">';
-      html += '<h3>🤖 AI-Enhanced Results</h3>';
+      html += '<h3>🤖 AI-Enhanced Results (FREE Gemini 2.0 Flash)</h3>';
       
       Object.entries(data.ai).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
@@ -236,21 +240,12 @@ class UIState {
       html += '</div>';
     }
     
-    // Structure info
-    if (data.structure) {
-      html += '<div class="result-section">';
-      html += '<h3>🏗️ Page Structure</h3>';
-      Object.entries(data.structure).forEach(([key, value]) => {
-        html += `<div class="structure-item"><strong>${key}:</strong> ${value}</div>`;
-      });
-      html += '</div>';
-    }
-    
     // Error info
     if (data.aiError) {
       html += '<div class="result-section error-section">';
       html += '<h3>⚠️ AI Processing</h3>';
       html += `<div class="error-info">AI enhancement failed: ${data.aiError}</div>`;
+      html += '<div style="margin-top: 8px; font-size: 11px;">Configure your FREE Gemini API key to enable AI features.</div>';
       html += '</div>';
     }
     
@@ -276,7 +271,6 @@ class UIState {
   
   showError(message) {
     const error = document.getElementById('error');
-    const status = document.getElementById('status');
     
     console.error('[Popup] Error:', message);
     
@@ -288,11 +282,6 @@ class UIState {
       setTimeout(() => {
         error.style.display = 'none';
       }, 5000);
-    }
-    
-    if (status) {
-      status.textContent = 'Error occurred - check details below';
-      status.className = 'status error';
     }
   }
   
@@ -345,7 +334,7 @@ class UIState {
         if (value !== null && value !== undefined) {
           let csvValue = Array.isArray(value) ? value.join('; ') : String(value);
           csvValue = csvValue.replace(/"/g, '""'); // Escape quotes
-          rows.push([key, `"${csvValue}"`, 'AI']);
+          rows.push([key, `"${csvValue}"`, 'Gemini AI']);
         }
       });
     }
