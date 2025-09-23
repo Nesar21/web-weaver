@@ -1,360 +1,281 @@
-// Performance metrics with proper averaging
-let performanceMetrics = {
-  extractionCount: 0,
-  errorCount: 0,
-  totalExtractionTime: 0
+// Day 4 Enhanced Background Script with AI Integration
+console.log('Web Weaver Lightning Background v1.0 Day 4 - Starting...');
+
+// AI Configuration Management
+let AI_CONFIG = {
+  model: 'gpt-4o-mini',
+  maxTokens: 2000,
+  apiKey: null
 };
 
-// UNIFIED: Single onInstalled listener
-chrome.runtime.onInstalled.addListener(() => {
-  console.log("Web Weaver Lightning v0.7 installed successfully");
-  
-  // Initialize default settings
-  chrome.storage.local.set({
-    webWeaverSettings: {
-      maxTables: 5,
-      maxTableRows: 15,
-      maxLinks: 15,
-      maxImages: 8,
-      maxForms: 5,
-      tableDepth: 3,
-      dynamicTimeout: 3000
-    }
-  });
-  
-  // Context menu for power users (Day 4 scope)
-  chrome.contextMenus.create({
-    id: "webweaver-extract",
-    title: "🕸️ Extract with Web Weaver",
-    contexts: ["page"]
-  });
-  
-  chrome.contextMenus.create({
-    id: "webweaver-extract-selection",
-    title: "🕸️ Extract Selection",
-    contexts: ["selection"]
-  });
+// Load API key from storage on startup
+chrome.storage.local.get(['openaiApiKey'], (result) => {
+  if (result.openaiApiKey) {
+    AI_CONFIG.apiKey = result.openaiApiKey;
+    console.log('[Background] API key loaded from storage');
+  } else {
+    console.log('[Background] No API key found - please configure');
+  }
 });
 
-// UNIFIED: Single onMessage listener with proper routing
+// Load extractor module
+async function loadExtractor() {
+  try {
+    const response = await fetch(chrome.runtime.getURL('extractor.js'));
+    const extractorCode = await response.text();
+    
+    // Create a function scope and execute the extractor code
+    const extractorModule = new Function('module', 'exports', extractorCode + '; return { extractWithAI, enforceSchema };');
+    const moduleObj = { exports: {} };
+    
+    return extractorModule(moduleObj, moduleObj.exports);
+  } catch (error) {
+    console.error('[Background] Failed to load extractor:', error);
+    throw error;
+  }
+}
+
+// Performance tracking
+const performanceMetrics = {
+  totalExtractions: 0,
+  successfulExtractions: 0,
+  failedExtractions: 0,
+  totalTokensUsed: 0,
+  averageTime: 0
+};
+
+// Update performance metrics
+function updateMetrics(success, duration, tokensUsed = 0) {
+  performanceMetrics.totalExtractions++;
+  
+  if (success) {
+    performanceMetrics.successfulExtractions++;
+    performanceMetrics.totalTokensUsed += tokensUsed;
+  } else {
+    performanceMetrics.failedExtractions++;
+  }
+  
+  // Calculate running average
+  performanceMetrics.averageTime = 
+    (performanceMetrics.averageTime * (performanceMetrics.totalExtractions - 1) + duration) / 
+    performanceMetrics.totalExtractions;
+  
+  console.log('[Background] Updated metrics:', performanceMetrics);
+}
+
+// Main message handler with robust error handling
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // Main extraction handler
+  const startTime = Date.now();
+  
+  // Handle API key configuration
+  if (request.action === "setApiKey") {
+    chrome.storage.local.set({ openaiApiKey: request.apiKey }, () => {
+      AI_CONFIG.apiKey = request.apiKey;
+      console.log('[Background] API key updated');
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+  
+  // Handle API key retrieval
+  if (request.action === "getApiKey") {
+    sendResponse({ 
+      success: true, 
+      apiKey: AI_CONFIG.apiKey ? "***configured***" : null,
+      hasKey: !!AI_CONFIG.apiKey
+    });
+    return false;
+  }
+  
+  // Handle AI extraction requests
+  if (request.action === "extractWithAI") {
+    handleAIExtraction(request, sender, sendResponse, startTime);
+    return true; // Keep message channel open
+  }
+  
+  // Handle content extraction requests (triggers content script)
   if (request.action === "extractData") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        // Clear injection flag first to allow re-injection
-        chrome.scripting.executeScript({
-          target: { tabId: tabs[0].id },
-          func: () => { 
-            window.webWeaverAllowReinject = true;
-            // Clear element cache for fresh extraction
-            if (window.elementCache) {
-              window.elementCache.clear();
-            }
-          }
-        }).then(() => {
-          return chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            files: ["content.js"]
-          });
-        }).then(() => {
-          sendResponse({ status: "injection_successful" });
-        }).catch(err => {
-          console.error("Injection failed:", err);
-          sendResponse({ error: err.message });
-        });
-      } else {
-        sendResponse({ error: "No active tab found" });
-      }
-    });
-    return true;
+    handleContentExtraction(sender, sendResponse, startTime);
+    return true; // Keep message channel open
   }
   
-  // Progress updates and data forwarding
-  if (request.action === "dataExtracted" || request.action === "progressUpdate") {
-    // Forward to popup with error handling
-    chrome.runtime.sendMessage(request).catch(err => {
-      console.error("Forward to popup failed:", err);
-      // Store in local storage as fallback
-      if (request.action === "dataExtracted") {
-        chrome.storage.local.set({
-          lastExtraction: {
-            data: request.data,
-            timestamp: Date.now()
-          }
-        });
-      }
+  // Handle performance metrics requests
+  if (request.action === "getMetrics") {
+    sendResponse({ 
+      success: true, 
+      metrics: performanceMetrics 
     });
+    return false;
   }
-  
-  // Settings management
-  if (request.action === "updateSettings") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.scripting.executeScript({
-          target: { tabId: tabs[0].id },
-          func: (settings) => {
-            if (window.extractionSettings) {
-              Object.assign(window.extractionSettings, settings);
-            }
-          },
-          args: [request.settings]
-        });
-        
-        // Also store in local storage
-        chrome.storage.local.set({
-          webWeaverSettings: request.settings
-        });
-      }
-    });
-    sendResponse({ status: "settings_updated" });
-    return true;
-  }
-  
-  if (request.action === "getSettings") {
-    chrome.storage.local.get(['webWeaverSettings'], (result) => {
-      sendResponse({ 
-        settings: result.webWeaverSettings || {
-          maxTables: 5,
-          maxTableRows: 15,
-          maxLinks: 15,
-          maxImages: 8,
-          maxForms: 5,
-          tableDepth: 3,
-          dynamicTimeout: 3000
+});
+
+// Handle AI extraction with full error handling
+async function handleAIExtraction(request, sender, sendResponse, startTime) {
+  try {
+    console.log('[Background] Starting AI extraction...');
+    
+    if (!AI_CONFIG.apiKey) {
+      throw new Error('API key not configured. Please set your OpenAI API key.');
+    }
+    
+    if (!request.pageContent) {
+      throw new Error('No page content provided for extraction');
+    }
+    
+    // Load extractor module
+    const { extractWithAI } = await loadExtractor();
+    
+    // Perform AI extraction
+    const result = await extractWithAI(request.pageContent, AI_CONFIG);
+    
+    const duration = Date.now() - startTime;
+    
+    if (result.success) {
+      updateMetrics(true, duration, result.metadata?.tokensUsed || 0);
+      
+      console.log('[Background] AI extraction successful:', {
+        duration: `${duration}ms`,
+        tokensUsed: result.metadata?.tokensUsed || 0,
+        fieldsExtracted: Object.keys(result.data).filter(k => result.data[k] !== null).length
+      });
+      
+      sendResponse({
+        success: true,
+        data: result.data,
+        metadata: {
+          ...result.metadata,
+          totalDuration: duration
         }
       });
-    });
-    return true;
-  }
-  
-  // CORRECTED: Proper performance tracking with accurate averaging
-  if (request.action === "recordPerformance") {
-    performanceMetrics.extractionCount++;
-    if (request.extractionTime) {
-      performanceMetrics.totalExtractionTime += request.extractionTime;
+    } else {
+      updateMetrics(false, duration);
+      
+      console.error('[Background] AI extraction failed:', result.error);
+      
+      sendResponse({
+        success: false,
+        error: result.error,
+        metadata: {
+          extractionTime: duration,
+          failed: true
+        }
+      });
     }
-    if (request.error) {
-      performanceMetrics.errorCount++;
-    }
-    sendResponse({ status: "performance_recorded" });
-    return true;
-  }
-  
-  if (request.action === "getPerformanceStats") {
-    const avgTime = performanceMetrics.extractionCount > 0 
-      ? Math.round(performanceMetrics.totalExtractionTime / performanceMetrics.extractionCount) 
-      : 0;
     
-    sendResponse({ 
-      stats: { 
-        extractionCount: performanceMetrics.extractionCount,
-        errorCount: performanceMetrics.errorCount,
-        averageExtractionTime: avgTime,
-        totalExtractionTime: performanceMetrics.totalExtractionTime,
-        successRate: performanceMetrics.extractionCount > 0 
-          ? Math.round(((performanceMetrics.extractionCount - performanceMetrics.errorCount) / performanceMetrics.extractionCount) * 100)
-          : 100
-      } 
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    updateMetrics(false, duration);
+    
+    console.error('[Background] AI extraction error:', error);
+    
+    sendResponse({
+      success: false,
+      error: error.message,
+      metadata: {
+        extractionTime: duration,
+        failed: true
+      }
     });
-    return true;
   }
-  
-  // DAY 4 SCOPE: Essential demo support
-  if (request.action === "validateDemoSites") {
-    const demoSites = [
-      { url: 'https://www.bloomberg.com/asia', name: 'Bloomberg Asia', status: 'validated' },
-      { url: 'https://en.wikipedia.org/wiki/Artificial_intelligence', name: 'Wikipedia AI', status: 'validated' },
-      { url: 'https://medium.com', name: 'Medium', status: 'validated' }
-    ];
+}
+
+// Handle content extraction (triggers content script then AI)
+async function handleContentExtraction(sender, sendResponse, startTime) {
+  try {
+    console.log('[Background] Starting full extraction pipeline...');
     
-    sendResponse({ validated: true, sites: demoSites });
-    return true;
-  }
-  
-  // One-click demo navigation (Day 4 essential)
-  if (request.action === "navigateToDemo") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.update(tabs[0].id, { url: request.url }, (updatedTab) => {
-          sendResponse({ status: "navigation_started", tabId: updatedTab.id });
+    // Get page content from content script
+    const response = await chrome.tabs.sendMessage(sender.tab.id, {
+      action: "extractPageData"
+    });
+    
+    if (!response.success) {
+      throw new Error(`Content extraction failed: ${response.error}`);
+    }
+    
+    const pageData = response.data;
+    
+    // If AI is configured, enhance with AI extraction
+    if (AI_CONFIG.apiKey && pageData.content) {
+      console.log('[Background] Enhancing with AI extraction...');
+      
+      const aiResponse = await handleAIExtractionInternal(pageData.content, startTime);
+      
+      if (aiResponse.success) {
+        // Merge AI results with page data
+        const enhancedData = {
+          ...pageData,
+          ai: aiResponse.data,
+          aiMetadata: aiResponse.metadata,
+          enhancedWithAI: true
+        };
+        
+        sendResponse({
+          success: true,
+          data: enhancedData
         });
       } else {
-        sendResponse({ error: "No active tab found" });
-      }
-    });
-    return true;
-  }
-  
-  // TRIMMED: Error reporting with size limits
-  if (request.action === "reportError") {
-    const errorData = {
-      error: String(request.error || '').substring(0, 200), // FIXED: Trim error message
-      url: request.url,
-      timestamp: Date.now()
-    };
-    
-    console.error("Web Weaver Error Report:", errorData);
-    
-    // Store error for debugging
-    chrome.storage.local.get(['errorLog'], (result) => {
-      const errorLog = result.errorLog || [];
-      errorLog.push(errorData);
-      
-      // Keep only last 5 errors (reduced from 10)
-      if (errorLog.length > 5) {
-        errorLog.shift();
-      }
-      
-      chrome.storage.local.set({ errorLog: errorLog });
-    });
-    
-    sendResponse({ status: "error_logged" });
-    return true;
-  }
-  
-  // Get error log for debugging
-  if (request.action === "getErrorLog") {
-    chrome.storage.local.get(['errorLog'], (result) => {
-      sendResponse({ errorLog: result.errorLog || [] });
-    });
-    return true;
-  }
-  
-  // Clear all data
-  if (request.action === "clearAllData") {
-    chrome.storage.local.clear(() => {
-      // Reset performance metrics
-      performanceMetrics = {
-        extractionCount: 0,
-        errorCount: 0,
-        totalExtractionTime: 0
-      };
-      sendResponse({ status: "data_cleared" });
-    });
-    return true;
-  }
-});
-
-// DAY 4 ESSENTIAL: Error recovery and connection management
-chrome.runtime.onConnect.addListener((port) => {
-  if (port.name === 'webweaver-recovery') {
-    port.onMessage.addListener((message) => {
-      if (message.action === 'reportError') {
-        console.error('Web Weaver Recovery Error:', message.error);
-        
-        // Try to recover by clearing problematic state
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          if (tabs[0]?.id) {
-            chrome.scripting.executeScript({
-              target: { tabId: tabs[0].id },
-              func: () => {
-                // Clear all Web Weaver state
-                window.webWeaverInjected = false;
-                window.webWeaverAllowReinject = true;
-                if (window.elementCache) {
-                  window.elementCache.clear();
-                }
-                if (window.tagCache) {
-                  window.tagCache.clear();
-                }
-              }
-            }).catch(() => {
-              // Silent fail for cross-origin issues
-            });
+        // Return page data with AI error info
+        sendResponse({
+          success: true,
+          data: {
+            ...pageData,
+            aiError: aiResponse.error,
+            enhancedWithAI: false
           }
         });
       }
-      
-      if (message.action === 'getRecoveryData') {
-        // Provide fallback extraction data from storage
-        chrome.storage.local.get(['lastExtraction'], (result) => {
-          port.postMessage({
-            action: 'recoveryData',
-            data: result.lastExtraction || null
-          });
-        });
-      }
-    });
+    } else {
+      // Return basic page data without AI enhancement
+      sendResponse({
+        success: true,
+        data: {
+          ...pageData,
+          enhancedWithAI: false,
+          aiError: AI_CONFIG.apiKey ? null : 'API key not configured'
+        }
+      });
+    }
     
-    port.onDisconnect.addListener(() => {
-      console.log('Web Weaver recovery port disconnected');
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    
+    console.error('[Background] Full extraction failed:', error);
+    
+    sendResponse({
+      success: false,
+      error: error.message,
+      metadata: {
+        extractionTime: duration,
+        failed: true
+      }
     });
   }
-});
+}
 
-// Tab change handler to clean up state
-chrome.tabs.onActivated.addListener((activeInfo) => {
-  // Clear extraction state when switching tabs
-  chrome.scripting.executeScript({
-    target: { tabId: activeInfo.tabId },
-    func: () => {
-      if (window.webWeaverInjected) {
-        window.webWeaverAllowReinject = true;
-      }
+// Internal AI extraction helper
+async function handleAIExtractionInternal(pageContent, startTime) {
+  try {
+    const { extractWithAI } = await loadExtractor();
+    return await extractWithAI(pageContent, AI_CONFIG);
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// Extension lifecycle
+chrome.runtime.onInstalled.addListener((details) => {
+  console.log('[Background] Web Weaver Lightning installed:', details.reason);
+  
+  // Set default settings
+  chrome.storage.local.get(['openaiApiKey'], (result) => {
+    if (!result.openaiApiKey) {
+      console.log('[Background] First install - API key setup required');
     }
-  }).catch(() => {
-    // Silent fail - tab might not support scripting
   });
 });
 
-// Context menu handlers
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "webweaver-extract") {
-    chrome.runtime.sendMessage({ action: "extractData" });
-  } else if (info.menuItemId === "webweaver-extract-selection" && info.selectionText) {
-    // Extract only selected content
-    chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: (selectedText) => {
-        // Extract from selection
-        const selectionData = {
-          title: document.title,
-          url: window.location.href,
-          selectedText: selectedText,
-          timestamp: new Date().toISOString(),
-          type: 'selection'
-        };
-        
-        chrome.runtime.sendMessage({ 
-          action: "dataExtracted", 
-          data: selectionData 
-        });
-      },
-      args: [info.selectionText]
-    });
-  }
-});
-
-// SIMPLIFIED: Essential cleanup only (reduced from hourly to every 4 hours)
-chrome.alarms.create('cleanup', { periodInMinutes: 240 });
-
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'cleanup') {
-    chrome.storage.local.get(['lastExtraction', 'errorLog'], (result) => {
-      const now = Date.now();
-      const oneDay = 24 * 60 * 60 * 1000;
-      
-      // Remove extractions older than 24 hours
-      if (result.lastExtraction && (now - result.lastExtraction.timestamp) > oneDay) {
-        chrome.storage.local.remove(['lastExtraction']);
-      }
-      
-      // Clean up old errors (keep only last day)
-      if (result.errorLog) {
-        const recentErrors = result.errorLog.filter(error => 
-          (now - error.timestamp) < oneDay
-        );
-        if (recentErrors.length !== result.errorLog.length) {
-          chrome.storage.local.set({ errorLog: recentErrors });
-        }
-      }
-    });
-  }
-});
-
-// Handle extension updates gracefully
-chrome.runtime.onUpdateAvailable.addListener(() => {
-  console.log('Web Weaver update available - user can choose to reload');
-  // Don't auto-reload, let user choose when convenient
-});
+console.log('[Background] Web Weaver Lightning Day 4 ready');

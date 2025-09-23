@@ -1,838 +1,365 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Web Weaver Lightning v1.0</title>
-  <style>
-    :root {
-      --primary-color: #3498db;
-      --success-color: #27ae60;
-      --error-color: #e74c3c;
-      --warning-color: #f39c12;
-      --secondary-color: #95a5a6;
-      --dark-color: #2c3e50;
-      --light-bg: #f8f9fa;
-      --border-color: #e0e6ed;
-      --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      --shadow-light: 0 2px 8px rgba(0,0,0,0.1);
-      --shadow-medium: 0 4px 16px rgba(0,0,0,0.15);
-      --shadow-heavy: 0 8px 24px rgba(0,0,0,0.2);
-      --border-radius: 8px;
-      --transition: all 0.2s ease;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      width: 480px;
-      min-height: 640px;
-      margin: 0;
-      padding: 20px;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: var(--gradient-primary);
-      color: var(--dark-color);
-      line-height: 1.5;
-    }
-
-    .container {
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: var(--shadow-heavy);
-      min-height: 600px;
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 24px;
-      padding-bottom: 20px;
-      border-bottom: 2px solid var(--light-bg);
-    }
-
-    .header h1 {
-      margin: 0;
-      color: var(--dark-color);
-      font-size: 28px;
-      font-weight: 700;
-      background: var(--gradient-primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    /* ENHANCED: Updated version for v1.0 */
-    .header .version {
-      color: var(--secondary-color);
-      font-size: 13px;
-      margin-top: 8px;
-      font-weight: 500;
-    }
-
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr auto;
-      gap: 12px;
-      margin-bottom: 20px;
-      align-items: center;
-    }
-
-    button {
-      background: var(--primary-color);
-      color: white;
-      border: none;
-      padding: 12px 16px;
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-      transition: var(--transition);
-      position: relative;
-      overflow: hidden;
-    }
-
-    button::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-      transition: left 0.5s;
-    }
-
-    button:hover::before {
-      left: 100%;
-    }
-
-    button:hover:not(:disabled) {
-      background: #2980b9;
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-medium);
-    }
-
-    button:active:not(:disabled) {
-      transform: translateY(0);
-    }
-
-    button:disabled {
-      background: var(--secondary-color);
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    button:focus {
-      outline: 3px solid rgba(52, 152, 219, 0.3);
-      outline-offset: 2px;
-    }
-
-    .btn-reset {
-      background: var(--error-color);
-    }
-
-    .btn-reset:hover:not(:disabled) {
-      background: #c0392b;
-    }
-
-    .settings-toggle {
-      background: var(--secondary-color);
-      padding: 12px;
-      border-radius: 50%;
-      width: 44px;
-      height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-    }
-
-    .settings-toggle:hover:not(:disabled) {
-      background: #7f8c8d;
-    }
-
-    .settings-panel {
-      background: var(--light-bg);
-      border-radius: var(--border-radius);
-      padding: 16px;
-      margin-bottom: 16px;
-      border: 1px solid var(--border-color);
-    }
-
-    .settings-panel h4 {
-      margin: 0 0 12px 0;
-      font-size: 14px;
-      color: var(--dark-color);
-    }
-
-    .setting-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .setting-row:last-child {
-      margin-bottom: 0;
-    }
-
-    .setting-row label {
-      font-size: 12px;
-      font-weight: 500;
-      min-width: 80px;
-      color: var(--dark-color);
-    }
-
-    .setting-row input[type="range"] {
-      flex: 1;
-      height: 6px;
-      background: #ddd;
-      outline: none;
-      border-radius: 3px;
-    }
-
-    .setting-row input[type="range"]::-webkit-slider-thumb {
-      appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: var(--primary-color);
-      cursor: pointer;
-      box-shadow: var(--shadow-light);
-    }
-
-    .setting-row .setting-value {
-      font-weight: 600;
-      color: var(--primary-color);
-      min-width: 24px;
-      text-align: center;
-      font-size: 12px;
-    }
-
-    /* ENHANCED: Progress skeleton always visible */
-    .progress-container {
-      margin-bottom: 16px;
-    }
-
-    .progress-bar-container {
-      background: #ecf0f1;
-      height: 10px;
-      border-radius: 5px;
-      overflow: hidden;
-      margin-bottom: 12px;
-      /* FIXED: Always show skeleton */
-      opacity: 0.3;
-      transition: opacity 0.3s ease;
-    }
-
-    .progress-container.active .progress-bar-container {
-      opacity: 1;
-    }
-
-    .progress-bar {
-      background: linear-gradient(90deg, var(--primary-color), var(--success-color));
-      height: 100%;
-      width: 0%;
-      border-radius: 5px;
-      transition: width 0.3s ease;
-      position: relative;
-    }
-
-    .progress-bar::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      right: 0;
-      background-image: linear-gradient(
-        -45deg,
-        rgba(255, 255, 255, .2) 25%,
-        transparent 25%,
-        transparent 50%,
-        rgba(255, 255, 255, .2) 50%,
-        rgba(255, 255, 255, .2) 75%,
-        transparent 75%,
-        transparent
-      );
-      background-size: 50px 50px;
-      animation: move 2s linear infinite;
-      opacity: 0;
-    }
-
-    .progress-container.active .progress-bar::after {
-      opacity: 1;
-    }
-
-    @keyframes move {
-      0% { background-position: 0 0; }
-      100% { background-position: 50px 50px; }
-    }
-
-    .progress-text {
-      font-size: 13px;
-      color: var(--secondary-color);
-      text-align: center;
-      font-weight: 500;
-      /* ENHANCED: Always show text area */
-      min-height: 18px;
-    }
-
-    .progress-cancel {
-      text-align: center;
-      margin-top: 8px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .progress-container.active .progress-cancel {
-      opacity: 1;
-    }
-
-    .cancel-btn {
-      background: var(--error-color);
-      font-size: 12px;
-      padding: 6px 12px;
-    }
-
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 16px;
-      padding: 16px;
-      background: var(--light-bg);
-      border-radius: var(--border-radius);
-      border: 1px solid var(--border-color);
-    }
-
-    .metric {
-      text-align: center;
-    }
-
-    .metric-label {
-      display: block;
-      font-size: 11px;
-      color: var(--secondary-color);
-      margin-bottom: 4px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .metric-value {
-      display: block;
-      font-size: 16px;
-      color: var(--dark-color);
-      font-weight: 700;
-    }
-
-    .tag-filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 16px;
-      padding: 16px;
-      background: var(--light-bg);
-      border-radius: var(--border-radius);
-      border: 1px solid var(--border-color);
-    }
-
-    .tag-filter {
-      padding: 8px 14px;
-      border: none;
-      border-radius: 20px;
-      font-size: 12px;
-      cursor: pointer;
-      background: white;
-      color: var(--secondary-color);
-      transition: var(--transition);
-      border: 2px solid transparent;
-      font-weight: 500;
-    }
-
-    .tag-filter.active {
-      background: var(--primary-color);
-      color: white;
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-light);
-    }
-
-    .tag-filter:hover:not(.active) {
-      background: #e8f4f8;
-      color: var(--primary-color);
-      transform: translateY(-1px);
-    }
-
-    .tag-filter:focus {
-      outline: 2px solid var(--primary-color);
-      outline-offset: 2px;
-    }
-
-    .export-controls {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-
-    .export-controls button {
-      font-size: 12px;
-      padding: 10px 12px;
-      background: var(--success-color);
-      font-weight: 600;
-    }
-
-    .export-controls button:hover:not(:disabled) {
-      background: #229954;
-    }
-
-    .search-container {
-      position: relative;
-      margin-bottom: 16px;
-    }
-
-    #searchBox {
-      width: 100%;
-      padding: 12px 44px 12px 16px;
-      border: 2px solid var(--border-color);
-      border-radius: var(--border-radius);
-      font-size: 14px;
-      transition: var(--transition);
-      background: white;
-    }
-
-    #searchBox:focus {
-      outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-    }
-
-    #searchBox::placeholder {
-      color: var(--secondary-color);
-    }
-
-    .search-icon {
-      position: absolute;
-      right: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--secondary-color);
-      font-size: 16px;
-      pointer-events: none;
-    }
-
-    /* ENHANCED: Improved status messages */
-    .status {
-      padding: 12px 16px;
-      border-radius: var(--border-radius);
-      margin-bottom: 16px;
-      font-weight: 600;
-      text-align: center;
-      font-size: 14px;
-      transition: var(--transition);
-    }
-
-    .status.success {
-      background: #d5f4e6;
-      color: var(--success-color);
-      border: 1px solid var(--success-color);
-    }
-
-    .status.error {
-      background: #f8d7da;
-      color: var(--error-color);
-      border: 1px solid var(--error-color);
-    }
-
-    .status.default {
-      background: var(--light-bg);
-      color: var(--dark-color);
-      border: 1px solid var(--border-color);
-    }
-
-    /* ENHANCED: Call-to-action styling for default status */
-    .status.default .cta-text {
-      color: var(--primary-color);
-      font-weight: 700;
-    }
-
-    /* ENHANCED: Monospace font for JSON output */
-    #output {
-      background: var(--light-bg);
-      border: 1px solid var(--border-color);
-      border-radius: var(--border-radius);
-      padding: 16px;
-      max-height: 400px;
-      overflow-y: auto;
-      font-size: 13px;
-      line-height: 1.5;
-      /* FIXED: Monospace for data authenticity */
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
-    }
-
-    /* ENHANCED: Keep normal font for highlighted content */
-    .highlighted-output {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    }
-
-    .content-section {
-      margin-bottom: 24px;
-    }
-
-    .content-section:last-child {
-      margin-bottom: 0;
-    }
-
-    .content-section h4 {
-      margin: 0 0 12px 0;
-      color: var(--dark-color);
-      font-size: 16px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .highlighted-item {
-      background: white;
-      border: 2px solid var(--border-color);
-      border-radius: var(--border-radius);
-      padding: 12px;
-      margin-bottom: 10px;
-      cursor: pointer;
-      transition: var(--transition);
-      position: relative;
-    }
-
-    .highlighted-item:hover {
-      border-color: var(--primary-color);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-light);
-    }
-
-    .highlighted-item.selected {
-      border-color: var(--primary-color);
-      background: #ebf3fd;
-      box-shadow: var(--shadow-medium);
-    }
-
-    .highlighted-item.search-match {
-      border-color: var(--warning-color);
-      background: #fef9e7;
-    }
-
-    .highlighted-item.keyboard-selected {
-      border-color: var(--primary-color);
-      background: #f0f8ff;
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-    }
-
-    .highlighted-item:focus {
-      outline: 3px solid rgba(52, 152, 219, 0.3);
-      outline-offset: 2px;
-    }
-
-    .tag-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 10px;
-      font-weight: 700;
-      color: white;
-      margin-right: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .content-text {
-      font-size: 14px;
-      color: var(--dark-color);
-      font-weight: 500;
-      line-height: 1.4;
-    }
-
-    .content-text mark {
-      background: #fff3cd;
-      padding: 1px 2px;
-      border-radius: 2px;
-    }
-
-    .link-url {
-      display: block;
-      font-size: 12px;
-      color: var(--secondary-color);
-      margin-top: 6px;
-      word-break: break-all;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    }
-
-    .confidence {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: var(--secondary-color);
-      color: white;
-      padding: 2px 6px;
-      border-radius: 10px;
-      font-size: 10px;
-      font-weight: 600;
-    }
-
-    .table-item, .form-item, .dynamic-item {
-      border-left: 4px solid var(--primary-color);
-    }
-
-    .table-info, .form-info {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
-    .table-stats, .form-stats {
-      font-size: 11px;
-      color: var(--secondary-color);
-      font-weight: 500;
-    }
-
-    .table-preview, .form-preview {
-      font-size: 12px;
-      color: var(--dark-color);
-      background: #f8f9fa;
-      padding: 8px;
-      border-radius: 4px;
-      line-height: 1.3;
-    }
-
-    .dynamic-status {
-      font-size: 16px;
-      margin-right: 8px;
-    }
-
-    .dynamic-info {
-      font-size: 11px;
-      color: var(--secondary-color);
-      margin-left: auto;
-    }
-
-    .error-info {
-      background: #fee;
-      color: var(--error-color);
-      padding: 6px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      margin-top: 6px;
-    }
-
-    .fallback-info {
-      background: #fff3cd;
-      border: 1px solid #ffeaa7;
-      border-radius: var(--border-radius);
-      padding: 16px;
-      margin: 16px 0;
-    }
-
-    .fallback-info h4 {
-      margin: 0 0 8px 0;
-      color: var(--warning-color);
-    }
-
-    .fallback-info p {
-      margin: 4px 0;
-      font-size: 13px;
-    }
-
-    /* Accessibility helpers */
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--secondary-color);
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #7f8c8d;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 520px) {
-      body {
-        width: 100%;
-        padding: 16px;
-      }
-      
-      .container {
-        padding: 20px;
-      }
-      
-      .controls {
-        grid-template-columns: 1fr;
-      }
-      
-      .metrics-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    /* Animation for loading states */
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.5; }
-      100% { opacity: 1; }
-    }
-
-    .loading {
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-
-    /* High contrast mode support */
-    @media (prefers-contrast: high) {
-      :root {
-        --primary-color: #0066cc;
-        --success-color: #006600;
-        --error-color: #cc0000;
-        --border-color: #666;
-      }
-    }
-
-    /* Reduced motion support */
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Weaver Lightning v1.0</title>
+<style>
+:root {
+--primary-color: #3498db;
+--success-color: #27ae60;
+--error-color: #e74c3c;
+--warning-color: #f39c12;
+--secondary-color: #95a5a6;
+--dark-color: #2c3e50;
+--light-bg: #f8f9fa;
+--border-color: #e0e6ed;
+--gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+--shadow-light: 0 2px 8px rgba(0,0,0,0.1);
+--shadow-medium: 0 4px 16px rgba(0,0,0,0.15);
+--shadow-heavy: 0 8px 24px rgba(0,0,0,0.2);
+--border-radius: 8px;
+--transition: all 0.2s ease;
+}
+
+* {
+box-sizing: border-box;
+}
+
+body {
+width: 480px;
+min-height: 640px;
+margin: 0;
+padding: 20px;
+font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+background: var(--gradient-primary);
+color: var(--dark-color);
+line-height: 1.5;
+}
+
+.container {
+background: white;
+border-radius: 12px;
+padding: 24px;
+box-shadow: var(--shadow-heavy);
+min-height: 600px;
+}
+
+.header {
+text-align: center;
+margin-bottom: 24px;
+padding-bottom: 20px;
+border-bottom: 2px solid var(--light-bg);
+}
+
+.header h1 {
+margin: 0;
+color: var(--dark-color);
+font-size: 28px;
+font-weight: 700;
+background: var(--gradient-primary);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+}
+
+.header .version {
+color: var(--secondary-color);
+font-size: 13px;
+margin-top: 8px;
+font-weight: 500;
+}
+
+.controls {
+display: grid;
+grid-template-columns: 1fr auto;
+gap: 12px;
+margin-bottom: 20px;
+align-items: center;
+}
+
+button {
+background: var(--primary-color);
+color: white;
+border: none;
+padding: 12px 16px;
+border-radius: var(--border-radius);
+cursor: pointer;
+font-weight: 600;
+font-size: 14px;
+transition: var(--transition);
+position: relative;
+overflow: hidden;
+}
+
+button:hover:not(:disabled) {
+background: #2980b9;
+transform: translateY(-2px);
+box-shadow: var(--shadow-medium);
+}
+
+button:disabled {
+background: var(--secondary-color);
+cursor: not-allowed;
+transform: none;
+box-shadow: none;
+}
+
+button:focus {
+outline: 3px solid rgba(52, 152, 219, 0.3);
+outline-offset: 2px;
+}
+
+.btn-config {
+background: var(--warning-color);
+}
+
+.btn-config:hover:not(:disabled) {
+background: #e67e22;
+}
+
+.status {
+padding: 12px 16px;
+border-radius: var(--border-radius);
+margin-bottom: 16px;
+font-weight: 600;
+text-align: center;
+font-size: 14px;
+transition: var(--transition);
+}
+
+.status.success {
+background: #d5f4e6;
+color: var(--success-color);
+border: 1px solid var(--success-color);
+}
+
+.status.error {
+background: #f8d7da;
+color: var(--error-color);
+border: 1px solid var(--error-color);
+}
+
+.status.warning {
+background: #fff3cd;
+color: var(--warning-color);
+border: 1px solid var(--warning-color);
+}
+
+.status.default {
+background: var(--light-bg);
+color: var(--dark-color);
+border: 1px solid var(--border-color);
+}
+
+.status.loading {
+background: #cce5ff;
+color: var(--primary-color);
+border: 1px solid var(--primary-color);
+}
+
+#loading {
+display: none;
+text-align: center;
+padding: 16px;
+color: var(--primary-color);
+}
+
+.loading-spinner {
+display: inline-block;
+width: 20px;
+height: 20px;
+border: 2px solid #f3f3f3;
+border-top: 2px solid var(--primary-color);
+border-radius: 50%;
+animation: spin 1s linear infinite;
+margin-right: 8px;
+}
+
+@keyframes spin {
+0% { transform: rotate(0deg); }
+100% { transform: rotate(360deg); }
+}
+
+#error {
+display: none;
+background: #f8d7da;
+color: var(--error-color);
+border: 1px solid var(--error-color);
+padding: 12px 16px;
+border-radius: var(--border-radius);
+margin-bottom: 16px;
+font-size: 13px;
+}
+
+.config-section {
+background: var(--light-bg);
+border-radius: var(--border-radius);
+padding: 16px;
+margin-bottom: 16px;
+border: 1px solid var(--border-color);
+}
+
+.config-section h4 {
+margin: 0 0 12px 0;
+font-size: 14px;
+color: var(--dark-color);
+}
+
+.input-group {
+margin-bottom: 12px;
+}
+
+.input-group label {
+display: block;
+font-size: 12px;
+font-weight: 500;
+margin-bottom: 4px;
+color: var(--dark-color);
+}
+
+.input-group input {
+width: 100%;
+padding: 8px 12px;
+border: 1px solid var(--border-color);
+border-radius: 4px;
+font-size: 13px;
+}
+
+.input-group input:focus {
+outline: none;
+border-color: var(--primary-color);
+}
+
+.export-controls {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 10px;
+margin-bottom: 16px;
+}
+
+.export-controls button {
+font-size: 12px;
+padding: 10px 12px;
+background: var(--success-color);
+font-weight: 600;
+}
+
+.export-controls button:hover:not(:disabled) {
+background: #229954;
+}
+
+#output {
+display: none;
+background: var(--light-bg);
+border: 1px solid var(--border-color);
+border-radius: var(--border-radius);
+padding: 16px;
+max-height: 400px;
+overflow-y: auto;
+font-size: 13px;
+line-height: 1.5;
+}
+
+.results-container {
+font-family: inherit;
+}
+
+.result-section {
+margin-bottom: 20px;
+padding: 12px;
+background: white;
+border-radius: 6px;
+border: 1px solid #ddd;
+}
+
+.result-section h3 {
+margin: 0 0 12px 0;
+font-size: 14px;
+color: var(--dark-color);
+}
+
+.info-item, .ai-item, .structure-item {
+margin-bottom: 8px;
+font-size: 12px;
+}
+
+.ai-results {
+border-left: 4px solid var(--primary-color);
+}
+
+.error-section {
+border-left: 4px solid var(--error-color);
+}
+
+.error-info {
+background: #fee;
+color: var(--error-color);
+padding: 8px;
+border-radius: 4px;
+font-size: 11px;
+}
+
+::-webkit-scrollbar {
+width: 8px;
+}
+
+::-webkit-scrollbar-track {
+background: #f1f1f1;
+border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+background: var(--secondary-color);
+border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+background: #7f8c8d;
+}
+</style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>🕸️ Web Weaver</h1>
-      <div class="version">v1.0 Lightning Edition</div>
-    </div>
+<div class="container">
+<div class="header">
+<h1>🕸️ Web Weaver</h1>
+<div class="version">v1.0 Lightning Edition - Day 4</div>
+</div>
 
-    <div class="controls">
-      <button id="extractBtn" 
-              class="tooltip" 
-              data-tooltip="Extract structured data with AI tagging"
-              aria-describedby="extract-help">
-        Extract Page Data
-      </button>
-      <button id="resetBtn" 
-              class="btn-reset tooltip" 
-              data-tooltip="Clear all data and reset state"
-              aria-describedby="reset-help">
-        Reset
-      </button>
-      <button id="settingsBtn" 
-              class="settings-toggle" 
-              aria-label="Toggle extraction settings"
-              title="Extraction Settings">
-        ⚙️
-      </button>
-    </div>
+<div class="controls">
+<button id="extractBtn">Extract with AI</button>
+<button id="configBtn" class="btn-config">⚙️</button>
+</div>
 
-    <div id="settingsContainer" class="settings-container" style="display: none;">
-      <!-- Settings panel will be injected here -->
-    </div>
+<div id="configSection" class="config-section" style="display: none;">
+<h4>🔑 API Configuration</h4>
+<div class="input-group">
+<label for="apiKeyInput">OpenAI API Key:</label>
+<input type="password" id="apiKeyInput" placeholder="sk-..." autocomplete="off">
+</div>
+<button id="saveApiKey">Save API Key</button>
+</div>
 
-    <!-- ENHANCED: Progress skeleton always visible -->
-    <div id="progressContainer" class="progress-container">
-      <div class="progress-bar-container">
-        <div class="progress-bar" id="progressBar"></div>
-      </div>
-      <div class="progress-text" id="progressText"></div>
-      <div class="progress-cancel">
-        <button id="cancelBtn" class="cancel-btn">Cancel</button>
-      </div>
-    </div>
+<div id="loading">
+<div class="loading-spinner"></div>
+Processing with AI...
+</div>
 
-    <!-- ENHANCED: Active call-to-action status message -->
-    <div id="status" class="status default" role="status" aria-live="polite">
-      🚀 <span class="cta-text">Ready:</span> Click "Extract Page Data" to start!
-    </div>
+<div id="status" class="status default">
+🚀 Ready: Click "Extract with AI" to start!
+</div>
 
-    <div id="metricsContainer" class="metrics-container" style="display: none;">
-      <!-- Metrics grid will be injected here -->
-    </div>
+<div id="error"></div>
 
-    <div id="tagContainer" class="tag-container" style="display: none;">
-      <!-- Tag filters will be injected here -->
-    </div>
+<div class="export-controls">
+<button id="exportJSON" disabled>📄 JSON</button>
+<button id="exportCSV" disabled>📊 CSV</button>
+<button id="copyBtn" disabled>📋 Copy</button>
+</div>
 
-    <div class="export-controls">
-      <button id="exportCSV" 
-              class="tooltip" 
-              data-tooltip="Download structured data as CSV file"
-              disabled>
-        📊 CSV
-      </button>
-      <button id="exportJSON" 
-              class="tooltip" 
-              data-tooltip="Download complete data as JSON file"
-              disabled>
-        📄 JSON
-      </button>
-      <button id="copyBtn" 
-              class="tooltip" 
-              data-tooltip="Copy JSON data to clipboard"
-              disabled>
-        📋 Copy
-      </button>
-    </div>
+<div id="output"></div>
+</div>
 
-    <div class="search-container">
-      <input type="text" 
-             id="searchBox" 
-             placeholder="Search extracted data (fuzzy search enabled)..." 
-             disabled
-             aria-label="Search extracted content"
-             autocomplete="off">
-      <span class="search-icon" aria-hidden="true">🔍</span>
-    </div>
-
-    <div id="output" 
-         style="display: none;" 
-         role="tabpanel" 
-         aria-label="Extracted data preview">
-    </div>
-
-    <!-- Hidden helper text for screen readers -->
-    <div class="sr-only">
-      <div id="extract-help">
-        Extract structured data from the current webpage with AI-powered content tagging
-      </div>
-      <div id="reset-help">
-        Clear all extracted data and return to initial state
-      </div>
-    </div>
-  </div>
-
-  <script src="popup.js"></script>
+<script src="popup.js"></script>
 </body>
 </html>

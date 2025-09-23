@@ -2,26 +2,28 @@
   "manifest_version": 3,
   "name": "Web Weaver Lightning",
   "short_name": "WebWeaver", 
-  "description": "Extract any webpage into clean JSON/CSV with smart AI tagging & dynamic content detection.",
+  "description": "AI-powered webpage extraction into structured JSON/CSV with smart tagging & translation.",
   "version": "1.0.0",
   "author": "Web Weaver Team",
-  
   "permissions": [
     "scripting",
     "activeTab",
     "downloads", 
     "storage",
     "contextMenus",
-    "alarms"
+    "alarms",
+    "offscreen"
   ],
-  
+  "host_permissions": [
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*"
+  ],
   "background": { 
     "service_worker": "background.js"
   },
-  
   "action": { 
     "default_popup": "popup.html",
-    "default_title": "Web Weaver Lightning - Extract Page Data",
+    "default_title": "Web Weaver Lightning - AI-Powered Extraction",
     "default_icon": {
       "16": "icon16.png",
       "32": "icon32.png",
@@ -29,20 +31,22 @@
       "128": "icon128.png"
     }
   },
-  
   "icons": {
     "16": "icon16.png",
     "32": "icon32.png",
     "48": "icon48.png",
     "128": "icon128.png"
   },
-  
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline';"
   },
-  
+  "web_accessible_resources": [
+    {
+      "resources": ["extractor.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "minimum_chrome_version": "88",
-  
   "commands": {
     "_execute_action": {
       "suggested_key": {
