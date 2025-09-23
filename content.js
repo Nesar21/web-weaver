@@ -15,16 +15,16 @@ if (window.webWeaverInjected && !window.webWeaverAllowReinject) {
     try {
       // Priority 1: Try <main> tag
       const mainElement = document.querySelector('main');
-      if (mainElement && mainElement.textContent.trim().length > 200) {
-        content = mainElement.textContent.trim();
+      if (mainElement && mainElement.innerText.trim().length > 200) {
+        content = mainElement.innerText.trim();
         method = 'main-tag';
       }
       
       // Priority 2: Try <article> tag
       if (!content) {
         const articleElement = document.querySelector('article');
-        if (articleElement && articleElement.textContent.trim().length > 200) {
-          content = articleElement.textContent.trim();
+        if (articleElement && articleElement.innerText.trim().length > 200) {
+          content = articleElement.innerText.trim();
           method = 'article-tag';
         }
       }
@@ -33,7 +33,7 @@ if (window.webWeaverInjected && !window.webWeaverAllowReinject) {
       if (!content) {
         const contentSelectors = [
           '.content',
-          '.post-content', 
+          '.post-content',
           '.article-content',
           '.entry-content',
           '.main-content',
@@ -42,8 +42,8 @@ if (window.webWeaverInjected && !window.webWeaverAllowReinject) {
         
         for (const selector of contentSelectors) {
           const element = document.querySelector(selector);
-          if (element && element.textContent.trim().length > 200) {
-            content = element.textContent.trim();
+          if (element && element.innerText.trim().length > 200) {
+            content = element.innerText.trim();
             method = `selector-${selector}`;
             break;
           }
@@ -54,19 +54,19 @@ if (window.webWeaverInjected && !window.webWeaverAllowReinject) {
       if (!content) {
         const paragraphs = Array.from(document.querySelectorAll('p'));
         const contentParagraphs = paragraphs.filter(p => 
-          p.textContent.trim().length > 50 && 
+          p.innerText.trim().length > 50 && 
           !p.closest('nav, header, footer, sidebar, .sidebar, .nav')
         );
         
         if (contentParagraphs.length > 0) {
-          content = contentParagraphs.map(p => p.textContent.trim()).join(' ');
+          content = contentParagraphs.map(p => p.innerText.trim()).join(' ');
           method = 'readability-p';
         }
       }
       
       // Priority 5: Fallback to body
       if (!content) {
-        content = document.body.textContent.trim();
+        content = document.body.innerText.trim();
         method = 'body-fallback';
       }
       
@@ -89,7 +89,7 @@ if (window.webWeaverInjected && !window.webWeaverAllowReinject) {
       console.error('[Content] Extraction failed:', error);
       
       return {
-        content: document.body.textContent.trim().slice(0, 8000),
+        content: document.body.innerText.trim().slice(0, 8000),
         method: 'error-fallback',
         title: document.title || 'No title', 
         url: window.location.href,
