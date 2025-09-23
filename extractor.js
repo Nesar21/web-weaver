@@ -1,8 +1,9 @@
-// Day 4 AI Extraction Engine - FREE Gemini 2.0 Flash
+// Day 4 AI Extraction Engine - FREE Gemini 2.0 Flash (CSP-Safe ES Module)
+
 const SCHEMA_FIELDS = ['title', 'description', 'author', 'date', 'content', 'links', 'images', 'category'];
 
 // Schema enforcement - ensures consistent JSON structure
-function enforceSchema(data) {
+export function enforceSchema(data) {
   const cleanedData = {};
   
   SCHEMA_FIELDS.forEach(field => {
@@ -16,8 +17,8 @@ function enforceSchema(data) {
   return cleanedData;
 }
 
-// Main AI extraction function with Google Gemini 2.0 Flash (100% FREE)
-async function extractWithAI(pageContent, apiConfig) {
+// ✅ THE FINAL, PERFECTED AI extraction function
+export async function extractWithAI(pageContent, apiConfig) {
   const startTime = Date.now();
   
   try {
@@ -31,95 +32,101 @@ async function extractWithAI(pageContent, apiConfig) {
       throw new Error('Insufficient content for extraction');
     }
     
-    // Truncate content to avoid limits
-    const truncatedContent = pageContent.slice(0, 8000);
+    // Prepare content for AI processing
+    const truncatedContent = pageContent.length > 8000 ? 
+      pageContent.substring(0, 8000) + '...' : pageContent;
     
-    const prompt = `Extract structured information from this webpage content and return ONLY valid JSON with these exact fields:
+    console.log(`[Extractor] Processing ${truncatedContent.length} characters...`);
     
-Required fields: title, description, author, date, content, links, images, category
+    // ✅ PERFECTED Gemini API payload with forced JSON response
+    const payload = {
+      contents: [{
+        parts: [{
+          text: `Extract structured data from this webpage content and return ONLY a valid JSON object with these exact fields:
+- title: main page title
+- description: brief summary (1-2 sentences)  
+- author: author name if found
+- date: publication date if found
+- category: content category (news/blog/product/docs/etc)
+- links: array of important URLs mentioned
+- images: array of important image descriptions
+- content: key content summary (100 words max)
 
-Category must be one of: news, market, opinion, technical, ads, other
-
-Content: ${truncatedContent}
-
-Return only the JSON object, no explanation or additional text.`;
-
-    // Google Gemini 2.0 Flash API call (100% FREE with generous limits)
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiConfig.apiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 1000,
-          thinkingConfig: {
-            thinkingBudget: 0  // Disable thinking for faster/cheaper responses
-          }
-        }
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API request failed: ${response.status} - ${errorText}`);
-    }
-
-    const responseData = await response.json();
-    
-    if (!responseData.candidates || !responseData.candidates[0] || !responseData.candidates[0].content) {
-      throw new Error('Invalid Gemini API response structure');
-    }
-
-    const content = responseData.candidates[0].content.parts[0].text.trim();
-    
-    // Remove markdown code blocks if present
-    const cleanContent = content.replace(/``````/g, '').trim();
-    
-    let extractedData;
-    try {
-      extractedData = JSON.parse(cleanContent);
-    } catch (parseError) {
-      console.error('[Extractor] JSON parse failed:', parseError);
-      throw new Error(`Invalid JSON from AI: ${parseError.message}`);
-    }
-
-    // Enforce schema
-    const validatedData = enforceSchema(extractedData);
-    
-    const duration = Date.now() - startTime;
-    
-    console.log('[Extractor] Gemini 2.0 Flash Success:', {
-      duration: `${duration}ms`,
-      model: 'gemini-2.0-flash',
-      fieldsExtracted: Object.keys(validatedData).filter(k => validatedData[k] !== null).length
-    });
-
-    return {
-      success: true,
-      data: validatedData,
-      metadata: {
-        extractionTime: duration,
-        model: 'gemini-2.0-flash',
-        free: true
+Webpage content:
+${truncatedContent}`
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: apiConfig.maxTokens || 2000,
+        responseMimeType: "application/json"
       }
     };
-
+    
+    console.log('[Extractor] Calling Gemini API...');
+    
+    // Call Gemini API
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiConfig.model}:generateContent?key=${apiConfig.apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+    }
+    
+    const result = await response.json();
+    console.log('[Extractor] Gemini API response received');
+    
+    // Extract the generated content
+    if (!result.candidates || !result.candidates[0] || !result.candidates[0].content) {
+      throw new Error('Invalid Gemini API response structure');
+    }
+    
+    const generatedText = result.candidates[0].content.parts[0].text;
+    console.log('[Extractor] Generated content:', generatedText.substring(0, 200) + '...');
+    
+    // ✅ CSP-Safe JSON parsing (no eval!)
+    let aiData;
+    try {
+      aiData = JSON.parse(generatedText);
+    } catch (parseError) {
+      console.error('[Extractor] JSON parse failed:', parseError);
+      // Try to extract JSON from text if wrapped
+      const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        aiData = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Could not parse AI response as JSON');
+      }
+    }
+    
+    // Enforce our schema
+    const cleanedData = enforceSchema(aiData);
+    
+    const duration = Date.now() - startTime;
+    console.log(`[Extractor] AI extraction completed in ${duration}ms`);
+    
+    return {
+      success: true,
+      data: cleanedData,
+      metadata: {
+        model: apiConfig.model,
+        extractionTime: duration,
+        contentLength: pageContent.length,
+        tokensApprox: Math.ceil(pageContent.length / 4)
+      }
+    };
+    
   } catch (error) {
     const duration = Date.now() - startTime;
     
-    console.error('[Extractor] Gemini Failed:', {
-      error: error.message,
-      duration: `${duration}ms`,
-      contentLength: pageContent?.length || 0
-    });
-
+    console.error('[Extractor] AI extraction failed:', error);
+    
     return {
       success: false,
       error: error.message,
@@ -129,9 +136,4 @@ Return only the JSON object, no explanation or additional text.`;
       }
     };
   }
-}
-
-// Export for background.js
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { extractWithAI, enforceSchema };
 }

@@ -19,7 +19,7 @@ class UIState {
   async checkApiKey() {
     try {
       const response = await chrome.runtime.sendMessage({ action: "getApiKey" });
-      this.apiKeyConfigured = response.hasKey;
+      this.apiKeyConfigured = response && response.hasKey;
       console.log('[Popup] API key status:', this.apiKeyConfigured ? 'configured' : 'missing');
     } catch (error) {
       console.error('[Popup] Failed to check API key:', error);
@@ -111,7 +111,6 @@ class UIState {
   
   async saveApiKey() {
     const apiKeyInput = document.getElementById('apiKeyInput');
-    const error = document.getElementById('error');
     
     if (!apiKeyInput || !apiKeyInput.value.trim()) {
       this.showError('Please enter a valid Gemini API key');
@@ -120,9 +119,9 @@ class UIState {
     
     const apiKey = apiKeyInput.value.trim();
     
-    // ✅ FIXED: Basic validation for Gemini API key
-    if (!apiKey.startsWith('AIza')) {
-      this.showError('Gemini API keys should start with "AIza"');
+    // ✅ FIXED: Allow both AIza and Alza formats for Gemini API key
+    if (!apiKey.startsWith('AIza') && !apiKey.startsWith('Alza')) {
+      this.showError('Gemini API keys should start with "AIza" or "Alza"');
       return;
     }
     
@@ -139,7 +138,7 @@ class UIState {
         apiKey: apiKey
       });
       
-      if (response.success) {
+      if (response && response.success) {
         this.apiKeyConfigured = true;
         this.showStatus('Gemini API key saved successfully!', 'success');
         
@@ -173,7 +172,7 @@ class UIState {
         action: "extractData"
       });
       
-      if (response.success) {
+      if (response && response.success) {
         this.currentData = response.data;
         this.displayResults(response.data);
         
@@ -189,8 +188,8 @@ class UIState {
           contentLength: response.data.content?.length || 0
         });
       } else {
-        this.showError('Extraction failed: ' + (response.error || 'Unknown error'));
-        console.error('[Popup] Extraction failed:', response.error);
+        this.showError('Extraction failed: ' + (response?.error || 'Unknown error'));
+        console.error('[Popup] Extraction failed:', response?.error);
       }
     } catch (error) {
       console.error('[Popup] Extraction error:', error);
@@ -210,9 +209,9 @@ class UIState {
     // Basic page info
     html += '<div class="result-section">';
     html += '<h3>📄 Page Information</h3>';
-    html += `<div class="info-item"><strong>Title:</strong> ${data.title || 'N/A'}</div>`;
-    html += `<div class="info-item"><strong>URL:</strong> ${data.url || 'N/A'}</div>`;
-    html += `<div class="info-item"><strong>Method:</strong> ${data.method || 'N/A'}</div>`;
+    html += `<div class="info-item"><strong>Title:</strong> ${this.escapeHtml(data.title || 'N/A')}</div>`;
+    html += `<div class="info-item"><strong>URL:</strong> ${this.escapeHtml(data.url || 'N/A')}</div>`;
+    html += `<div class="info-item"><strong>Method:</strong> ${this.escapeHtml(data.method || 'N/A')}</div>`;
     html += `<div class="info-item"><strong>Content Length:</strong> ${data.content?.length || 0} chars</div>`;
     html += '</div>';
     
@@ -233,7 +232,7 @@ class UIState {
           
           html += `<div class="ai-item">`;
           html += `<strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> `;
-          html += `<span>${displayValue}</span>`;
+          html += `<span>${this.escapeHtml(String(displayValue))}</span>`;
           html += `</div>`;
         }
       });
@@ -244,7 +243,7 @@ class UIState {
     if (data.aiError) {
       html += '<div class="result-section error-section">';
       html += '<h3>⚠️ AI Processing</h3>';
-      html += `<div class="error-info">AI enhancement failed: ${data.aiError}</div>`;
+      html += `<div class="error-info">AI enhancement failed: ${this.escapeHtml(data.aiError)}</div>`;
       html += '<div style="margin-top: 8px; font-size: 11px;">Configure your FREE Gemini API key to enable AI features.</div>';
       html += '</div>';
     }
@@ -253,6 +252,17 @@ class UIState {
     
     output.innerHTML = html;
     output.style.display = 'block';
+  }
+  
+  escapeHtml(text) {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
   }
   
   showStatus(message, type = 'default') {
