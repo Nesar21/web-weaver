@@ -1,0 +1,10 @@
+{
+  "title": "Artificial Intelligence",
+  "description": "AI is intelligence demonstrated by machines, in contrast to natural intelligence displayed by animals including humans.",
+  "author": "Wikipedia Contributors",
+  "date": "2024-09-20",
+  "category": "documentation",
+  "content": "Artificial intelligence leverages computational systems to perform tasks that typically require human intelligence, including visual perception, speech recognition, and decision-making.",
+  "links": ["https://en.wikipedia.org/wiki/Machine_learning", "https://en.wikipedia.org/wiki/Neural_network"],
+  "images": ["AI neural network diagram", "Robot illustration"]
+}
