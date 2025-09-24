@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Web Weaver Lightning",
   "short_name": "WebWeaver", 
-  "description": "FREE AI-powered webpage extraction with Gemini 2.0 Flash - transforms any site into structured JSON/CSV data.",
-  "version": "1.0.0",
+  "description": "FREE AI-powered webpage extraction with Gemini 2.0 Flash - Day 5 validation ready.",
+  "version": "1.0.5",
   "author": "Web Weaver Team",
   "permissions": [
     "scripting",
@@ -21,16 +21,10 @@
   },
   "action": { 
     "default_popup": "popup.html",
-    "default_title": "Web Weaver Lightning - FREE AI Extraction"
+    "default_title": "Web Weaver Lightning - Day 5 Validation Ready"
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline';"
   },
-  "web_accessible_resources": [
-    {
-      "resources": ["extractor.js"],
-      "matches": ["<all_urls>"]
-    }
-  ],
   "minimum_chrome_version": "88"
 }

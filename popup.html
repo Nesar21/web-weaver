@@ -1,365 +1,293 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Web Weaver Lightning v1.0</title>
-<style>
-:root {
---primary-color: #3498db;
---success-color: #27ae60;
---error-color: #e74c3c;
---warning-color: #f39c12;
---secondary-color: #95a5a6;
---dark-color: #2c3e50;
---light-bg: #f8f9fa;
---border-color: #e0e6ed;
---gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
---shadow-light: 0 2px 8px rgba(0,0,0,0.1);
---shadow-medium: 0 4px 16px rgba(0,0,0,0.15);
---shadow-heavy: 0 8px 24px rgba(0,0,0,0.2);
---border-radius: 8px;
---transition: all 0.2s ease;
-}
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 380px;
+      min-height: 500px;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+    }
 
-* {
-box-sizing: border-box;
-}
+    .header {
+      background: rgba(255,255,255,0.95);
+      padding: 20px;
+      text-align: center;
+      border-bottom: 1px solid #e0e0e0;
+    }
 
-body {
-width: 480px;
-min-height: 640px;
-margin: 0;
-padding: 20px;
-font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-background: var(--gradient-primary);
-color: var(--dark-color);
-line-height: 1.5;
-}
+    .title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 0;
+    }
 
-.container {
-background: white;
-border-radius: 12px;
-padding: 24px;
-box-shadow: var(--shadow-heavy);
-min-height: 600px;
-}
+    .subtitle {
+      font-size: 12px;
+      color: #7f8c8d;
+      margin: 5px 0 0 0;
+    }
 
-.header {
-text-align: center;
-margin-bottom: 24px;
-padding-bottom: 20px;
-border-bottom: 2px solid var(--light-bg);
-}
+    .main-content {
+      padding: 20px;
+      background: white;
+    }
 
-.header h1 {
-margin: 0;
-color: var(--dark-color);
-font-size: 28px;
-font-weight: 700;
-background: var(--gradient-primary);
--webkit-background-clip: text;
--webkit-text-fill-color: transparent;
-background-clip: text;
-}
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin: 8px 0;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
 
-.header .version {
-color: var(--secondary-color);
-font-size: 13px;
-margin-top: 8px;
-font-weight: 500;
-}
+    .btn-primary {
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+      color: white;
+    }
 
-.controls {
-display: grid;
-grid-template-columns: 1fr auto;
-gap: 12px;
-margin-bottom: 20px;
-align-items: center;
-}
+    .btn-primary:hover { background: linear-gradient(135deg, #45a049, #3d8b40); }
 
-button {
-background: var(--primary-color);
-color: white;
-border: none;
-padding: 12px 16px;
-border-radius: var(--border-radius);
-cursor: pointer;
-font-weight: 600;
-font-size: 14px;
-transition: var(--transition);
-position: relative;
-overflow: hidden;
-}
+    .btn-secondary {
+      background: linear-gradient(135deg, #2196F3, #1976D2);
+      color: white;
+    }
 
-button:hover:not(:disabled) {
-background: #2980b9;
-transform: translateY(-2px);
-box-shadow: var(--shadow-medium);
-}
+    .btn-secondary:hover { background: linear-gradient(135deg, #1976D2, #1565C0); }
 
-button:disabled {
-background: var(--secondary-color);
-cursor: not-allowed;
-transform: none;
-box-shadow: none;
-}
+    /* ✅ DAY 5: Championship validation button */
+    .btn-validation {
+      background: linear-gradient(135deg, #FF9800, #F57C00);
+      color: white;
+      border: 2px solid #FF6F00;
+    }
 
-button:focus {
-outline: 3px solid rgba(52, 152, 219, 0.3);
-outline-offset: 2px;
-}
+    .btn-validation:hover { 
+      background: linear-gradient(135deg, #F57C00, #E65100);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+    }
 
-.btn-config {
-background: var(--warning-color);
-}
+    .btn:disabled {
+      background: #cccccc !important;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
 
-.btn-config:hover:not(:disabled) {
-background: #e67e22;
-}
+    .status {
+      padding: 10px;
+      border-radius: 6px;
+      margin: 10px 0;
+      font-size: 13px;
+      text-align: center;
+    }
 
-.status {
-padding: 12px 16px;
-border-radius: var(--border-radius);
-margin-bottom: 16px;
-font-weight: 600;
-text-align: center;
-font-size: 14px;
-transition: var(--transition);
-}
+    .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    .status.default { background: #e7f3ff; color: #004085; border: 1px solid #b6d7ff; }
 
-.status.success {
-background: #d5f4e6;
-color: var(--success-color);
-border: 1px solid var(--success-color);
-}
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
 
-.status.error {
-background: #f8d7da;
-color: var(--error-color);
-border: 1px solid var(--error-color);
-}
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #3498db;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
 
-.status.warning {
-background: #fff3cd;
-color: var(--warning-color);
-border: 1px solid var(--warning-color);
-}
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
 
-.status.default {
-background: var(--light-bg);
-color: var(--dark-color);
-border: 1px solid var(--border-color);
-}
+    .config-section {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 15px 0;
+      border-left: 4px solid #17a2b8;
+    }
 
-.status.loading {
-background: #cce5ff;
-color: var(--primary-color);
-border: 1px solid var(--primary-color);
-}
+    .config-title {
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
 
-#loading {
-display: none;
-text-align: center;
-padding: 16px;
-color: var(--primary-color);
-}
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin: 8px 0;
+    }
 
-.loading-spinner {
-display: inline-block;
-width: 20px;
-height: 20px;
-border: 2px solid #f3f3f3;
-border-top: 2px solid var(--primary-color);
-border-radius: 50%;
-animation: spin 1s linear infinite;
-margin-right: 8px;
-}
+    .form-control {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 13px;
+    }
 
-@keyframes spin {
-0% { transform: rotate(0deg); }
-100% { transform: rotate(360deg); }
-}
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 12px;
+      min-width: auto;
+    }
 
-#error {
-display: none;
-background: #f8d7da;
-color: var(--error-color);
-border: 1px solid var(--error-color);
-padding: 12px 16px;
-border-radius: var(--border-radius);
-margin-bottom: 16px;
-font-size: 13px;
-}
+    /* ✅ DAY 5: Championship developer section */
+    .developer-section {
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+      border-radius: 8px;
+      padding: 15px;
+      margin: 15px 0;
+      color: white;
+    }
 
-.config-section {
-background: var(--light-bg);
-border-radius: var(--border-radius);
-padding: 16px;
-margin-bottom: 16px;
-border: 1px solid var(--border-color);
-}
+    .developer-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+      font-size: 14px;
+      text-align: center;
+    }
 
-.config-section h4 {
-margin: 0 0 12px 0;
-font-size: 14px;
-color: var(--dark-color);
-}
+    .output {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 15px 0;
+      max-height: 400px;
+      overflow-y: auto;
+      font-size: 12px;
+      line-height: 1.4;
+      display: none;
+    }
 
-.input-group {
-margin-bottom: 12px;
-}
+    .validation-results {
+      background: #f8f9fa;
+      border-left: 4px solid #4CAF50;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 0 8px 8px 0;
+    }
 
-.input-group label {
-display: block;
-font-size: 12px;
-font-weight: 500;
-margin-bottom: 4px;
-color: var(--dark-color);
-}
+    .validation-results h3 {
+      color: #2E7D32;
+      margin: 0 0 15px 0;
+      font-size: 16px;
+    }
 
-.input-group input {
-width: 100%;
-padding: 8px 12px;
-border: 1px solid var(--border-color);
-border-radius: 4px;
-font-size: 13px;
-}
+    .summary-card {
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 10px 0;
+      border-left: 4px solid #4CAF50;
+    }
 
-.input-group input:focus {
-outline: none;
-border-color: var(--primary-color);
-}
+    .summary-card.warning {
+      border-left-color: #FF9800;
+    }
 
-.export-controls {
-display: grid;
-grid-template-columns: repeat(3, 1fr);
-gap: 10px;
-margin-bottom: 16px;
-}
+    .next-steps {
+      background: #e3f2fd;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
 
-.export-controls button {
-font-size: 12px;
-padding: 10px 12px;
-background: var(--success-color);
-font-weight: 600;
-}
-
-.export-controls button:hover:not(:disabled) {
-background: #229954;
-}
-
-#output {
-display: none;
-background: var(--light-bg);
-border: 1px solid var(--border-color);
-border-radius: var(--border-radius);
-padding: 16px;
-max-height: 400px;
-overflow-y: auto;
-font-size: 13px;
-line-height: 1.5;
-}
-
-.results-container {
-font-family: inherit;
-}
-
-.result-section {
-margin-bottom: 20px;
-padding: 12px;
-background: white;
-border-radius: 6px;
-border: 1px solid #ddd;
-}
-
-.result-section h3 {
-margin: 0 0 12px 0;
-font-size: 14px;
-color: var(--dark-color);
-}
-
-.info-item, .ai-item, .structure-item {
-margin-bottom: 8px;
-font-size: 12px;
-}
-
-.ai-results {
-border-left: 4px solid var(--primary-color);
-}
-
-.error-section {
-border-left: 4px solid var(--error-color);
-}
-
-.error-info {
-background: #fee;
-color: var(--error-color);
-padding: 8px;
-border-radius: 4px;
-font-size: 11px;
-}
-
-::-webkit-scrollbar {
-width: 8px;
-}
-
-::-webkit-scrollbar-track {
-background: #f1f1f1;
-border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-background: var(--secondary-color);
-border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-background: #7f8c8d;
-}
-</style>
+    .next-steps h4 {
+      color: #1565C0;
+      margin: 0 0 10px 0;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-<div class="header">
-<h1>🕸️ Web Weaver</h1>
-<div class="version">v1.0 Lightning Edition - Day 4</div>
-</div>
+  <div class="header">
+    <h1 class="title">🚀 Web Weaver Lightning</h1>
+    <p class="subtitle">Day 5 - Championship Validation Ready</p>
+  </div>
 
-<div class="controls">
-<button id="extractBtn">Extract with AI</button>
-<button id="configBtn" class="btn-config">⚙️</button>
-</div>
+  <div class="main-content">
+    <!-- Main Action Button -->
+    <button id="extractBtn" class="btn btn-primary">
+      <span>🎯</span>
+      Extract with AI
+    </button>
 
-<div id="configSection" class="config-section" style="display: none;">
-<h4>🔑 API Configuration</h4>
-<div class="input-group">
-<label for="apiKeyInput">OpenAI API Key:</label>
-<input type="password" id="apiKeyInput" placeholder="sk-..." autocomplete="off">
-</div>
-<button id="saveApiKey">Save API Key</button>
-</div>
+    <!-- ✅ DAY 5: Championship Validation Section -->
+    <div class="developer-section">
+      <div class="developer-title">🏆 Day 5 Championship Validation</div>
+      <button id="validateBtn" class="btn btn-validation">
+        <span>🎯</span>
+        Run Day 5 Validation
+      </button>
+      <div style="font-size: 11px; margin-top: 8px; text-align: center; opacity: 0.9;">
+        Tests REAL Gemini AI • No Simulation • Championship Grade
+      </div>
+    </div>
 
-<div id="loading">
-<div class="loading-spinner"></div>
-Processing with AI...
-</div>
+    <!-- Status Display -->
+    <div id="status" class="status default">
+      🚀 Ready: Click "Extract with AI" or "Run Day 5 Validation"
+    </div>
 
-<div id="status" class="status default">
-🚀 Ready: Click "Extract with AI" to start!
-</div>
+    <!-- Loading Indicator -->
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <div>Processing...</div>
+    </div>
 
-<div id="error"></div>
+    <!-- API Configuration -->
+    <div id="configSection" class="config-section">
+      <div class="config-title">🔑 Gemini API Configuration</div>
+      <div class="input-group">
+        <input type="password" id="apiKeyInput" class="form-control" 
+               placeholder="Enter your Gemini API key...">
+        <button id="saveApiKey" class="btn btn-small btn-secondary">Save</button>
+      </div>
+      <div style="font-size: 11px; color: #6c757d; margin-top: 5px;">
+        Get your free API key from <a href="https://ai.google.dev" target="_blank">Google AI Studio</a>
+      </div>
+    </div>
 
-<div class="export-controls">
-<button id="exportJSON" disabled>📄 JSON</button>
-<button id="exportCSV" disabled>📊 CSV</button>
-<button id="copyBtn" disabled>📋 Copy</button>
-</div>
+    <!-- Export Section -->
+    <div class="export-section">
+      <div class="config-title">📁 Export Results</div>
+      <div class="export-buttons">
+        <button id="exportJSON" class="btn btn-small btn-secondary" disabled>JSON</button>
+        <button id="exportCSV" class="btn btn-small btn-secondary" disabled>CSV</button>
+        <button id="copyBtn" class="btn btn-small btn-secondary" disabled>Copy</button>
+      </div>
+    </div>
 
-<div id="output"></div>
-</div>
+    <!-- Results Output -->
+    <div id="output" class="output"></div>
+  </div>
 
-<script src="popup.js"></script>
+  <script src="popup.js"></script>
 </body>
 </html>
