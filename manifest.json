@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Web Weaver Lightning - Day 6 SURGICAL",
+  "version": "6.0.0",
+  "description": "Championship-grade web content extraction with SURGICAL AI precision",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://generativelanguage.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_title": "Day 6 SURGICAL Web Extractor"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["src/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
