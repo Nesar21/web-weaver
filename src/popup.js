@@ -1,397 +1,497 @@
-// Day 6.5 Enhanced Popup Script - Championship UI
-console.log('Web Weaver Lightning Popup v6.5 - ENHANCED Championship Ready');
+// Day 6 REAL Validation Popup Script - Championship Edition
+console.log('Day 6 REAL Validation Popup Script loaded - Championship ready');
 
-// UI State Management
-class EnhancedUIState {
-  constructor() {
-    this.isExtracting = false;
-    this.isValidating = false;
-    this.currentData = null;
-    this.validationResults = null;
-    this.apiKeyConfigured = false;
-    this.init();
-  }
-  
-  async init() {
-    await this.checkApiKey();
-    this.bindEvents();
-    this.updateUI();
-  }
-  
-  async checkApiKey() {
+// DOM Elements
+let elements = {};
+
+// State Management
+let currentResults = null;
+let currentValidation = null;
+let apiKeyConfigured = false;
+
+// Initialize popup
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('[Popup] Day 6 REAL Validation initializing...');
+    
+    initializeElements();
+    checkApiStatus();
+    setupEventListeners();
+    
+    console.log('[Popup] Day 6 REAL Validation ready');
+});
+
+// Initialize DOM elements
+function initializeElements() {
+    elements = {
+        // Status elements
+        apiStatusDot: document.getElementById('apiStatusDot'),
+        apiStatusText: document.getElementById('apiStatusText'),
+        methodIndicator: document.getElementById('methodIndicator'),
+        methodText: document.getElementById('methodText'),
+        
+        // Form elements
+        apiKey: document.getElementById('apiKey'),
+        saveApiKey: document.getElementById('saveApiKey'),
+        
+        // Action buttons
+        extractBtn: document.getElementById('extractBtn'),
+        validateBtn: document.getElementById('validateBtn'),
+        
+        // Loading indicators
+        extractLoading: document.getElementById('extractLoading'),
+        validateLoading: document.getElementById('validateLoading'),
+        
+        // Results containers
+        results: document.getElementById('results'),
+        validationResults: document.getElementById('validationResults'),
+        
+        // Result content
+        extractionBadge: document.getElementById('extractionBadge'),
+        badgeText: document.getElementById('badgeText'),
+        fieldGrid: document.getElementById('fieldGrid'),
+        
+        // Metrics
+        contentLength: document.getElementById('contentLength'),
+        extractionTime: document.getElementById('extractionTime'),
+        fieldsFound: document.getElementById('fieldsFound'),
+        
+        // Comparison
+        comparisonToggle: document.getElementById('comparisonToggle'),
+        comparisonContent: document.getElementById('comparisonContent'),
+        aiComparison: document.getElementById('aiComparison'),
+        basicComparison: document.getElementById('basicComparison'),
+        
+        // Validation results
+        validationScore: document.getElementById('validationScore'),
+        scoreMain: document.getElementById('scoreMain'),
+        scoreTarget: document.getElementById('scoreTarget'),
+        testsRun: document.getElementById('testsRun'),
+        successRate: document.getElementById('successRate'),
+        avgResponse: document.getElementById('avgResponse'),
+        validationMethod: document.getElementById('validationMethod'),
+        
+        // Export buttons
+        exportJson: document.getElementById('exportJson'),
+        exportCsv: document.getElementById('exportCsv'),
+        copyResults: document.getElementById('copyResults'),
+        exportValidation: document.getElementById('exportValidation'),
+        exportValidationCsv: document.getElementById('exportValidationCsv'),
+        copyValidation: document.getElementById('copyValidation')
+    };
+}
+
+// Setup event listeners
+function setupEventListeners() {
+    // API Configuration
+    elements.saveApiKey.addEventListener('click', saveApiKey);
+    
+    // Actions
+    elements.extractBtn.addEventListener('click', performExtraction);
+    elements.validateBtn.addEventListener('click', performValidation);
+    
+    // Comparison toggle
+    elements.comparisonToggle.addEventListener('click', toggleComparison);
+    
+    // Export actions
+    elements.exportJson.addEventListener('click', () => exportData('json'));
+    elements.exportCsv.addEventListener('click', () => exportData('csv'));
+    elements.copyResults.addEventListener('click', copyResults);
+    
+    elements.exportValidation.addEventListener('click', () => exportValidation('json'));
+    elements.exportValidationCsv.addEventListener('click', () => exportValidation('csv'));
+    elements.copyValidation.addEventListener('click', copyValidationResults);
+}
+
+// Check API status
+async function checkApiStatus() {
     try {
-      const response = await chrome.runtime.sendMessage({ action: "getApiKey" });
-      this.apiKeyConfigured = response && response.hasKey;
-      console.log('[Popup] API key status:', this.apiKeyConfigured ? 'configured' : 'missing');
+        const response = await sendMessage({ action: "getApiKey" });
+        apiKeyConfigured = response.hasKey;
+        
+        updateApiStatus(apiKeyConfigured);
+        updateMethodIndicator(apiKeyConfigured ? 'ai' : 'basic');
+        
     } catch (error) {
-      console.error('[Popup] Failed to check API key:', error);
-      this.apiKeyConfigured = false;
+        console.error('[Popup] API status check failed:', error);
+        updateApiStatus(false);
     }
-  }
-  
-  bindEvents() {
-    // Main extraction button
-    const extractBtn = document.getElementById('extractBtn');
-    if (extractBtn) {
-      extractBtn.addEventListener('click', () => this.handleExtraction());
-    }
-    
-    // ✅ DAY 6.5: ENHANCED AI Validation
-    const validateBtn = document.getElementById('validateBtn');
-    if (validateBtn) {
-      validateBtn.addEventListener('click', () => this.handleValidation());
-    }
-    
-    // API key configuration
-    const saveApiBtn = document.getElementById('saveApiBtn');
-    const apiKeyInput = document.getElementById('apiKeyInput');
-    
-    if (saveApiBtn && apiKeyInput) {
-      saveApiBtn.addEventListener('click', () => this.saveApiKey());
-      apiKeyInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') this.saveApiKey();
-      });
-    }
-    
-    // Export buttons
-    const exportJsonBtn = document.getElementById('exportJson');
-    const exportCsvBtn = document.getElementById('exportCsv');
-    const copyBtn = document.getElementById('copyResults');
-    
-    if (exportJsonBtn) exportJsonBtn.addEventListener('click', () => this.exportResults('json'));
-    if (exportCsvBtn) exportCsvBtn.addEventListener('click', () => this.exportResults('csv'));
-    if (copyBtn) copyBtn.addEventListener('click', () => this.copyResults());
-  }
-  
-  updateUI() {
-    // Update API status
-    const apiStatus = document.getElementById('apiStatus');
-    if (apiStatus) {
-      if (this.apiKeyConfigured) {
-        apiStatus.innerHTML = '✅ Enhanced AI Ready';
-        apiStatus.className = 'status-success';
-      } else {
-        apiStatus.innerHTML = '❌ Configure API Key';
-        apiStatus.className = 'status-error';
-      }
-    }
-    
-    // Update extraction button
-    const extractBtn = document.getElementById('extractBtn');
-    if (extractBtn) {
-      extractBtn.disabled = this.isExtracting;
-      extractBtn.textContent = this.isExtracting ? 'Extracting...' : '🎯 Extract with Enhanced AI';
-    }
-    
-    // Update validation button  
-    const validateBtn = document.getElementById('validateBtn');
-    if (validateBtn) {
-      validateBtn.disabled = this.isValidating || !this.apiKeyConfigured;
-      validateBtn.textContent = this.isValidating ? 'Testing...' : '🏆 Run Day 6.5 Validation';
-    }
-  }
-  
-  async saveApiKey() {
-    const apiKeyInput = document.getElementById('apiKeyInput');
-    const apiKey = apiKeyInput.value.trim();
+}
+
+// Update API status display
+function updateApiStatus(connected) {
+    elements.apiStatusDot.classList.toggle('connected', connected);
+    elements.apiStatusText.textContent = connected ? 'Enhanced AI Ready' : 'Configure API Key';
+}
+
+// Update method indicator
+function updateMethodIndicator(method) {
+    elements.methodIndicator.className = `method-indicator method-${method}`;
+    elements.methodText.textContent = method === 'ai' ? 'Enhanced AI' : 'Enhanced Basic';
+}
+
+// Save API key
+async function saveApiKey() {
+    const apiKey = elements.apiKey.value.trim();
     
     if (!apiKey) {
-      this.showStatus('Please enter your Gemini API key', 'error');
-      return;
+        showNotification('Please enter an API key', 'error');
+        return;
     }
     
     try {
-      const response = await chrome.runtime.sendMessage({
-        action: "setApiKey",
-        apiKey: apiKey
-      });
-      
-      if (response && response.success) {
-        this.apiKeyConfigured = true;
-        apiKeyInput.value = '';
-        this.showStatus('✅ Enhanced AI key configured!', 'success');
-        this.updateUI();
-      } else {
-        this.showStatus('Failed to save API key', 'error');
-      }
-    } catch (error) {
-      console.error('[Popup] API key save error:', error);
-      this.showStatus('Error saving API key', 'error');
-    }
-  }
-  
-  async handleExtraction() {
-    if (this.isExtracting) return;
-    
-    this.isExtracting = true;
-    this.updateUI();
-    this.showStatus('🎯 Starting Enhanced AI extraction...', 'info');
-    
-    try {
-      const response = await chrome.runtime.sendMessage({ action: "extractData" });
-      
-      if (response && response.success) {
-        this.currentData = response.data;
-        this.displayExtractionResults(response.data);
+        elements.saveApiKey.disabled = true;
+        elements.saveApiKey.textContent = 'Saving...';
         
-        if (response.data.enhancedWithAI) {
-          this.showStatus('✅ Enhanced AI extraction complete!', 'success');
+        const response = await sendMessage({ 
+            action: "setApiKey", 
+            apiKey: apiKey 
+        });
+        
+        if (response.success) {
+            apiKeyConfigured = true;
+            updateApiStatus(true);
+            updateMethodIndicator('ai');
+            elements.apiKey.value = '';
+            showNotification('Enhanced AI configured successfully!', 'success');
         } else {
-          this.showStatus('⚠️ Basic extraction only (configure API key for AI)', 'warning');
+            throw new Error(response.message || 'Configuration failed');
         }
-      } else {
-        this.showStatus(`❌ Extraction failed: ${response?.error || 'Unknown error'}`, 'error');
-      }
+        
     } catch (error) {
-      console.error('[Popup] Extraction error:', error);
-      this.showStatus('❌ Extraction failed', 'error');
+        console.error('[Popup] API key save failed:', error);
+        showNotification('Configuration failed: ' + error.message, 'error');
     } finally {
-      this.isExtracting = false;
-      this.updateUI();
+        elements.saveApiKey.disabled = false;
+        elements.saveApiKey.textContent = 'Save Configuration';
     }
-  }
-  
-  async handleValidation() {
-    if (this.isValidating || !this.apiKeyConfigured) return;
-    
-    this.isValidating = true;
-    this.updateUI();
-    this.showStatus('🧪 Running Day 6.5 Enhanced validation...', 'info');
-    
+}
+
+// Perform extraction
+async function performExtraction() {
     try {
-      const response = await chrome.runtime.sendMessage({ action: "runValidation" });
-      
-      if (response && response.success) {
-        this.validationResults = response.results;
-        this.displayValidationResults(response.results);
+        elements.extractBtn.disabled = true;
+        elements.extractLoading.style.display = 'flex';
+        elements.results.classList.remove('show');
         
-        const score = response.results.overallScore;
-        if (score >= 70) {
-          this.showStatus(`🏆 CHAMPIONSHIP! ${score}% accuracy achieved!`, 'success');
-        } else if (score >= 60) {
-          this.showStatus(`✅ Target met: ${score}% accuracy`, 'success');
+        console.log('[Popup] Starting REAL extraction...');
+        
+        const response = await sendMessage({ action: "extractData" });
+        
+        if (response.success) {
+            currentResults = response.data;
+            displayExtractionResults(response.data);
+            console.log('[Popup] REAL extraction completed');
         } else {
-          this.showStatus(`⚠️ Need improvement: ${score}% accuracy`, 'warning');
+            throw new Error(response.error || 'Extraction failed');
         }
-      } else {
-        this.showStatus(`❌ Validation failed: ${response?.error || 'Unknown error'}`, 'error');
-      }
+        
     } catch (error) {
-      console.error('[Popup] Validation error:', error);
-      this.showStatus('❌ Validation failed', 'error');
+        console.error('[Popup] Extraction failed:', error);
+        showNotification('Extraction failed: ' + error.message, 'error');
     } finally {
-      this.isValidating = false;
-      this.updateUI();
+        elements.extractBtn.disabled = false;
+        elements.extractLoading.style.display = 'none';
     }
-  }
-  
-  displayExtractionResults(data) {
-    const resultsDiv = document.getElementById('extractionResults');
-    if (!resultsDiv) return;
-    
-    const ai = data.ai || {};
-    const isEnhanced = data.enhancedWithAI;
-    
-    let html = `
-      <div class="result-card">
-        <h3>🎯 Day 6.5 Enhanced Extraction Results</h3>
-        <div class="result-grid">
-          <div class="result-item">
-            <label>Title:</label>
-            <span>${ai.title || data.title || 'Not extracted'}</span>
-          </div>
-          <div class="result-item">
-            <label>Author:</label>
-            <span>${ai.author || data.metadata?.author || 'Not found'}</span>
-          </div>
-          <div class="result-item">
-            <label>Date:</label>
-            <span>${ai.publication_date || data.metadata?.publication_date || 'Not found'}</span>
-          </div>
-          <div class="result-item">
-            <label>Category:</label>
-            <span>${ai.category || 'Not classified'}</span>
-          </div>
-          <div class="result-item">
-            <label>Description:</label>
-            <span>${ai.description || 'Not generated'}</span>
-          </div>
-          <div class="result-item">
-            <label>Summary:</label>
-            <span>${ai.main_content_summary || 'Not generated'}</span>
-          </div>
-          <div class="result-item">
-            <label>Content:</label>
-            <span>${data.content?.length || 0} characters extracted</span>
-          </div>
-          <div class="result-item">
-            <label>Method:</label>
-            <span>${data.method || 'Unknown'}</span>
-          </div>
-        </div>
-        <div class="enhancement-status ${isEnhanced ? 'enhanced' : 'basic'}">
-          ${isEnhanced ? '✅ Enhanced with Day 6.5 AI' : '⚠️ Basic extraction only'}
-        </div>
-      </div>
-    `;
-    
-    resultsDiv.innerHTML = html;
-  }
-  
-  displayValidationResults(results) {
-    const resultsDiv = document.getElementById('validationResults');
-    if (!resultsDiv) return;
-    
-    const passed = results.overallScore >= 60;
-    const championship = results.overallScore >= 70;
-    
-    let html = `
-      <div class="validation-card">
-        <h3>🏆 Day 6.5 Enhanced Validation Results</h3>
-        <div class="score-display ${championship ? 'championship' : passed ? 'passed' : 'failed'}">
-          <div class="main-score">${results.overallScore}%</div>
-          <div class="score-label">Overall Accuracy</div>
-        </div>
+}
+
+// Perform real validation
+async function performValidation() {
+    try {
+        elements.validateBtn.disabled = true;
+        elements.validateLoading.style.display = 'flex';
+        elements.validationResults.classList.remove('show');
         
-        <div class="validation-summary">
-          <div class="summary-item">
-            <span class="label">Target:</span>
-            <span class="value">≥60% ${passed ? '✅' : '❌'}</span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Championship:</span>
-            <span class="value">≥70% ${championship ? '🏆' : '⏳'}</span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Sites Tested:</span>
-            <span class="value">${results.sitesCount}</span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Passed:</span>
-            <span class="value">${results.passedCount}</span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Duration:</span>
-            <span class="value">${results.suiteDuration}ms</span>
-          </div>
-        </div>
+        console.log('[Popup] Starting REAL validation on current page...');
         
-        <div class="site-results">
-          <h4>Site Breakdown:</h4>
-          ${results.results.map(site => `
-            <div class="site-result ${site.passed ? 'passed' : 'failed'}">
-              <div class="site-name">${site.site}</div>
-              <div class="site-score">${site.score?.toFixed(1) || 0}%</div>
-              <div class="site-status">${site.passed ? '✅' : '❌'}</div>
+        const response = await sendMessage({ action: "runRealValidation" });
+        
+        if (response.success) {
+            currentValidation = response.results;
+            displayValidationResults(response.results);
+            console.log('[Popup] REAL validation completed:', response.results);
+        } else {
+            throw new Error(response.error || 'Validation failed');
+        }
+        
+    } catch (error) {
+        console.error('[Popup] Validation failed:', error);
+        showNotification('Validation failed: ' + error.message, 'error');
+    } finally {
+        elements.validateBtn.disabled = false;
+        elements.validateLoading.style.display = 'none';
+    }
+}
+
+// Display extraction results with enhanced UI
+function displayExtractionResults(data) {
+    // Update badge based on method
+    const isAI = data.enhancedWithAI;
+    elements.extractionBadge.className = `extraction-badge badge-${isAI ? 'ai' : 'basic'}`;
+    elements.badgeText.textContent = isAI ? '🤖 Enhanced AI' : '⚡ Enhanced Basic';
+    
+    // Update metrics
+    elements.contentLength.textContent = data.content?.length || 0;
+    elements.extractionTime.textContent = data.extractionTime || '-';
+    
+    // Count fields with values
+    const aiData = data.ai || {};
+    const fieldsWithValues = Object.values(aiData).filter(value => 
+        value !== null && value !== undefined && value !== '' && 
+        !(Array.isArray(value) && value.length === 0)
+    ).length;
+    elements.fieldsFound.textContent = fieldsWithValues;
+    
+    // Display field grid
+    displayFieldGrid(aiData);
+    
+    // Display comparison if both AI and basic are available
+    if (data.ai && data.enhancedBasic) {
+        displayComparison(data.ai, data.enhancedBasic);
+    }
+    
+    // Show results
+    elements.results.classList.add('show');
+}
+
+// Display field grid with visual indicators
+function displayFieldGrid(data) {
+    const fields = [
+        { key: 'title', label: 'Title' },
+        { key: 'author', label: 'Author' },
+        { key: 'publication_date', label: 'Date' },
+        { key: 'category', label: 'Category' },
+        { key: 'description', label: 'Description' },
+        { key: 'main_content_summary', label: 'Summary' }
+    ];
+    
+    elements.fieldGrid.innerHTML = '';
+    
+    fields.forEach(field => {
+        const value = data[field.key];
+        const hasValue = value !== null && value !== undefined && value !== '' && 
+                         !(Array.isArray(value) && value.length === 0);
+        
+        const fieldElement = document.createElement('div');
+        fieldElement.className = `field-item ${hasValue ? 'has-value' : 'no-value'}`;
+        
+        fieldElement.innerHTML = `
+            <div class="field-label">${field.label}</div>
+            <div class="field-value ${hasValue ? '' : 'empty'}">
+                ${hasValue ? truncateText(formatValue(value), 50) : 'Not found'}
             </div>
-          `).join('')}
-        </div>
+        `;
         
-        <div class="methodology">
-          <small>Method: ${results.methodology}</small>
-        </div>
-      </div>
-    `;
+        elements.fieldGrid.appendChild(fieldElement);
+    });
+}
+
+// Display AI vs Basic comparison
+function displayComparison(aiData, basicData) {
+    // AI Results
+    elements.aiComparison.innerHTML = createComparisonContent(aiData);
     
-    resultsDiv.innerHTML = html;
-  }
-  
-  exportResults(format) {
-    const data = this.validationResults || this.currentData;
-    if (!data) {
-      this.showStatus('No data to export', 'warning');
-      return;
+    // Basic Results
+    elements.basicComparison.innerHTML = createComparisonContent(basicData);
+}
+
+// Create comparison content
+function createComparisonContent(data) {
+    const fields = ['title', 'author', 'description', 'main_content_summary'];
+    
+    return fields.map(field => {
+        const value = data[field];
+        const hasValue = value !== null && value !== undefined && value !== '';
+        
+        return `
+            <div style="margin-bottom: 8px; padding: 6px; background: ${hasValue ? 'rgba(22, 163, 74, 0.05)' : 'rgba(100, 116, 139, 0.05)'}; border-radius: 4px;">
+                <div style="font-size: 9px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
+                    ${field.replace('_', ' ')}
+                </div>
+                <div style="font-size: 10px; color: ${hasValue ? 'var(--text)' : 'var(--text-muted)'};">
+                    ${hasValue ? truncateText(formatValue(value), 40) : 'Not extracted'}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Display validation results with real metrics
+function displayValidationResults(results) {
+    // Calculate real performance metrics
+    const realScore = calculateRealPerformance(results);
+    
+    // Update main score
+    elements.scoreMain.textContent = `${realScore.overall}%`;
+    elements.scoreTarget.textContent = `Real Performance on Current Page`;
+    
+    // Set score styling
+    const scoreClass = realScore.overall >= 75 ? 'excellent' : 
+                      realScore.overall >= 60 ? 'good' : 'poor';
+    elements.validationScore.className = `validation-score ${scoreClass}`;
+    
+    // Update metrics
+    elements.testsRun.textContent = results.testsPerformed || 1;
+    elements.successRate.textContent = `${realScore.successRate}%`;
+    elements.avgResponse.textContent = `${results.avgResponseTime || results.extractionTime || 0}ms`;
+    elements.validationMethod.textContent = results.method || 'Real AI';
+    
+    // Show validation results
+    elements.validationResults.classList.add('show');
+}
+
+// Calculate real performance metrics
+function calculateRealPerformance(results) {
+    const data = results.extractedData || results.data || results;
+    const aiData = data.ai || {};
+    
+    // Count successful extractions
+    const fields = ['title', 'author', 'publication_date', 'category', 'description', 'main_content_summary'];
+    const successful = fields.filter(field => {
+        const value = aiData[field];
+        return value !== null && value !== undefined && value !== '' && 
+               !(Array.isArray(value) && value.length === 0);
+    }).length;
+    
+    const overall = Math.round((successful / fields.length) * 100);
+    const successRate = Math.round((successful / fields.length) * 100);
+    
+    return {
+        overall,
+        successRate,
+        fieldsFound: successful,
+        totalFields: fields.length
+    };
+}
+
+// Toggle comparison view
+function toggleComparison() {
+    const content = elements.comparisonContent;
+    content.classList.toggle('show');
+}
+
+// Export functions
+function exportData(format) {
+    if (!currentResults) {
+        showNotification('No data to export', 'error');
+        return;
     }
-    
-    let content, filename, mimeType;
     
     if (format === 'json') {
-      content = JSON.stringify(data, null, 2);
-      filename = `web-weaver-results-${Date.now()}.json`;
-      mimeType = 'application/json';
+        downloadFile(JSON.stringify(currentResults, null, 2), 'extraction-results.json', 'application/json');
     } else if (format === 'csv') {
-      content = this.convertToCSV(data);
-      filename = `web-weaver-results-${Date.now()}.csv`;
-      mimeType = 'text/csv';
+        const csv = convertToCSV(currentResults.ai || {});
+        downloadFile(csv, 'extraction-results.csv', 'text/csv');
+    }
+}
+
+function copyResults() {
+    if (!currentResults) {
+        showNotification('No data to copy', 'error');
+        return;
     }
     
+    const text = JSON.stringify(currentResults, null, 2);
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Results copied to clipboard!', 'success');
+    });
+}
+
+function exportValidation(format) {
+    if (!currentValidation) {
+        showNotification('No validation data to export', 'error');
+        return;
+    }
+    
+    if (format === 'json') {
+        downloadFile(JSON.stringify(currentValidation, null, 2), 'validation-results.json', 'application/json');
+    } else if (format === 'csv') {
+        const csv = convertValidationToCSV(currentValidation);
+        downloadFile(csv, 'validation-results.csv', 'text/csv');
+    }
+}
+
+function copyValidationResults() {
+    if (!currentValidation) {
+        showNotification('No validation data to copy', 'error');
+        return;
+    }
+    
+    const text = JSON.stringify(currentValidation, null, 2);
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Validation results copied to clipboard!', 'success');
+    });
+}
+
+// Utility functions
+function sendMessage(message) {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(message, response => {
+            if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+            } else {
+                resolve(response);
+            }
+        });
+    });
+}
+
+function showNotification(message, type) {
+    // Simple notification system
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: ${type === 'success' ? 'var(--success)' : 'var(--error)'};
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+function formatValue(value) {
+    if (Array.isArray(value)) {
+        return value.join(', ');
+    }
+    return String(value);
+}
+
+function truncateText(text, maxLength) {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+}
+
+function convertToCSV(data) {
+    const headers = Object.keys(data);
+    const values = headers.map(header => JSON.stringify(data[header] || ''));
+    return headers.join(',') + '\n' + values.join(',');
+}
+
+function convertValidationToCSV(data) {
+    return `Metric,Value\nOverall Score,${data.overallScore || 0}\nTests Run,${data.testsPerformed || 1}\nSuccess Rate,${data.successRate || 0}\nAvg Response Time,${data.avgResponseTime || 0}`;
+}
+
+function downloadFile(content, filename, mimeType) {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
+    
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
-    this.showStatus(`✅ Exported as ${filename}`, 'success');
-  }
-  
-  copyResults() {
-    const data = this.validationResults || this.currentData;
-    if (!data) {
-      this.showStatus('No data to copy', 'warning');
-      return;
-    }
-    
-    navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => {
-      this.showStatus('📋 Data copied to clipboard!', 'success');
-    }).catch(() => {
-      this.showStatus('Failed to copy data', 'error');
-    });
-  }
-  
-  convertToCSV(data) {
-    if (data.results) {
-      // Validation results
-      const headers = ['Site', 'Score', 'Passed', 'Method'];
-      const rows = data.results.map(r => [
-        r.site,
-        r.score?.toFixed(1) || '0',
-        r.passed ? 'Yes' : 'No',
-        data.methodology
-      ]);
-      
-      return [headers, ...rows].map(row => row.join(',')).join('\n');
-    } else {
-      // Extraction results
-      const ai = data.ai || {};
-      const headers = ['Field', 'Value'];
-      const rows = [
-        ['Title', ai.title || data.title || ''],
-        ['Author', ai.author || data.metadata?.author || ''],
-        ['Date', ai.publication_date || data.metadata?.publication_date || ''],
-        ['Category', ai.category || ''],
-        ['Description', ai.description || ''],
-        ['Content Length', data.content?.length || 0],
-        ['Method', data.method || '']
-      ];
-      
-      return [headers, ...rows].map(row => `"${row[0]}","${row[1]}"`).join('\n');
-    }
-  }
-  
-  showStatus(message, type = 'info') {
-    const statusDiv = document.getElementById('statusMessage');
-    if (statusDiv) {
-      statusDiv.textContent = message;
-      statusDiv.className = `status status-${type}`;
-      
-      // Auto-hide after 5 seconds for non-error messages
-      if (type !== 'error') {
-        setTimeout(() => {
-          statusDiv.textContent = '';
-          statusDiv.className = 'status';
-        }, 5000);
-      }
-    }
-    
-    console.log(`[Popup] ${message}`);
-  }
 }
 
-// Initialize Enhanced UI
-document.addEventListener('DOMContentLoaded', () => {
-  window.enhancedUI = new EnhancedUIState();
-});
-
-console.log('Day 6.5 Enhanced Popup Script loaded - Championship ready');
+console.log('[Popup] Day 6 REAL Validation Popup Script ready - Championship grade');

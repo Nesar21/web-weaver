@@ -1,408 +1,708 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Web Weaver Lightning - Day 6.5 Enhanced</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Weaver Lightning - Day 6 Championship Edition</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            width: 420px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #16a34a;
+            --warning: #ea580c;
+            --error: #dc2626;
+            --ai-glow: #8b5cf6;
+            --basic-color: #64748b;
+            --background: #ffffff;
+            --card: #f8fafc;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 400px;
+            min-height: 600px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
         .header {
-            background: rgba(255,255,255,0.95);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
             padding: 16px;
             text-align: center;
-            border-bottom: 2px solid #e0e6ed;
+            position: relative;
+            overflow: hidden;
         }
-        
-        .header h1 {
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(30deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(30deg); }
+        }
+
+        .title {
             font-size: 18px;
             font-weight: 700;
-            color: #2d3748;
             margin-bottom: 4px;
         }
-        
-        .header .version {
+
+        .subtitle {
             font-size: 12px;
-            color: #718096;
+            opacity: 0.9;
             font-weight: 500;
         }
-        
-        .container {
-            background: #f7fafc;
-            max-height: 600px;
-            overflow-y: auto;
+
+        .status-bar {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        
-        .section {
-            margin: 0;
-            padding: 16px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        
-        .section h3 {
-            font-size: 14px;
+
+        .api-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
             font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--error);
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(22, 163, 74, 0.4);
+        }
+
+        .method-indicator {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .method-ai {
+            background: linear-gradient(135deg, var(--ai-glow), #a855f7);
+            color: white;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+            animation: aiPulse 2s infinite;
+        }
+
+        .method-basic {
+            background: var(--basic-color);
+            color: white;
+        }
+
+        @keyframes aiPulse {
+            0%, 100% { box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3); }
+            50% { box-shadow: 0 2px 16px rgba(139, 92, 246, 0.6); }
+        }
+
+        .content {
+            padding: 16px;
+        }
+
+        .section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+
+        .section-header {
+            background: linear-gradient(90deg, var(--card) 0%, rgba(37, 99, 235, 0.02) 100%);
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-title {
+            font-weight: 600;
+            font-size: 14px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        
-        .input-group {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
+
+        .section-content {
+            padding: 16px;
         }
-        
-        .input-group input {
-            flex: 1;
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input {
+            width: 100%;
             padding: 8px 12px;
-            border: 2px solid #e2e8f0;
+            border: 1px solid var(--border);
             border-radius: 6px;
             font-size: 13px;
+            font-family: 'SF Mono', Monaco, monospace;
+            transition: border-color 0.2s ease;
         }
-        
-        .input-group input:focus {
+
+        .input:focus {
             outline: none;
-            border-color: #4299e1;
-            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
-        
+
         .btn {
+            width: 100%;
             padding: 10px 16px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
         }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #4299e1, #3182ce);
-            color: white;
-        }
-        
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
-        }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #48bb78, #38a169);
-            color: white;
-        }
-        
-        .btn-success:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
-        }
-        
+
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none !important;
         }
-        
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-        
-        .status {
-            margin-top: 8px;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        .status-success {
-            background: #c6f6d5;
-            color: #2f855a;
-            border: 1px solid #9ae6b4;
-        }
-        
-        .status-error {
-            background: #fed7d7;
-            color: #c53030;
-            border: 1px solid #feb2b2;
-        }
-        
-        .status-warning {
-            background: #fefcbf;
-            color: #d69e2e;
-            border: 1px solid #faf089;
-        }
-        
-        .status-info {
-            background: #bee3f8;
-            color: #2b6cb0;
-            border: 1px solid #90cdf4;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        
-        .action-buttons .btn {
-            flex: 1;
-            min-width: 120px;
-        }
-        
-        .result-card, .validation-card {
-            margin-top: 16px;
-            padding: 16px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .result-card h3, .validation-card h3 {
-            margin-bottom: 12px;
-            color: #2d3748;
-            font-size: 14px;
-        }
-        
-        .result-grid {
-            display: grid;
-            gap: 8px;
-        }
-        
-        .result-item {
-            display: flex;
-            font-size: 12px;
-        }
-        
-        .result-item label {
-            font-weight: 600;
-            color: #4a5568;
-            width: 80px;
-            flex-shrink: 0;
-        }
-        
-        .result-item span {
-            color: #2d3748;
-            word-break: break-word;
-        }
-        
-        .enhancement-status {
-            margin-top: 12px;
-            padding: 8px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            text-align: center;
-        }
-        
-        .enhancement-status.enhanced {
-            background: #c6f6d5;
-            color: #2f855a;
-        }
-        
-        .enhancement-status.basic {
-            background: #fefcbf;
-            color: #d69e2e;
-        }
-        
-        .score-display {
-            text-align: center;
-            margin: 16px 0;
-            padding: 16px;
-            border-radius: 8px;
-        }
-        
-        .score-display.championship {
-            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+
+        .btn-primary {
+            background: var(--primary);
             color: white;
         }
-        
-        .score-display.passed {
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-            color: #2d3748;
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
         }
-        
-        .score-display.failed {
-            background: linear-gradient(135deg, #ffb3ba 0%, #ffdfba 100%);
-            color: #2d3748;
+
+        .btn-success {
+            background: var(--success);
+            color: white;
         }
-        
-        .main-score {
-            font-size: 32px;
-            font-weight: 800;
-            line-height: 1;
+
+        .btn-ai {
+            background: linear-gradient(135deg, var(--ai-glow), #a855f7);
+            color: white;
+            position: relative;
         }
-        
-        .score-label {
+
+        .btn-ai:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-ai::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-ai:hover::before {
+            left: 100%;
+        }
+
+        .btn-validation {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .btn-validation:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            gap: 8px;
             font-size: 12px;
-            font-weight: 600;
-            margin-top: 4px;
+            color: var(--text-muted);
+            margin-top: 8px;
         }
-        
-        .validation-summary {
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .results.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .result-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .extraction-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-ai {
+            background: linear-gradient(135deg, var(--ai-glow), #a855f7);
+            color: white;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+        }
+
+        .badge-basic {
+            background: var(--basic-color);
+            color: white;
+        }
+
+        .field-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin: 16px 0;
+            gap: 12px;
+            margin-bottom: 16px;
         }
-        
-        .summary-item {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            padding: 4px 0;
-        }
-        
-        .summary-item .label {
-            font-weight: 600;
-            color: #4a5568;
-        }
-        
-        .summary-item .value {
-            color: #2d3748;
-        }
-        
-        .site-results {
-            margin: 16px 0;
-        }
-        
-        .site-results h4 {
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #2d3748;
-        }
-        
-        .site-result {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            margin: 4px 0;
+
+        .field-item {
+            background: white;
+            border: 1px solid var(--border);
             border-radius: 6px;
-            font-size: 12px;
+            padding: 8px;
+            transition: border-color 0.2s ease;
         }
-        
-        .site-result.passed {
-            background: #f0fff4;
-            border: 1px solid #c6f6d5;
+
+        .field-item.has-value {
+            border-color: var(--success);
+            background: rgba(22, 163, 74, 0.02);
         }
-        
-        .site-result.failed {
-            background: #fffaf0;
-            border: 1px solid #fed7d7;
+
+        .field-item.no-value {
+            border-color: var(--text-muted);
+            background: rgba(100, 116, 139, 0.02);
         }
-        
-        .site-name {
+
+        .field-label {
+            font-size: 10px;
             font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .field-value {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text);
+            word-break: break-word;
+        }
+
+        .field-value.empty {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 8px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .metric-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .metric-label {
+            font-size: 9px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .validation-results {
+            margin-top: 16px;
+        }
+
+        .validation-score {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: white;
+            border: 2px solid;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .validation-score.excellent {
+            border-color: var(--success);
+            background: rgba(22, 163, 74, 0.05);
+            color: var(--success);
+        }
+
+        .validation-score.good {
+            border-color: var(--warning);
+            background: rgba(234, 88, 12, 0.05);
+            color: var(--warning);
+        }
+
+        .validation-score.poor {
+            border-color: var(--error);
+            background: rgba(220, 38, 38, 0.05);
+            color: var(--error);
+        }
+
+        .score-main {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .score-target {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        .export-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .btn-small {
             flex: 1;
+            padding: 6px 12px;
+            font-size: 11px;
+            border-radius: 6px;
         }
-        
-        .site-score {
-            margin: 0 8px;
-            font-weight: 600;
+
+        .comparison-toggle {
+            margin-top: 16px;
+            padding: 12px;
+            background: rgba(37, 99, 235, 0.05);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
-        
-        .methodology {
+
+        .comparison-toggle:hover {
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .comparison-content {
+            display: none;
             margin-top: 12px;
             padding-top: 12px;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid var(--border);
+        }
+
+        .comparison-content.show {
+            display: block;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .comparison-column {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+        }
+
+        .comparison-header {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
             text-align: center;
+            padding: 4px 8px;
+            border-radius: 4px;
         }
-        
-        .methodology small {
-            color: #718096;
-            font-size: 11px;
+
+        .comparison-ai {
+            background: linear-gradient(135deg, var(--ai-glow), #a855f7);
+            color: white;
         }
-        
-        .export-buttons {
-            display: flex;
-            gap: 4px;
-            margin-top: 12px;
+
+        .comparison-basic {
+            background: var(--basic-color);
+            color: white;
         }
-        
-        .export-buttons .btn {
-            flex: 1;
-            padding: 6px 8px;
-            font-size: 11px;
-        }
-        
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e0;
-            border-radius: 3px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a0aec0;
-        }
-        
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🚀 Web Weaver Lightning</h1>
-        <div class="version">Day 6.5 - Enhanced Championship Ready</div>
+        <div class="title">🚀 Web Weaver Lightning</div>
+        <div class="subtitle">Day 6 - Championship Real Validation System</div>
     </div>
-    
-    <div class="container">
-        <div class="section">
-            <h3>⚙️ Enhanced AI Configuration</h3>
-            <div class="input-group">
-                <input type="password" id="apiKeyInput" placeholder="Enter your Gemini API key">
-                <button class="btn btn-primary btn-small" id="saveApiBtn">Save</button>
-            </div>
-            <div id="apiStatus" class="status">Configure API key for Enhanced AI</div>
+
+    <div class="status-bar">
+        <div class="api-status">
+            <div class="status-dot" id="apiStatusDot"></div>
+            <span id="apiStatusText">Configure API Key</span>
         </div>
-        
-        <div class="section">
-            <h3>🎯 Enhanced Extraction</h3>
-            <div class="action-buttons">
-                <button class="btn btn-primary" id="extractBtn">🎯 Extract with Enhanced AI</button>
-            </div>
-            <div id="statusMessage" class="status" style="display: none;"></div>
+        <div class="method-indicator" id="methodIndicator">
+            <span id="methodText">Basic</span>
         </div>
-        
+    </div>
+
+    <div class="content">
+        <!-- API Configuration -->
         <div class="section">
-            <h3>🏆 Enhanced Championship Validation</h3>
-            <div class="action-buttons">
-                <button class="btn btn-success" id="validateBtn">🧪 Run Day 6.5 Validation</button>
+            <div class="section-header">
+                <div class="section-title">⚙️ Enhanced AI Configuration</div>
             </div>
-            <p style="font-size: 11px; color: #718096; margin-top: 8px;">
-                Tests Enhanced AI • No Simulation • Championship Grade
-            </p>
+            <div class="section-content">
+                <div class="form-group">
+                    <label class="label" for="apiKey">Gemini API Key</label>
+                    <input type="password" id="apiKey" class="input" placeholder="Enter your API key for AI enhancement">
+                </div>
+                <button id="saveApiKey" class="btn btn-primary">Save Configuration</button>
+            </div>
         </div>
-        
+
+        <!-- Extraction -->
         <div class="section">
-            <div id="extractionResults"></div>
-            <div id="validationResults"></div>
+            <div class="section-header">
+                <div class="section-title">🎯 Real-Time Extraction</div>
+            </div>
+            <div class="section-content">
+                <button id="extractBtn" class="btn btn-ai">🎯 Extract with Real AI</button>
+                <div class="loading" id="extractLoading">
+                    <div class="spinner"></div>
+                    <span>Extracting data...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real Validation -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">🏆 Real Performance Validation</div>
+            </div>
+            <div class="section-content">
+                <button id="validateBtn" class="btn btn-validation">🏆 Run Real Validation</button>
+                <div class="loading" id="validateLoading">
+                    <div class="spinner"></div>
+                    <span>Running authentic validation...</span>
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+                    Tests real extraction on current page • No simulation • Authentic metrics
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Display -->
+        <div class="results" id="results">
+            <div class="result-header">
+                <div class="result-title">🎯 Real Extraction Results</div>
+                <div class="extraction-badge" id="extractionBadge">
+                    <span id="badgeText">Basic</span>
+                </div>
+            </div>
+
+            <!-- Field Grid -->
+            <div class="field-grid" id="fieldGrid">
+                <!-- Dynamic field items will be inserted here -->
+            </div>
+
+            <!-- Metrics -->
+            <div class="metrics">
+                <div class="metric-item">
+                    <div class="metric-value" id="contentLength">-</div>
+                    <div class="metric-label">Characters</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value" id="extractionTime">-</div>
+                    <div class="metric-label">Time (ms)</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value" id="fieldsFound">-</div>
+                    <div class="metric-label">Fields</div>
+                </div>
+            </div>
+
+            <!-- AI vs Basic Comparison -->
+            <div class="comparison-toggle" id="comparisonToggle">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 12px; font-weight: 600;">🔍 View AI vs Basic Comparison</span>
+                    <span style="font-size: 10px; opacity: 0.7;">Click to expand</span>
+                </div>
+                <div class="comparison-content" id="comparisonContent">
+                    <div class="comparison-grid">
+                        <div class="comparison-column">
+                            <div class="comparison-header comparison-ai">🤖 Enhanced AI</div>
+                            <div id="aiComparison"></div>
+                        </div>
+                        <div class="comparison-column">
+                            <div class="comparison-header comparison-basic">⚡ Enhanced Basic</div>
+                            <div id="basicComparison"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Actions -->
+            <div class="export-actions">
+                <button class="btn btn-small btn-primary" id="exportJson">📄 JSON</button>
+                <button class="btn btn-small btn-primary" id="exportCsv">📊 CSV</button>
+                <button class="btn btn-small btn-success" id="copyResults">📋 Copy</button>
+            </div>
+        </div>
+
+        <!-- Validation Results -->
+        <div class="results" id="validationResults">
+            <div class="result-header">
+                <div class="result-title">🏆 Real Validation Results</div>
+            </div>
             
-            <div class="export-buttons">
-                <button class="btn btn-primary btn-small" id="exportJson">📄 JSON</button>
-                <button class="btn btn-primary btn-small" id="exportCsv">📊 CSV</button>
-                <button class="btn btn-primary btn-small" id="copyResults">📋 Copy</button>
+            <div class="validation-score" id="validationScore">
+                <div>
+                    <div class="score-main" id="scoreMain">--%</div>
+                    <div class="score-target" id="scoreTarget">Real Performance</div>
+                </div>
+                <div style="text-align: right; font-size: 12px;">
+                    <div>Target: ≥60% ✅</div>
+                    <div>Championship: ≥75% 🏆</div>
+                </div>
+            </div>
+
+            <div class="field-grid">
+                <div class="field-item">
+                    <div class="field-label">Tests Run</div>
+                    <div class="field-value" id="testsRun">-</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Success Rate</div>
+                    <div class="field-value" id="successRate">-</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Avg Response</div>
+                    <div class="field-value" id="avgResponse">-</div>
+                </div>
+                <div class="field-item">
+                    <div class="field-label">Method</div>
+                    <div class="field-value" id="validationMethod">Real AI</div>
+                </div>
+            </div>
+
+            <div class="export-actions">
+                <button class="btn btn-small btn-primary" id="exportValidation">📄 JSON</button>
+                <button class="btn btn-small btn-primary" id="exportValidationCsv">📊 CSV</button>
+                <button class="btn btn-small btn-success" id="copyValidation">📋 Copy</button>
             </div>
         </div>
     </div>
-    
+
     <script src="popup.js"></script>
 </body>
 </html>
