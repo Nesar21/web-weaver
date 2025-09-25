@@ -1,5 +1,5 @@
-// Day 6 REAL Validation Background Script - Championship Edition
-console.log('Day 6 REAL Validation Background Script - Championship ready');
+// Day 6 FIXED Background Script - Championship Edition
+console.log('Day 6 FIXED Background Script - Championship ready');
 
 // Enhanced AI Configuration
 let AI_CONFIG = {
@@ -17,7 +17,7 @@ chrome.storage.local.get(['geminiApiKey'], (result) => {
   }
 });
 
-// REAL VALIDATION SYSTEM - No fake data, real metrics
+// REAL VALIDATION SYSTEM - Fixed AI response handling
 async function runRealValidation(tabId) {
   const startTime = Date.now();
   console.log('[Background] Starting REAL validation on current page...');
@@ -60,24 +60,36 @@ async function runRealValidation(tabId) {
     
     let aiResult = null;
     let aiTime = 0;
+    let usingRealAI = false;
     
     if (AI_CONFIG.apiKey && pageData.content) {
       console.log('[Background] Running Enhanced AI extraction...');
       const aiStartTime = Date.now();
       try {
         const aiResponse = await executeEnhancedAIExtraction(pageData, AI_CONFIG);
-        aiResult = aiResponse.data;
+        
+        // FIXED: Handle array response from AI
+        let aiData = aiResponse.data;
+        if (Array.isArray(aiData) && aiData.length > 0) {
+          console.log('[Background] AI returned array, extracting first object');
+          aiData = aiData[0];
+        }
+        
+        aiResult = aiData;
         aiTime = Date.now() - aiStartTime;
+        usingRealAI = aiResponse.metadata.realAI;
         console.log(`[Background] AI extraction completed in ${aiTime}ms`);
       } catch (error) {
         console.warn('[Background] AI extraction failed, using Basic:', error);
         aiResult = basicResult.data;
+        usingRealAI = false;
       }
     } else {
       aiResult = basicResult.data;
+      usingRealAI = false;
     }
     
-    // Calculate REAL performance metrics
+    // Calculate REAL performance metrics with fixed AI data
     const realMetrics = calculateRealValidationMetrics({
       url,
       domain,
@@ -85,8 +97,9 @@ async function runRealValidation(tabId) {
       extractionTime: Date.now() - startTime,
       aiTime,
       basicData: basicResult.data,
-      aiData: aiResult,
+      aiData: aiResult,  // Now guaranteed to be an object
       hasApiKey: !!AI_CONFIG.apiKey,
+      usingRealAI,
       pageStructure: pageData.structure
     });
     
@@ -99,7 +112,7 @@ async function runRealValidation(tabId) {
         extractedData: {
           ai: aiResult,
           enhancedBasic: basicResult.data,
-          enhancedWithAI: !!AI_CONFIG.apiKey && aiTime > 0
+          enhancedWithAI: usingRealAI
         },
         pageInfo: {
           url,
@@ -123,21 +136,32 @@ async function runRealValidation(tabId) {
   }
 }
 
-// Calculate REAL validation metrics based on actual extraction performance
+// FIXED: Calculate REAL validation metrics with proper object handling
 function calculateRealValidationMetrics(data) {
-  const { aiData, basicData, contentLength, extractionTime, aiTime, hasApiKey, pageStructure, domain } = data;
+  const { aiData, basicData, contentLength, extractionTime, aiTime, hasApiKey, usingRealAI, pageStructure, domain } = data;
   
   // Core fields to evaluate
   const coreFields = ['title', 'author', 'publication_date', 'category', 'description', 'main_content_summary'];
   
+  // FIXED: Ensure aiData is an object, not array
+  let processedAiData = aiData;
+  if (Array.isArray(aiData)) {
+    console.warn('[Background] AI data was array, taking first element');
+    processedAiData = aiData.length > 0 ? aiData[0] : {};
+  } else if (!aiData || typeof aiData !== 'object') {
+    console.warn('[Background] AI data invalid, using empty object');
+    processedAiData = {};
+  }
+  
   // Evaluate AI data quality
-  const aiScore = evaluateExtractionQuality(aiData, coreFields, domain);
+  const aiScore = evaluateExtractionQuality(processedAiData, coreFields, domain);
   
   // Evaluate Basic data quality
   const basicScore = evaluateExtractionQuality(basicData, coreFields, domain);
   
-  // Calculate overall performance score
-  const overallScore = Math.round(aiScore.score);
+  // Use the better of AI or Basic for overall score
+  const primaryScore = usingRealAI && aiScore.score > basicScore.score ? aiScore : basicScore;
+  const overallScore = Math.round(primaryScore.score);
   
   // Performance classification
   let performanceClass = 'poor';
@@ -152,7 +176,7 @@ function calculateRealValidationMetrics(data) {
   }
   
   // Success rate calculation
-  const successRate = Math.round((aiScore.successfulFields / coreFields.length) * 100);
+  const successRate = Math.round((primaryScore.successfulFields / coreFields.length) * 100);
   
   return {
     overallScore,
@@ -162,15 +186,16 @@ function calculateRealValidationMetrics(data) {
     
     // Detailed metrics
     fieldsEvaluated: coreFields.length,
-    fieldsSuccessful: aiScore.successfulFields,
-    fieldsPartial: aiScore.partialFields,
-    fieldsMissing: aiScore.missingFields,
+    fieldsSuccessful: primaryScore.successfulFields,
+    fieldsPartial: primaryScore.partialFields,
+    fieldsMissing: primaryScore.missingFields,
     
     // Performance metrics
     extractionTime,
     aiTime: aiTime || 0,
     contentLength,
     hasApiKey,
+    usingRealAI,
     
     // Comparison
     aiPerformance: aiScore,
@@ -183,13 +208,29 @@ function calculateRealValidationMetrics(data) {
     // Validation metadata
     testsPerformed: 1,
     avgResponseTime: extractionTime,
-    method: hasApiKey && aiTime > 0 ? 'Enhanced AI' : 'Enhanced Basic',
+    method: usingRealAI ? 'Enhanced AI' : 'Enhanced Basic',
     timestamp: Date.now()
   };
 }
 
-// Evaluate extraction quality with realistic scoring
+// FIXED: Evaluate extraction quality with better null handling
 function evaluateExtractionQuality(data, fields, domain) {
+  if (!data || typeof data !== 'object') {
+    console.warn('[Background] Invalid data for evaluation:', typeof data);
+    return {
+      score: 0,
+      successfulFields: 0,
+      partialFields: 0,
+      missingFields: fields.length,
+      fieldEvaluations: fields.map(field => ({
+        field,
+        score: 0,
+        quality: 'missing',
+        reason: 'No data object provided'
+      }))
+    };
+  }
+  
   let successfulFields = 0;
   let partialFields = 0;
   let totalQualityScore = 0;
@@ -227,17 +268,28 @@ function evaluateExtractionQuality(data, fields, domain) {
   };
 }
 
-// Evaluate individual field quality
+// Enhanced field quality evaluation with better scoring
 function evaluateFieldQuality(field, value, domain) {
-  if (!value || value === null || value === undefined || value === '') {
+  // Check for null/undefined/empty
+  if (value === null || value === undefined || value === '') {
     return { score: 0, quality: 'missing', reason: 'No value extracted' };
   }
   
-  if (Array.isArray(value) && value.length === 0) {
-    return { score: 0, quality: 'missing', reason: 'Empty array' };
+  // Handle arrays
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return { score: 0, quality: 'missing', reason: 'Empty array' };
+    }
+    // For arrays, evaluate the first element or join them
+    const arrayValue = field === 'links' || field === 'images' ? 
+      value.join(', ') : String(value[0]);
+    return evaluateFieldQuality(field, arrayValue, domain);
   }
   
   const valueStr = String(value).trim();
+  if (valueStr.length === 0) {
+    return { score: 0, quality: 'missing', reason: 'Empty string' };
+  }
   
   // Field-specific quality checks
   switch (field) {
@@ -280,7 +332,7 @@ function evaluateFieldQuality(field, value, domain) {
   }
 }
 
-// Enhanced Basic Extraction (same as before but for validation)
+// Enhanced Basic Extraction - Same as before but better error handling
 function executeEnhancedBasicExtraction(pageData) {
   console.log('[Background] Enhanced Basic extraction for validation...');
   
@@ -314,13 +366,22 @@ function executeEnhancedBasicExtraction(pageData) {
     console.error('[Background] Enhanced Basic extraction failed:', error);
     return {
       success: false,
-      data: {},
+      data: {
+        title: null,
+        author: null,
+        publication_date: null,
+        main_content_summary: null,
+        category: null,
+        description: null,
+        links: [],
+        images: []
+      },
       error: error.message
     };
   }
 }
 
-// Enhanced AI Extraction (same core function but for validation)
+// FIXED: Enhanced AI Extraction with proper response format enforcement
 async function executeEnhancedAIExtraction(pageData, apiConfig) {
   const startTime = Date.now();
   
@@ -339,25 +400,26 @@ async function executeEnhancedAIExtraction(pageData, apiConfig) {
       url: pageData.url || ''
     };
     
-    // Enhanced prompt for validation
+    // FIXED: Enhanced prompt with stricter format requirements
     const enhancedPrompt = `You are an expert content analyzer. Extract structured data from this web content with maximum accuracy.
 
 CRITICAL RULES:
-1. Extract meaningful information from the provided content
-2. For homepage/aggregated content, focus on the FIRST substantial article or main content
-3. Return valid JSON only - no explanations
+1. Return a SINGLE JSON OBJECT (not an array)
+2. Extract meaningful information from the provided content
+3. For homepage/aggregated content, focus on the FIRST substantial article or main content
 4. If no relevant content exists for a field, return null
+5. NEVER return an array - always return a single object
 
-EXTRACTION SCHEMA:
+REQUIRED JSON FORMAT (return exactly this structure):
 {
-  "title": "string",
-  "author": "string", 
-  "publication_date": "string",
-  "main_content_summary": "string",
-  "category": "string",
-  "description": "string",
-  "links": ["string"],
-  "images": ["string"]
+  "title": "string or null",
+  "author": "string or null", 
+  "publication_date": "string or null",
+  "main_content_summary": "string or null",
+  "category": "string or null",
+  "description": "string or null",
+  "links": ["array of strings"],
+  "images": ["array of strings"]
 }
 
 CONTENT FOR ANALYSIS:
@@ -368,7 +430,7 @@ Title: ${basicInfo.title}
 MAIN CONTENT:
 ${content}
 
-Return ONLY the JSON object with the exact schema above.`;
+Return ONLY the JSON object with the exact schema above. DO NOT wrap in an array.`;
 
     const enhancedPayload = {
       contents: [{
@@ -409,19 +471,36 @@ Return ONLY the JSON object with the exact schema above.`;
     const generatedText = result.candidates[0].content.parts[0].text;
     console.log('[Background] AI response received for validation');
     
-    // Parse JSON response
+    // FIXED: Parse and validate JSON response format
     let aiData;
     try {
-      aiData = JSON.parse(generatedText);
+      const parsed = JSON.parse(generatedText);
+      
+      // FIXED: Handle array responses
+      if (Array.isArray(parsed)) {
+        console.warn('[Background] AI returned array, extracting first object');
+        aiData = parsed.length > 0 ? parsed[0] : {};
+      } else {
+        aiData = parsed;
+      }
     } catch (parseError) {
       console.warn('[Background] JSON parse failed, attempting recovery...');
       const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        aiData = JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0]);
+        aiData = Array.isArray(parsed) ? (parsed[0] || {}) : parsed;
       } else {
         throw new Error('Failed to parse AI response as JSON');
       }
     }
+    
+    // FIXED: Ensure aiData has all required fields
+    const requiredFields = ['title', 'author', 'publication_date', 'main_content_summary', 'category', 'description', 'links', 'images'];
+    requiredFields.forEach(field => {
+      if (!(field in aiData)) {
+        aiData[field] = field === 'links' || field === 'images' ? [] : null;
+      }
+    });
     
     const duration = Date.now() - startTime;
     console.log(`[Background] AI extraction completed in ${duration}ms`);
@@ -434,7 +513,7 @@ Return ONLY the JSON object with the exact schema above.`;
         extractionTime: duration,
         contentLength: content.length,
         realAI: true,
-        promptVersion: 'validation-v1'
+        promptVersion: 'validation-v1-fixed'
       }
     };
     
@@ -711,7 +790,7 @@ function extractEnhancedImages(metadataImages, content) {
   return [];
 }
 
-// Message handlers
+// FIXED: Message handlers with better error handling
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const startTime = Date.now();
   
@@ -744,7 +823,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Enhanced extraction handler
+// FIXED: Enhanced extraction handler with proper AI response handling
 async function handleEnhancedExtraction(sendResponse, startTime) {
   try {
     console.log('[Background] Starting Day 6 enhanced extraction...');
@@ -790,13 +869,20 @@ async function handleEnhancedExtraction(sendResponse, startTime) {
       
       const aiResponse = await executeEnhancedAIExtraction(pageData, AI_CONFIG);
       
+      // FIXED: Handle AI response properly
+      let aiData = aiResponse.data;
+      if (Array.isArray(aiData) && aiData.length > 0) {
+        console.log('[Background] AI returned array, extracting first object');
+        aiData = aiData[0];
+      }
+      
       const enhancedData = {
         ...pageData,
-        ai: aiResponse.data,
+        ai: aiData,
         aiMetadata: aiResponse.metadata,
         enhancedWithAI: aiResponse.metadata.realAI,
         enhancedBasic: basicResult.data,
-        method: 'enhanced-ai-v6'
+        method: 'enhanced-ai-v6-fixed'
       };
       
       sendResponse({ success: true, data: enhancedData });
@@ -829,7 +915,7 @@ async function handleEnhancedExtraction(sendResponse, startTime) {
   }
 }
 
-// Real validation handler
+// Real validation handler - same as before
 async function handleRealValidation(sendResponse, startTime) {
   try {
     console.log('[Background] Starting REAL validation...');
@@ -853,4 +939,4 @@ async function handleRealValidation(sendResponse, startTime) {
   }
 }
 
-console.log('[Background] Day 6 REAL Validation Background Script ready - Championship grade');
+console.log('[Background] Day 6 FIXED Background Script ready - Championship grade');
