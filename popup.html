@@ -2,54 +2,353 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Web Weaver Lightning - Day 6 FINAL POLISH</title>
+    <title>Web Weaver Lightning - Day 6 SURGICAL</title>
     <style>
-        /* Championship Animation Styles */
-        .show {
-            opacity: 1 !important;
-            transform: translateY(0) !important;
-            transition: all 0.3s ease-out !important;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        #results, #validationResults {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.3s ease-out;
+        body {
+            width: 400px;
+            min-height: 600px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            line-height: 1.4;
+            background: #ffffff;
+            color: #333;
+            overflow-x: hidden;
         }
 
-        /* Championship Score Styling */
-        .score-main.championship {
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        .container {
+            padding: 16px;
+            background: white;
+            min-height: 600px;
         }
 
-        /* Enhanced Comparison Styling */
+        .header {
+            text-align: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .header h1 {
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            font-size: 11px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        .section h3 {
+            font-size: 13px;
+            margin-bottom: 8px;
+            color: #495057;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #dc3545;
+            transition: background 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .status-dot.connected {
+            background: #28a745;
+        }
+
+        .method-indicator {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 500;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .method-ai {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+        }
+
+        .method-basic {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #545b62);
+            font-size: 10px;
+            padding: 6px 12px;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            background: rgba(0, 123, 255, 0.1);
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e3f2fd;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 8px;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 500;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .badge-ai {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+        }
+
+        .badge-basic {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 6px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            font-size: 14px;
+            color: #007bff;
+        }
+
+        .metric-label {
+            font-size: 9px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .field-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .field-item {
+            padding: 6px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid transparent;
+            font-size: 11px;
+        }
+
+        .field-item.has-value {
+            border-left-color: #28a745;
+            background: rgba(40, 167, 69, 0.05);
+        }
+
+        .field-item.no-value {
+            border-left-color: #dc3545;
+            background: rgba(220, 53, 69, 0.05);
+            opacity: 0.7;
+        }
+
+        .field-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 2px;
+        }
+
+        .field-indicator {
+            font-size: 10px;
+            font-weight: bold;
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        .field-indicator.success {
+            color: #28a745;
+        }
+
+        .field-indicator.empty {
+            color: #dc3545;
+        }
+
+        .field-preview {
+            font-size: 9px;
+            color: #6c757d;
+            margin-top: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .comparison-toggle {
+            background: #e9ecef;
+            border: none;
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .comparison-toggle:hover {
+            background: #dee2e6;
+        }
+
+        .comparison-content {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .comparison-header {
+            font-size: 10px;
+            font-weight: bold;
+            padding: 6px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+
         .ai-header {
             background: rgba(0, 123, 255, 0.1);
-            padding: 8px;
-            border-radius: 4px;
-            font-weight: bold;
             color: #007bff;
-            margin-bottom: 8px;
         }
 
         .basic-header {
             background: rgba(40, 167, 69, 0.1);
-            padding: 8px;
-            border-radius: 4px;
-            font-weight: bold;
             color: #28a745;
-            margin-bottom: 8px;
         }
 
         .comparison-field {
-            margin-bottom: 12px;
-            padding: 8px;
+            margin-bottom: 8px;
+            padding: 6px;
             border-radius: 4px;
-            border-left: 3px solid transparent;
+            font-size: 9px;
+            border-left: 2px solid transparent;
         }
 
         .comparison-field.has-value {
@@ -62,20 +361,45 @@
             background: rgba(220, 53, 69, 0.05);
         }
 
-        /* Notification Styles */
+        .validation-score {
+            text-align: center;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+        }
+
+        .score-main {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .score-target {
+            font-size: 10px;
+            opacity: 0.9;
+            line-height: 1.3;
+        }
+
+        .export-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-top: 8px;
+        }
+
         .notification {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 24px;
-            border-radius: 6px;
+            top: 10px;
+            right: 10px;
+            padding: 8px 16px;
+            border-radius: 4px;
             color: white;
             font-weight: 500;
+            font-size: 11px;
             z-index: 1000;
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: all 0.3s ease-out;
-            max-width: 300px;
+            max-width: 200px;
             word-wrap: break-word;
         }
 
@@ -86,63 +410,139 @@
         .notification-error {
             background: linear-gradient(135deg, #dc3545, #fd7e14);
         }
-
-        /* Field Grid Enhancements */
-        .field-item {
-            border-radius: 6px;
-            transition: all 0.2s ease;
-        }
-
-        .field-item:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .field-indicator.success {
-            color: #28a745;
-            font-weight: bold;
-        }
-
-        .field-indicator.empty {
-            color: #dc3545;
-            opacity: 0.6;
-        }
-
-        /* Loading Animation Enhancement */
-        .spinner {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Championship Badge */
-        .badge-ai {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-        }
-
-        .badge-basic {
-            background: linear-gradient(135deg, #28a745, #1e7e34);
-        }
-
-        /* Method Indicator Enhancement */
-        .method-indicator {
-            transition: all 0.3s ease;
-        }
-
-        .method-ai {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-        }
-
-        .method-basic {
-            background: linear-gradient(135deg, #28a745, #1e7e34);
-        }
     </style>
 </head>
 <body>
-    <!-- Previous HTML structure remains the same -->
-    <!-- The styles above enhance the existing HTML with animations and championship visuals -->
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Web Weaver Lightning</h1>
+            <div class="subtitle">Day 6 SURGICAL Edition</div>
+        </div>
+
+        <!-- API Configuration -->
+        <div class="section">
+            <h3>⚙️ Enhanced AI Configuration</h3>
+            
+            <div class="status-indicator">
+                <div class="status-dot" id="apiStatusDot"></div>
+                <span id="apiStatusText" style="font-size: 11px;">Configure API Key</span>
+                <div class="method-indicator method-basic" id="methodIndicator">
+                    <span id="methodText">Enhanced Basic</span>
+                </div>
+            </div>
+
+            <input type="password" id="apiKey" placeholder="Enter your Gemini API key">
+            <button class="btn" id="saveApiKey">Save Configuration</button>
+        </div>
+
+        <!-- Real-Time Extraction -->
+        <div class="section">
+            <h3>🎯 Real-Time Extraction</h3>
+            
+            <div class="loading" id="extractLoading">
+                <div class="spinner"></div>
+                <span style="font-size: 11px;">Extracting data...</span>
+            </div>
+            
+            <button class="btn btn-success" id="extractBtn">🎯 Extract Data</button>
+            
+            <div class="results" id="results">
+                <div class="badge badge-basic" id="extractionBadge">
+                    <span id="badgeText">⚡ Enhanced Basic</span>
+                </div>
+                
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <div class="metric-value" id="contentLength">-</div>
+                        <div class="metric-label">Characters</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="extractionTime">-</div>
+                        <div class="metric-label">Time (ms)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="fieldsFound">-</div>
+                        <div class="metric-label">Fields</div>
+                    </div>
+                </div>
+                
+                <div class="field-grid" id="fieldGrid">
+                    <!-- Field items will be populated by JavaScript -->
+                </div>
+                
+                <button class="comparison-toggle" id="comparisonToggle">
+                    🔍 View AI vs Basic Comparison
+                </button>
+                
+                <div class="comparison-content" id="comparisonContent">
+                    <div id="aiComparison">
+                        <div class="comparison-header ai-header">🤖 Enhanced AI</div>
+                        <!-- AI comparison data will be populated -->
+                    </div>
+                    <div id="basicComparison">
+                        <div class="comparison-header basic-header">⚡ Enhanced Basic</div>
+                        <!-- Basic comparison data will be populated -->
+                    </div>
+                </div>
+                
+                <div class="export-grid">
+                    <button class="btn btn-secondary" id="exportJson">📁 JSON</button>
+                    <button class="btn btn-secondary" id="exportCsv">📊 CSV</button>
+                    <button class="btn btn-secondary" id="copyResults">📋 Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real Performance Validation -->
+        <div class="section">
+            <h3>🏆 Real Performance Validation</h3>
+            
+            <div class="loading" id="validateLoading">
+                <div class="spinner"></div>
+                <span style="font-size: 11px;">Running validation...</span>
+            </div>
+            
+            <button class="btn btn-warning" id="validateBtn">🏆 Run Real Validation</button>
+            <div style="font-size: 9px; color: #6c757d; margin-top: 4px; line-height: 1.2;">
+                Tests real extraction on current page • No simulation • Authentic metrics
+            </div>
+            
+            <div class="results" id="validationResults">
+                <div class="validation-score" id="validationScore">
+                    <div class="score-main" id="scoreMain">--%</div>
+                    <div class="score-target" id="scoreTarget">Target: ≥60% ✅<br>Championship: ≥75% 🏆</div>
+                </div>
+                
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <div class="metric-value" id="testsRun">-</div>
+                        <div class="metric-label">Tests Run</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="successRate">-</div>
+                        <div class="metric-label">Success Rate</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="avgResponse">-</div>
+                        <div class="metric-label">Avg Response</div>
+                    </div>
+                </div>
+                
+                <div class="metric" style="margin-top: 8px;">
+                    <div class="metric-value" id="validationMethod">Real AI</div>
+                    <div class="metric-label">Method</div>
+                </div>
+                
+                <div class="export-grid">
+                    <button class="btn btn-secondary" id="exportValidation">📈 Export</button>
+                    <button class="btn btn-secondary" id="exportValidationCsv">📊 CSV</button>
+                    <button class="btn btn-secondary" id="copyValidation">📋 Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
 </body>
 </html>
