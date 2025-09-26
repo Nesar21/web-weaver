@@ -1,44 +1,36 @@
 {
   "manifest_version": 3,
-  "name": "Web Weaver Lightning - Day 7 SURGICAL DATA",
-  "version": "7.0.0",
-  "description": "Championship cross-vertical extraction with surgical error logging and real-time intelligence gathering",
+  "name": "Web Weaver Lightning - Day 8 Championship",
+  "version": "8.0.0",
+  "description": "Day 8 Championship Cross-Vertical Data Harvester with ≥80% Accuracy Target",
   "permissions": [
-    "activeTab",
     "storage",
-    "scripting",
+    "activeTab",
     "tabs",
-    "clipboardWrite"
+    "scripting"
   ],
   "host_permissions": [
-    "https://generativelanguage.googleapis.com/*",
-    "https://www.bloomberg.com/*",
-    "https://www.amazon.com/*",
-    "https://www.allrecipes.com/*",
-    "https://en.wikipedia.org/*",
-    "https://medium.com/*"
+    "https://*.bloomberg.com/*",
+    "https://*.amazon.com/*",
+    "https://*.allrecipes.com/*",
+    "https://*.wikipedia.org/*",
+    "https://*.medium.com/*",
+    "https://generativelanguage.googleapis.com/*"
   ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "<all_urls>"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Day 7 SURGICAL Cross-Vertical Data Harvester"
-  },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": ["*"],
-      "matches": ["<all_urls>"]
-    }
-  ]
+    "default_title": "Day 8 Championship Data Harvester"
+  }
 }

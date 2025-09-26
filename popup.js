@@ -1,4 +1,4 @@
-// Day 7 Championship Cross-Vertical Data Harvester Controller with Surgical Error Analysis
+// Day 7 Championship Cross-Vertical Data Harvester Controller - SURGICAL ERROR ANALYSIS
 
 console.log('[Popup] Day 7 SURGICAL Data Harvester Controller - Championship ready');
 
@@ -70,9 +70,9 @@ function initializeElements() {
 
 // Setup all event listeners
 function setupEventListeners() {
-    // API Configuration
+    // API Configuration - FIXED with proper error handling
     if (elements.saveApiKey) {
-        elements.saveApiKey.addEventListener('click', saveApiKey);
+        elements.saveApiKey.addEventListener('click', saveApiKeyFixed);
     }
     
     // Main extraction
@@ -106,23 +106,108 @@ function setupEventListeners() {
     }
 }
 
-// Day 7 Championship Feature: Cross-Vertical Data Harvester
+// Day 7 FIXED API Key management with proper async handling
+async function saveApiKeyFixed() {
+    console.log('[Popup] Day 7 API key save attempt...');
+    
+    const apiKey = elements.geminiApiKey?.value?.trim();
+    
+    if (!apiKey || apiKey.length === 0) {
+        console.error('[Popup] Day 7 - Empty API key provided');
+        showNotification('Please enter a valid API key', 'error');
+        return;
+    }
+    
+    if (apiKey.length < 20) {
+        console.error('[Popup] Day 7 - API key too short');
+        showNotification('API key appears to be too short. Please check your key.', 'error');
+        return;
+    }
+    
+    try {
+        console.log(`[Popup] Day 7 - Attempting to save API key (length: ${apiKey.length})`);
+        
+        // Show loading state
+        if (elements.saveApiKey) {
+            elements.saveApiKey.disabled = true;
+            elements.saveApiKey.textContent = 'Saving...';
+        }
+        
+        const response = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('API key save timeout'));
+            }, 10000);
+            
+            chrome.runtime.sendMessage({
+                action: 'setApiKey',
+                apiKey: apiKey
+            }, (response) => {
+                clearTimeout(timeout);
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(response);
+                }
+            });
+        });
+        
+        console.log('[Popup] Day 7 API key save response:', response);
+        
+        if (response && response.success) {
+            console.log('[Popup] Day 7 API key saved successfully');
+            showNotification(`API key saved successfully! (Length: ${response.keyLength || apiKey.length})`, 'success');
+            if (elements.geminiApiKey) elements.geminiApiKey.value = '';
+            
+            // Update API key status immediately
+            setTimeout(loadApiKeyStatus, 500);
+        } else {
+            const errorMessage = response?.error || 'Failed to save API key';
+            console.error('[Popup] Day 7 API key save failed:', errorMessage);
+            throw new Error(errorMessage);
+        }
+        
+    } catch (error) {
+        console.error('[Popup] Day 7 API key save error:', error);
+        showNotification(`Failed to save API key: ${error.message}`, 'error');
+    } finally {
+        // Reset button state
+        if (elements.saveApiKey) {
+            elements.saveApiKey.disabled = false;
+            elements.saveApiKey.textContent = 'Save API Key';
+        }
+    }
+}
+
+// Day 7 Championship Feature: Cross-Vertical Data Harvester for SURGICAL ERROR ANALYSIS
 async function runCrossVerticalTest() {
-    console.log('[Popup] Day 7 Cross-Vertical Test: Starting championship validation...');
+    console.log('[Popup] Day 7 Cross-Vertical Test: Starting SURGICAL data collection...');
     
     try {
         // Show loading state
         showLoadingState();
         updateProgress(0);
         
-        // Send request to background script for real cross-vertical testing
-        const response = await chrome.runtime.sendMessage({
-            action: 'getIterationLog',
-            timestamp: Date.now()
+        // Send request to background script for Day 7 surgical testing
+        const response = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Cross-vertical test timeout'));
+            }, 45000);
+            
+            chrome.runtime.sendMessage({
+                action: 'getIterationLog',
+                timestamp: Date.now()
+            }, (response) => {
+                clearTimeout(timeout);
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(response);
+                }
+            });
         });
         
         if (response && response.success) {
-            console.log('[Popup] Cross-vertical test completed successfully');
+            console.log('[Popup] Day 7 cross-vertical test completed successfully');
             
             // Store test results
             extractionState.testResults = response;
@@ -136,21 +221,24 @@ async function runCrossVerticalTest() {
             // Update performance stats
             updatePerformanceStats(response);
             
-            // Show success notification
-            showNotification('Cross-vertical test completed! CSV data copied to clipboard.', 'success');
+            // Show success notification with Day 7 surgical focus
+            const aiStatus = response.summary?.usingRealAI ? 'with AI' : 'basic mode';
+            const accuracy = response.summary?.overallAIScore || 0;
+            
+            showNotification(`Day 7 surgical test complete ${aiStatus}! ${accuracy}% baseline captured. CSV copied to clipboard.`, 'success');
             
         } else {
-            throw new Error(response?.error || 'Cross-vertical test failed');
+            throw new Error(response?.error || 'Day 7 cross-vertical test failed');
         }
         
     } catch (error) {
-        console.error('[Popup] Cross-vertical test error:', error);
+        console.error('[Popup] Day 7 cross-vertical test error:', error);
         hideLoadingState();
-        showNotification(`Test failed: ${error.message}`, 'error');
+        showNotification(`Day 7 test failed: ${error.message}`, 'error');
         
         // Log error for analysis
         extractionState.errorLog.push({
-            type: 'CROSS_VERTICAL_TEST_ERROR',
+            type: 'DAY7_CROSS_VERTICAL_TEST_ERROR',
             message: error.message,
             timestamp: new Date().toISOString()
         });
@@ -163,7 +251,10 @@ async function runCrossVerticalTest() {
 function showLoadingState() {
     if (elements.logLoading) elements.logLoading.classList.add('show');
     if (elements.logResults) elements.logResults.classList.remove('show');
-    if (elements.copyLogBtn) elements.copyLogBtn.disabled = true;
+    if (elements.copyLogBtn) {
+        elements.copyLogBtn.disabled = true;
+        elements.copyLogBtn.textContent = 'Running Surgical Analysis...';
+    }
     if (elements.testProgress) elements.testProgress.style.display = 'block';
     
     // Animate progress bar
@@ -173,37 +264,14 @@ function showLoadingState() {
 // Hide loading state
 function hideLoadingState() {
     if (elements.logLoading) elements.logLoading.classList.remove('show');
-    if (elements.copyLogBtn) elements.copyLogBtn.disabled = false;
+    if (elements.copyLogBtn) {
+        elements.copyLogBtn.disabled = false;
+        elements.copyLogBtn.textContent = '📋 Run Cross-Vertical Test';
+    }
     if (elements.testProgress) elements.testProgress.style.display = 'none';
 }
 
-// Animate progress bar during testing
-function animateProgress() {
-    let progress = 0;
-    const interval = setInterval(() => {
-        progress += Math.random() * 15;
-        if (progress >= 95) {
-            clearInterval(interval);
-            progress = 95;
-        }
-        updateProgress(progress);
-    }, 500);
-    
-    // Clear interval after 30 seconds (timeout)
-    setTimeout(() => {
-        clearInterval(interval);
-        updateProgress(100);
-    }, 30000);
-}
-
-// Update progress bar
-function updateProgress(percentage) {
-    if (elements.progressFill) {
-        elements.progressFill.style.width = `${percentage}%`;
-    }
-}
-
-// Display cross-vertical test results
+// Display cross-vertical test results with Day 7 surgical analysis focus
 function displayTestResults(response) {
     hideLoadingState();
     updateProgress(100);
@@ -214,6 +282,8 @@ function displayTestResults(response) {
     
     if (elements.testSummary && response.summary) {
         const summary = response.summary;
+        const aiStatus = summary.usingRealAI ? '🤖 AI' : '⚙️ Basic';
+        
         elements.testSummary.innerHTML = `
             <div class="stats-grid">
                 <div class="stat-card">
@@ -221,8 +291,8 @@ function displayTestResults(response) {
                     <div class="stat-label">Sites Tested</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number ${summary.overallAIScore >= 70 ? 'text-success' : 'text-warning'}">${summary.overallAIScore}%</div>
-                    <div class="stat-label">AI Accuracy</div>
+                    <div class="stat-number ${summary.overallAIScore >= 50 ? 'text-success' : summary.overallAIScore >= 25 ? 'text-warning' : 'text-error'}">${summary.overallAIScore}%</div>
+                    <div class="stat-label">${aiStatus} Accuracy</div>
                 </div>
             </div>
             <div class="site-results" style="margin-top: 12px;">
@@ -231,89 +301,31 @@ function displayTestResults(response) {
                     <span class="site-score ${getScoreClass(summary.overallAIScore)}">${summary.overallAIScore}%</span>
                 </div>
                 <div class="site-status">
-                    <span class="site-name">Target Achievement</span>
-                    <span class="site-score ${summary.targetAchieved ? 'score-excellent' : 'score-fair'}">
-                        ${summary.targetAchieved ? '✅ Achieved' : '📈 In Progress'}
-                    </span>
+                    <span class="site-name">Day 7 Surgical Analysis</span>
+                    <span class="site-score score-good">📊 Complete</span>
+                </div>
+                <div class="site-status">
+                    <span class="site-name">Day 8 Optimization Ready</span>
+                    <span class="site-score score-excellent">✅ Data Captured</span>
                 </div>
             </div>
         `;
     }
 }
 
-// Get CSS class for score styling
-function getScoreClass(score) {
-    if (score >= 90) return 'score-excellent';
-    if (score >= 75) return 'score-good';
-    if (score >= 60) return 'score-fair';
-    return 'score-poor';
-}
-
-// Perform single page extraction
-async function performExtraction(mode) {
-    console.log(`[Popup] Performing ${mode} extraction...`);
-    
-    try {
-        // Show loading state
-        if (elements.extractionLoading) elements.extractionLoading.classList.add('show');
-        if (elements.extractionResults) elements.extractionResults.classList.remove('show');
-        if (elements.extractBtn) elements.extractBtn.disabled = true;
-        if (elements.enhancedBtn) elements.enhancedBtn.disabled = true;
-        
-        // Send extraction request
-        const action = mode === 'enhanced' ? 'extractData' : 'extractPageData';
-        const response = await chrome.runtime.sendMessage({ action });
-        
-        if (response && response.success) {
-            console.log('[Popup] Extraction successful');
-            
-            // Store extraction data
-            extractionState.currentData = response.data;
-            
-            // Display results
-            displayExtractionResults(response.data, mode);
-            
-            // Update performance stats
-            extractionState.performanceStats.totalExtractions++;
-            updatePerformanceDisplay();
-            
-            showNotification('Extraction completed successfully!', 'success');
-            
-        } else {
-            throw new Error(response?.error || 'Extraction failed');
-        }
-        
-    } catch (error) {
-        console.error('[Popup] Extraction error:', error);
-        showNotification(`Extraction failed: ${error.message}`, 'error');
-        
-        // Log error
-        extractionState.errorLog.push({
-            type: 'SINGLE_EXTRACTION_ERROR',
-            message: error.message,
-            mode: mode,
-            timestamp: new Date().toISOString()
-        });
-        
-        displayErrorAnalysis();
-        
-    } finally {
-        // Hide loading state
-        if (elements.extractionLoading) elements.extractionLoading.classList.remove('show');
-        if (elements.extractBtn) elements.extractBtn.disabled = false;
-        if (elements.enhancedBtn) elements.enhancedBtn.disabled = false;
-    }
-}
-
-// Display single extraction results
-function displayExtractionResults(data, mode) {
+// Display single extraction results with Day 7 focus
+function displayExtractionResults(data, mode, metadata) {
     if (elements.extractionResults) {
         elements.extractionResults.classList.add('show');
     }
     
     if (elements.resultsBadge) {
-        const badgeClass = mode === 'enhanced' ? 'badge-ai' : 'badge-basic';
-        elements.resultsBadge.innerHTML = `${mode === 'enhanced' ? '🚀' : '⚡'} ${mode.charAt(0).toUpperCase() + mode.slice(1)} Extraction Complete`;
+        const isAI = metadata?.realAI;
+        const badgeClass = isAI ? 'badge-ai' : (mode === 'enhanced' ? 'badge-ai' : 'badge-basic');
+        const icon = isAI ? '🤖' : (mode === 'enhanced' ? '🚀' : '⚡');
+        const label = isAI ? 'AI Enhanced' : (mode === 'enhanced' ? 'Enhanced' : 'Basic');
+        
+        elements.resultsBadge.innerHTML = `${icon} ${label} Extraction Complete`;
         elements.resultsBadge.parentElement.className = `badge ${badgeClass}`;
     }
     
@@ -336,6 +348,9 @@ function displayExtractionResults(data, mode) {
         });
         
         const accuracy = Math.round((fieldsExtracted / totalFields) * 100);
+        const isAI = metadata?.realAI;
+        const duration = metadata?.extractionTime || data.extractionMetadata?.duration || 'N/A';
+        const strategy = data.extractionMetadata?.strategy || metadata?.method || 'AUTO';
         
         elements.statsGrid.innerHTML = `
             <div class="stat-card">
@@ -343,66 +358,172 @@ function displayExtractionResults(data, mode) {
                 <div class="stat-label">Fields Extracted</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number ${accuracy >= 70 ? 'text-success' : 'text-warning'}">${accuracy}%</div>
+                <div class="stat-number ${accuracy >= 50 ? 'text-success' : accuracy >= 25 ? 'text-warning' : 'text-error'}">${accuracy}%</div>
                 <div class="stat-label">Accuracy</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">${data.extractionMetadata?.duration || 'N/A'}</div>
+                <div class="stat-number">${typeof duration === 'number' ? duration + 'ms' : duration}</div>
                 <div class="stat-label">Duration</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">${data.extractionMetadata?.strategy || 'AUTO'}</div>
-                <div class="stat-label">Strategy</div>
+                <div class="stat-number">${strategy}</div>
+                <div class="stat-label">${isAI ? '🤖 AI' : 'Basic'}</div>
             </div>
         `;
     }
 }
 
-// API Key management
-async function saveApiKey() {
-    const apiKey = elements.geminiApiKey?.value?.trim();
-    
-    if (!apiKey) {
-        showNotification('Please enter a valid API key', 'error');
-        return;
-    }
+// Perform single page extraction with Day 7 focus
+async function performExtraction(mode) {
+    console.log(`[Popup] Day 7 performing ${mode} extraction...`);
     
     try {
-        const response = await chrome.runtime.sendMessage({
-            action: 'setApiKey',
-            apiKey: apiKey
+        // Show loading state
+        if (elements.extractionLoading) elements.extractionLoading.classList.add('show');
+        if (elements.extractionResults) elements.extractionResults.classList.remove('show');
+        if (elements.extractBtn) {
+            elements.extractBtn.disabled = true;
+            elements.extractBtn.textContent = 'Extracting...';
+        }
+        if (elements.enhancedBtn) {
+            elements.enhancedBtn.disabled = true;
+            elements.enhancedBtn.textContent = 'Processing...';
+        }
+        
+        // Send extraction request
+        const action = mode === 'enhanced' ? 'extractData' : 'extractPageData';
+        
+        const response = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Extraction timeout'));
+            }, 20000);
+            
+            chrome.runtime.sendMessage({ action }, (response) => {
+                clearTimeout(timeout);
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(response);
+                }
+            });
         });
         
         if (response && response.success) {
-            showNotification('API key saved successfully!', 'success');
-            if (elements.geminiApiKey) elements.geminiApiKey.value = '';
+            console.log('[Popup] Day 7 extraction successful');
+            
+            // Store extraction data
+            extractionState.currentData = response.data;
+            
+            // Display results
+            displayExtractionResults(response.data, mode, response.metadata);
+            
+            // Update performance stats
+            extractionState.performanceStats.totalExtractions++;
+            updatePerformanceDisplay();
+            
+            const aiStatus = response.metadata?.realAI ? ' with AI' : '';
+            showNotification(`Day 7 extraction completed successfully${aiStatus}!`, 'success');
+            
         } else {
-            throw new Error('Failed to save API key');
+            throw new Error(response?.error || 'Day 7 extraction failed');
         }
         
     } catch (error) {
-        console.error('[Popup] API key save error:', error);
-        showNotification('Failed to save API key', 'error');
+        console.error('[Popup] Day 7 extraction error:', error);
+        showNotification(`Day 7 extraction failed: ${error.message}`, 'error');
+        
+        // Log error
+        extractionState.errorLog.push({
+            type: 'DAY7_SINGLE_EXTRACTION_ERROR',
+            message: error.message,
+            mode: mode,
+            timestamp: new Date().toISOString()
+        });
+        
+        displayErrorAnalysis();
+        
+    } finally {
+        // Reset button states
+        if (elements.extractionLoading) elements.extractionLoading.classList.remove('show');
+        if (elements.extractBtn) {
+            elements.extractBtn.disabled = false;
+            elements.extractBtn.textContent = '🎯 Extract Current Page';
+        }
+        if (elements.enhancedBtn) {
+            elements.enhancedBtn.disabled = false;
+            elements.enhancedBtn.textContent = '🚀 Enhanced Extraction';
+        }
     }
 }
 
-// Load API key status
+// Load API key status with Day 7 messaging
 async function loadApiKeyStatus() {
     try {
-        const response = await chrome.runtime.sendMessage({
-            action: 'getApiKey'
+        const response = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('API key status check timeout'));
+            }, 5000);
+            
+            chrome.runtime.sendMessage({
+                action: 'getApiKey'
+            }, (response) => {
+                clearTimeout(timeout);
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(response);
+                }
+            });
         });
         
         if (response && response.hasKey) {
-            showNotification('AI extraction enabled', 'success');
+            const keyInfo = response.keyLength ? ` (${response.keyLength} chars)` : '';
+            showNotification(`Day 7 AI extraction enabled${keyInfo}`, 'success');
+            console.log('[Popup] Day 7 AI extraction ready');
+        } else {
+            console.log('[Popup] Day 7 - No API key configured, basic extraction only');
         }
         
     } catch (error) {
-        console.log('[Popup] Could not check API key status');
+        console.log('[Popup] Day 7 - Could not check API key status:', error.message);
     }
 }
 
-// Export test results
+// Get CSS class for score styling (Day 7 baseline expectations)
+function getScoreClass(score) {
+    if (score >= 70) return 'score-excellent';
+    if (score >= 50) return 'score-good';
+    if (score >= 30) return 'score-fair';
+    return 'score-poor';
+}
+
+// Animate progress bar during testing
+function animateProgress() {
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 12;
+        if (progress >= 95) {
+            clearInterval(interval);
+            progress = 95;
+        }
+        updateProgress(progress);
+    }, 600);
+    
+    // Clear interval after 40 seconds (timeout)
+    setTimeout(() => {
+        clearInterval(interval);
+        updateProgress(100);
+    }, 40000);
+}
+
+// Update progress bar
+function updateProgress(percentage) {
+    if (elements.progressFill) {
+        elements.progressFill.style.width = `${percentage}%`;
+    }
+}
+
+// Export test results (keeping existing functionality)
 async function exportTestResults(format) {
     if (!extractionState.testResults) {
         showNotification('No test results to export', 'error');
@@ -414,11 +535,11 @@ async function exportTestResults(format) {
         
         if (format === 'csv') {
             data = extractionState.testResults.csvData;
-            filename = `day7-cross-vertical-results-${new Date().toISOString().split('T')[0]}.csv`;
+            filename = `day7-surgical-results-${new Date().toISOString().split('T')[0]}.csv`;
             mimeType = 'text/csv';
         } else {
             data = JSON.stringify(extractionState.testResults, null, 2);
-            filename = `day7-cross-vertical-results-${new Date().toISOString().split('T')[0]}.json`;
+            filename = `day7-surgical-results-${new Date().toISOString().split('T')[0]}.json`;
             mimeType = 'application/json';
         }
         
@@ -435,11 +556,11 @@ async function exportTestResults(format) {
         
         URL.revokeObjectURL(url);
         
-        showNotification(`Results exported as ${format.toUpperCase()}`, 'success');
+        showNotification(`Day 7 surgical data exported as ${format.toUpperCase()}`, 'success');
         
     } catch (error) {
-        console.error('[Popup] Export error:', error);
-        showNotification(`Export failed: ${error.message}`, 'error');
+        console.error('[Popup] Day 7 export error:', error);
+        showNotification(`Day 7 export failed: ${error.message}`, 'error');
     }
 }
 
@@ -454,13 +575,12 @@ async function exportSingleResult(format) {
         let data, filename, mimeType;
         
         if (format === 'csv') {
-            // Convert to CSV format
             data = convertToCSV(extractionState.currentData);
-            filename = `extraction-result-${new Date().toISOString().split('T')[0]}.csv`;
+            filename = `day7-extraction-result-${new Date().toISOString().split('T')[0]}.csv`;
             mimeType = 'text/csv';
         } else {
             data = JSON.stringify(extractionState.currentData, null, 2);
-            filename = `extraction-result-${new Date().toISOString().split('T')[0]}.json`;
+            filename = `day7-extraction-result-${new Date().toISOString().split('T')[0]}.json`;
             mimeType = 'application/json';
         }
         
@@ -477,11 +597,11 @@ async function exportSingleResult(format) {
         
         URL.revokeObjectURL(url);
         
-        showNotification(`Data exported as ${format.toUpperCase()}`, 'success');
+        showNotification(`Day 7 data exported as ${format.toUpperCase()}`, 'success');
         
     } catch (error) {
-        console.error('[Popup] Single export error:', error);
-        showNotification(`Export failed: ${error.message}`, 'error');
+        console.error('[Popup] Day 7 single export error:', error);
+        showNotification(`Day 7 export failed: ${error.message}`, 'error');
     }
 }
 
@@ -495,10 +615,10 @@ async function copyResultsToClipboard() {
     try {
         const dataString = JSON.stringify(extractionState.currentData, null, 2);
         await navigator.clipboard.writeText(dataString);
-        showNotification('Results copied to clipboard!', 'success');
+        showNotification('Day 7 results copied to clipboard!', 'success');
         
     } catch (error) {
-        console.error('[Popup] Copy error:', error);
+        console.error('[Popup] Day 7 copy error:', error);
         showNotification('Failed to copy to clipboard', 'error');
     }
 }
@@ -606,24 +726,13 @@ function showNotification(message, type = 'success') {
     elements.notification.textContent = message;
     elements.notification.className = `notification ${type} show`;
     
+    // Auto-hide after appropriate time based on type
+    const hideDelay = type === 'error' ? 5000 : 3000;
     setTimeout(() => {
-        elements.notification.classList.remove('show');
-    }, 3000);
+        if (elements.notification) {
+            elements.notification.classList.remove('show');
+        }
+    }, hideDelay);
 }
 
-// Utility functions
-function formatBytes(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-function formatDuration(ms) {
-    if (ms < 1000) return `${ms}ms`;
-    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-    return `${(ms / 60000).toFixed(1)}m`;
-}
-
-console.log('[Popup] Day 7 SURGICAL Data Harvester Controller ready - Championship edition loaded');
+console.log('[Popup] Day 7 SURGICAL Data Harvester Controller ready - Surgical error analysis edition loaded');

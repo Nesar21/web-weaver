@@ -1,6 +1,6 @@
-// Day 7 Championship Cross-Vertical Data Harvester Controller with Surgical Error Analysis
+// Day 8 Championship Cross-Vertical Data Harvester Controller - FIXED API HANDLING
 
-console.log('[Popup] Day 7 SURGICAL Data Harvester Controller - Championship ready');
+console.log('[Popup] Day 8 SURGICAL Data Harvester Controller - API fixed');
 
 // Global state management
 let extractionState = {
@@ -19,7 +19,7 @@ const elements = {};
 
 // Initialize the popup when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('[Popup] Day 7 Data Harvester initializing...');
+    console.log('[Popup] Day 8 Data Harvester initializing...');
     initializeElements();
     loadStoredData();
     setupEventListeners();
@@ -40,7 +40,7 @@ function initializeElements() {
     elements.statsGrid = document.getElementById('statsGrid');
     elements.resultsBadge = document.getElementById('resultsBadge');
     
-    // Day 7 Data Harvester
+    // Day 8 Data Harvester
     elements.copyLogBtn = document.getElementById('copyLogBtn');
     elements.logLoading = document.getElementById('logLoading');
     elements.logResults = document.getElementById('logResults');
@@ -70,9 +70,9 @@ function initializeElements() {
 
 // Setup all event listeners
 function setupEventListeners() {
-    // API Configuration
+    // API Configuration - FIXED with proper error handling
     if (elements.saveApiKey) {
-        elements.saveApiKey.addEventListener('click', saveApiKey);
+        elements.saveApiKey.addEventListener('click', saveApiKeyFixed);
     }
     
     // Main extraction
@@ -83,7 +83,7 @@ function setupEventListeners() {
         elements.enhancedBtn.addEventListener('click', () => performExtraction('enhanced'));
     }
     
-    // Day 7 Data Harvester - The Championship Feature
+    // Day 8 Data Harvester - The Championship Feature
     if (elements.copyLogBtn) {
         elements.copyLogBtn.addEventListener('click', runCrossVerticalTest);
     }
@@ -106,9 +106,81 @@ function setupEventListeners() {
     }
 }
 
-// Day 7 Championship Feature: Cross-Vertical Data Harvester
+// Day 8 FIXED API Key management with proper async handling
+async function saveApiKeyFixed() {
+    console.log('[Popup] Day 8 API key save attempt...');
+    
+    const apiKey = elements.geminiApiKey?.value?.trim();
+    
+    if (!apiKey || apiKey.length === 0) {
+        console.error('[Popup] Day 8 - Empty API key provided');
+        showNotification('Please enter a valid API key', 'error');
+        return;
+    }
+    
+    if (apiKey.length < 20) {
+        console.error('[Popup] Day 8 - API key too short');
+        showNotification('API key appears to be too short. Please check your key.', 'error');
+        return;
+    }
+    
+    try {
+        console.log(`[Popup] Day 8 - Attempting to save API key (length: ${apiKey.length})`);
+        
+        // Show loading state
+        if (elements.saveApiKey) {
+            elements.saveApiKey.disabled = true;
+            elements.saveApiKey.textContent = 'Saving...';
+        }
+        
+        const response = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('API key save timeout'));
+            }, 10000);
+            
+            chrome.runtime.sendMessage({
+                action: 'setApiKey',
+                apiKey: apiKey
+            }, (response) => {
+                clearTimeout(timeout);
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(response);
+                }
+            });
+        });
+        
+        console.log('[Popup] Day 8 API key save response:', response);
+        
+        if (response && response.success) {
+            console.log('[Popup] Day 8 API key saved successfully');
+            showNotification(`API key saved successfully! (Length: ${response.keyLength || apiKey.length})`, 'success');
+            if (elements.geminiApiKey) elements.geminiApiKey.value = '';
+            
+            // Update API key status immediately
+            setTimeout(loadApiKeyStatus, 500);
+        } else {
+            const errorMessage = response?.error || 'Failed to save API key';
+            console.error('[Popup] Day 8 API key save failed:', errorMessage);
+            throw new Error(errorMessage);
+        }
+        
+    } catch (error) {
+        console.error('[Popup] Day 8 API key save error:', error);
+        showNotification(`Failed to save API key: ${error.message}`, 'error');
+    } finally {
+        // Reset button state
+        if (elements.saveApiKey) {
+            elements.saveApiKey.disabled = false;
+            elements.saveApiKey.textContent = 'Save API Key';
+        }
+    }
+}
+
+// Day 8 Championship Feature: Cross-Vertical Data Harvester
 async function runCrossVerticalTest() {
-    console.log('[Popup] Day 7 Cross-Vertical Test: Starting championship validation...');
+    console.log('[Popup] Day 8 Cross-Vertical Test: Starting championship validation...');
     
     try {
         // Show loading state
@@ -116,13 +188,26 @@ async function runCrossVerticalTest() {
         updateProgress(0);
         
         // Send request to background script for real cross-vertical testing
-        const response = await chrome.runtime.sendMessage({
-            action: 'getIterationLog',
-            timestamp: Date.now()
+        const response = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Cross-vertical test timeout'));
+            }, 45000); // Increased timeout for Day 8 comprehensive testing
+            
+            chrome.runtime.sendMessage({
+                action: 'getIterationLog',
+                timestamp: Date.now()
+            }, (response) => {
+                clearTimeout(timeout);
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(response);
+                }
+            });
         });
         
         if (response && response.success) {
-            console.log('[Popup] Cross-vertical test completed successfully');
+            console.log('[Popup] Day 8 cross-vertical test completed successfully');
             
             // Store test results
             extractionState.testResults = response;
@@ -136,21 +221,25 @@ async function runCrossVerticalTest() {
             // Update performance stats
             updatePerformanceStats(response);
             
-            // Show success notification
-            showNotification('Cross-vertical test completed! CSV data copied to clipboard.', 'success');
+            // Show success notification with Day 8 details
+            const aiStatus = response.summary?.usingRealAI ? 'with AI' : 'basic mode';
+            const accuracy = response.summary?.overallAIScore || 0;
+            const targetStatus = accuracy >= 80 ? '🏆 TARGET ACHIEVED' : '📈 Improving';
+            
+            showNotification(`Day 8 test complete ${aiStatus}! ${accuracy}% accuracy ${targetStatus}. CSV copied to clipboard.`, 'success');
             
         } else {
-            throw new Error(response?.error || 'Cross-vertical test failed');
+            throw new Error(response?.error || 'Day 8 cross-vertical test failed');
         }
         
     } catch (error) {
-        console.error('[Popup] Cross-vertical test error:', error);
+        console.error('[Popup] Day 8 cross-vertical test error:', error);
         hideLoadingState();
-        showNotification(`Test failed: ${error.message}`, 'error');
+        showNotification(`Day 8 test failed: ${error.message}`, 'error');
         
         // Log error for analysis
         extractionState.errorLog.push({
-            type: 'CROSS_VERTICAL_TEST_ERROR',
+            type: 'DAY8_CROSS_VERTICAL_TEST_ERROR',
             message: error.message,
             timestamp: new Date().toISOString()
         });
@@ -163,7 +252,10 @@ async function runCrossVerticalTest() {
 function showLoadingState() {
     if (elements.logLoading) elements.logLoading.classList.add('show');
     if (elements.logResults) elements.logResults.classList.remove('show');
-    if (elements.copyLogBtn) elements.copyLogBtn.disabled = true;
+    if (elements.copyLogBtn) {
+        elements.copyLogBtn.disabled = true;
+        elements.copyLogBtn.textContent = 'Running Test...';
+    }
     if (elements.testProgress) elements.testProgress.style.display = 'block';
     
     // Animate progress bar
@@ -173,7 +265,10 @@ function showLoadingState() {
 // Hide loading state
 function hideLoadingState() {
     if (elements.logLoading) elements.logLoading.classList.remove('show');
-    if (elements.copyLogBtn) elements.copyLogBtn.disabled = false;
+    if (elements.copyLogBtn) {
+        elements.copyLogBtn.disabled = false;
+        elements.copyLogBtn.textContent = '📋 Run Cross-Vertical Test';
+    }
     if (elements.testProgress) elements.testProgress.style.display = 'none';
 }
 
@@ -181,19 +276,19 @@ function hideLoadingState() {
 function animateProgress() {
     let progress = 0;
     const interval = setInterval(() => {
-        progress += Math.random() * 15;
+        progress += Math.random() * 12;
         if (progress >= 95) {
             clearInterval(interval);
             progress = 95;
         }
         updateProgress(progress);
-    }, 500);
+    }, 600);
     
-    // Clear interval after 30 seconds (timeout)
+    // Clear interval after 40 seconds (timeout)
     setTimeout(() => {
         clearInterval(interval);
         updateProgress(100);
-    }, 30000);
+    }, 40000);
 }
 
 // Update progress bar
@@ -203,7 +298,7 @@ function updateProgress(percentage) {
     }
 }
 
-// Display cross-vertical test results
+// Display cross-vertical test results with Day 8 enhancements
 function displayTestResults(response) {
     hideLoadingState();
     updateProgress(100);
@@ -214,6 +309,9 @@ function displayTestResults(response) {
     
     if (elements.testSummary && response.summary) {
         const summary = response.summary;
+        const targetAchieved = summary.overallAIScore >= 80;
+        const aiStatus = summary.usingRealAI ? '🤖 AI' : '⚙️ Basic';
+        
         elements.testSummary.innerHTML = `
             <div class="stats-grid">
                 <div class="stat-card">
@@ -221,21 +319,29 @@ function displayTestResults(response) {
                     <div class="stat-label">Sites Tested</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number ${summary.overallAIScore >= 70 ? 'text-success' : 'text-warning'}">${summary.overallAIScore}%</div>
-                    <div class="stat-label">AI Accuracy</div>
+                    <div class="stat-number ${summary.overallAIScore >= 80 ? 'text-success' : summary.overallAIScore >= 60 ? 'text-warning' : 'text-error'}">${summary.overallAIScore}%</div>
+                    <div class="stat-label">${aiStatus} Accuracy</div>
                 </div>
             </div>
             <div class="site-results" style="margin-top: 12px;">
                 <div class="site-status">
-                    <span class="site-name">Cross-Vertical Average</span>
-                    <span class="site-score ${getScoreClass(summary.overallAIScore)}">${summary.overallAIScore}%</span>
-                </div>
-                <div class="site-status">
-                    <span class="site-name">Target Achievement</span>
-                    <span class="site-score ${summary.targetAchieved ? 'score-excellent' : 'score-fair'}">
-                        ${summary.targetAchieved ? '✅ Achieved' : '📈 In Progress'}
+                    <span class="site-name">Day 8 Target (≥80%)</span>
+                    <span class="site-score ${targetAchieved ? 'score-excellent' : 'score-fair'}">
+                        ${targetAchieved ? '🏆 ACHIEVED' : '📈 In Progress'}
                     </span>
                 </div>
+                <div class="site-status">
+                    <span class="site-name">AI Configuration</span>
+                    <span class="site-score ${summary.apiKeyConfigured ? 'score-good' : 'score-poor'}">
+                        ${summary.apiKeyConfigured ? '✅ Configured' : '❌ Missing'}
+                    </span>
+                </div>
+                ${summary.usingRealAI ? `
+                <div class="site-status">
+                    <span class="site-name">Real AI Processing</span>
+                    <span class="site-score score-excellent">✅ Active</span>
+                </div>
+                ` : ''}
             </div>
         `;
     }
@@ -244,52 +350,73 @@ function displayTestResults(response) {
 // Get CSS class for score styling
 function getScoreClass(score) {
     if (score >= 90) return 'score-excellent';
-    if (score >= 75) return 'score-good';
+    if (score >= 80) return 'score-good';
     if (score >= 60) return 'score-fair';
     return 'score-poor';
 }
 
-// Perform single page extraction
+// Perform single page extraction with Day 8 enhancements
 async function performExtraction(mode) {
-    console.log(`[Popup] Performing ${mode} extraction...`);
+    console.log(`[Popup] Day 8 performing ${mode} extraction...`);
     
     try {
         // Show loading state
         if (elements.extractionLoading) elements.extractionLoading.classList.add('show');
         if (elements.extractionResults) elements.extractionResults.classList.remove('show');
-        if (elements.extractBtn) elements.extractBtn.disabled = true;
-        if (elements.enhancedBtn) elements.enhancedBtn.disabled = true;
+        if (elements.extractBtn) {
+            elements.extractBtn.disabled = true;
+            elements.extractBtn.textContent = 'Extracting...';
+        }
+        if (elements.enhancedBtn) {
+            elements.enhancedBtn.disabled = true;
+            elements.enhancedBtn.textContent = 'Processing...';
+        }
         
         // Send extraction request
         const action = mode === 'enhanced' ? 'extractData' : 'extractPageData';
-        const response = await chrome.runtime.sendMessage({ action });
+        
+        const response = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Extraction timeout'));
+            }, 20000);
+            
+            chrome.runtime.sendMessage({ action }, (response) => {
+                clearTimeout(timeout);
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(response);
+                }
+            });
+        });
         
         if (response && response.success) {
-            console.log('[Popup] Extraction successful');
+            console.log('[Popup] Day 8 extraction successful');
             
             // Store extraction data
             extractionState.currentData = response.data;
             
             // Display results
-            displayExtractionResults(response.data, mode);
+            displayExtractionResults(response.data, mode, response.metadata);
             
             // Update performance stats
             extractionState.performanceStats.totalExtractions++;
             updatePerformanceDisplay();
             
-            showNotification('Extraction completed successfully!', 'success');
+            const aiStatus = response.metadata?.realAI ? ' with AI' : '';
+            showNotification(`Day 8 extraction completed successfully${aiStatus}!`, 'success');
             
         } else {
-            throw new Error(response?.error || 'Extraction failed');
+            throw new Error(response?.error || 'Day 8 extraction failed');
         }
         
     } catch (error) {
-        console.error('[Popup] Extraction error:', error);
-        showNotification(`Extraction failed: ${error.message}`, 'error');
+        console.error('[Popup] Day 8 extraction error:', error);
+        showNotification(`Day 8 extraction failed: ${error.message}`, 'error');
         
         // Log error
         extractionState.errorLog.push({
-            type: 'SINGLE_EXTRACTION_ERROR',
+            type: 'DAY8_SINGLE_EXTRACTION_ERROR',
             message: error.message,
             mode: mode,
             timestamp: new Date().toISOString()
@@ -298,22 +425,32 @@ async function performExtraction(mode) {
         displayErrorAnalysis();
         
     } finally {
-        // Hide loading state
+        // Reset button states
         if (elements.extractionLoading) elements.extractionLoading.classList.remove('show');
-        if (elements.extractBtn) elements.extractBtn.disabled = false;
-        if (elements.enhancedBtn) elements.enhancedBtn.disabled = false;
+        if (elements.extractBtn) {
+            elements.extractBtn.disabled = false;
+            elements.extractBtn.textContent = '🎯 Extract Current Page';
+        }
+        if (elements.enhancedBtn) {
+            elements.enhancedBtn.disabled = false;
+            elements.enhancedBtn.textContent = '🚀 Enhanced Extraction';
+        }
     }
 }
 
-// Display single extraction results
-function displayExtractionResults(data, mode) {
+// Display single extraction results with Day 8 enhancements
+function displayExtractionResults(data, mode, metadata) {
     if (elements.extractionResults) {
         elements.extractionResults.classList.add('show');
     }
     
     if (elements.resultsBadge) {
-        const badgeClass = mode === 'enhanced' ? 'badge-ai' : 'badge-basic';
-        elements.resultsBadge.innerHTML = `${mode === 'enhanced' ? '🚀' : '⚡'} ${mode.charAt(0).toUpperCase() + mode.slice(1)} Extraction Complete`;
+        const isAI = metadata?.realAI;
+        const badgeClass = isAI ? 'badge-ai' : (mode === 'enhanced' ? 'badge-ai' : 'badge-basic');
+        const icon = isAI ? '🤖' : (mode === 'enhanced' ? '🚀' : '⚡');
+        const label = isAI ? 'AI Enhanced' : (mode === 'enhanced' ? 'Enhanced' : 'Basic');
+        
+        elements.resultsBadge.innerHTML = `${icon} ${label} Extraction Complete`;
         elements.resultsBadge.parentElement.className = `badge ${badgeClass}`;
     }
     
@@ -321,7 +458,7 @@ function displayExtractionResults(data, mode) {
         let fieldsExtracted = 0;
         let totalFields = 0;
         
-        // Count extracted fields
+        // Count extracted fields with Day 8 precision
         const fields = ['title', 'author', 'publication_date', 'main_content_summary', 'category', 'description', 'price', 'ingredients', 'instructions', 'reviews_rating'];
         
         fields.forEach(field => {
@@ -336,6 +473,9 @@ function displayExtractionResults(data, mode) {
         });
         
         const accuracy = Math.round((fieldsExtracted / totalFields) * 100);
+        const isAI = metadata?.realAI;
+        const duration = metadata?.extractionTime || data.extractionMetadata?.duration || 'N/A';
+        const strategy = data.extractionMetadata?.strategy || metadata?.day8Version || 'AUTO';
         
         elements.statsGrid.innerHTML = `
             <div class="stat-card">
@@ -343,66 +483,55 @@ function displayExtractionResults(data, mode) {
                 <div class="stat-label">Fields Extracted</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number ${accuracy >= 70 ? 'text-success' : 'text-warning'}">${accuracy}%</div>
-                <div class="stat-label">Accuracy</div>
+                <div class="stat-number ${accuracy >= 80 ? 'text-success' : accuracy >= 60 ? 'text-warning' : 'text-error'}">${accuracy}%</div>
+                <div class="stat-label">Day 8 Accuracy</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">${data.extractionMetadata?.duration || 'N/A'}</div>
+                <div class="stat-number">${typeof duration === 'number' ? duration + 'ms' : duration}</div>
                 <div class="stat-label">Duration</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">${data.extractionMetadata?.strategy || 'AUTO'}</div>
-                <div class="stat-label">Strategy</div>
+                <div class="stat-number">${strategy}</div>
+                <div class="stat-label">${isAI ? '🤖 AI' : 'Basic'}</div>
             </div>
         `;
     }
 }
 
-// API Key management
-async function saveApiKey() {
-    const apiKey = elements.geminiApiKey?.value?.trim();
-    
-    if (!apiKey) {
-        showNotification('Please enter a valid API key', 'error');
-        return;
-    }
-    
-    try {
-        const response = await chrome.runtime.sendMessage({
-            action: 'setApiKey',
-            apiKey: apiKey
-        });
-        
-        if (response && response.success) {
-            showNotification('API key saved successfully!', 'success');
-            if (elements.geminiApiKey) elements.geminiApiKey.value = '';
-        } else {
-            throw new Error('Failed to save API key');
-        }
-        
-    } catch (error) {
-        console.error('[Popup] API key save error:', error);
-        showNotification('Failed to save API key', 'error');
-    }
-}
-
-// Load API key status
+// Load API key status with Day 8 enhancements
 async function loadApiKeyStatus() {
     try {
-        const response = await chrome.runtime.sendMessage({
-            action: 'getApiKey'
+        const response = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('API key status check timeout'));
+            }, 5000);
+            
+            chrome.runtime.sendMessage({
+                action: 'getApiKey'
+            }, (response) => {
+                clearTimeout(timeout);
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(response);
+                }
+            });
         });
         
         if (response && response.hasKey) {
-            showNotification('AI extraction enabled', 'success');
+            const keyInfo = response.keyLength ? ` (${response.keyLength} chars)` : '';
+            showNotification(`Day 8 AI extraction enabled${keyInfo}`, 'success');
+            console.log('[Popup] Day 8 AI extraction ready');
+        } else {
+            console.log('[Popup] Day 8 - No API key configured, basic extraction only');
         }
         
     } catch (error) {
-        console.log('[Popup] Could not check API key status');
+        console.log('[Popup] Day 8 - Could not check API key status:', error.message);
     }
 }
 
-// Export test results
+// Export test results (existing function - keeping as is)
 async function exportTestResults(format) {
     if (!extractionState.testResults) {
         showNotification('No test results to export', 'error');
@@ -414,11 +543,11 @@ async function exportTestResults(format) {
         
         if (format === 'csv') {
             data = extractionState.testResults.csvData;
-            filename = `day7-cross-vertical-results-${new Date().toISOString().split('T')[0]}.csv`;
+            filename = `day8-cross-vertical-results-${new Date().toISOString().split('T')[0]}.csv`;
             mimeType = 'text/csv';
         } else {
             data = JSON.stringify(extractionState.testResults, null, 2);
-            filename = `day7-cross-vertical-results-${new Date().toISOString().split('T')[0]}.json`;
+            filename = `day8-cross-vertical-results-${new Date().toISOString().split('T')[0]}.json`;
             mimeType = 'application/json';
         }
         
@@ -435,15 +564,15 @@ async function exportTestResults(format) {
         
         URL.revokeObjectURL(url);
         
-        showNotification(`Results exported as ${format.toUpperCase()}`, 'success');
+        showNotification(`Day 8 results exported as ${format.toUpperCase()}`, 'success');
         
     } catch (error) {
-        console.error('[Popup] Export error:', error);
-        showNotification(`Export failed: ${error.message}`, 'error');
+        console.error('[Popup] Day 8 export error:', error);
+        showNotification(`Day 8 export failed: ${error.message}`, 'error');
     }
 }
 
-// Export single extraction result
+// Export single extraction result (existing function - keeping as is)
 async function exportSingleResult(format) {
     if (!extractionState.currentData) {
         showNotification('No extraction data to export', 'error');
@@ -454,13 +583,12 @@ async function exportSingleResult(format) {
         let data, filename, mimeType;
         
         if (format === 'csv') {
-            // Convert to CSV format
             data = convertToCSV(extractionState.currentData);
-            filename = `extraction-result-${new Date().toISOString().split('T')[0]}.csv`;
+            filename = `day8-extraction-result-${new Date().toISOString().split('T')[0]}.csv`;
             mimeType = 'text/csv';
         } else {
             data = JSON.stringify(extractionState.currentData, null, 2);
-            filename = `extraction-result-${new Date().toISOString().split('T')[0]}.json`;
+            filename = `day8-extraction-result-${new Date().toISOString().split('T')[0]}.json`;
             mimeType = 'application/json';
         }
         
@@ -477,15 +605,15 @@ async function exportSingleResult(format) {
         
         URL.revokeObjectURL(url);
         
-        showNotification(`Data exported as ${format.toUpperCase()}`, 'success');
+        showNotification(`Day 8 data exported as ${format.toUpperCase()}`, 'success');
         
     } catch (error) {
-        console.error('[Popup] Single export error:', error);
-        showNotification(`Export failed: ${error.message}`, 'error');
+        console.error('[Popup] Day 8 single export error:', error);
+        showNotification(`Day 8 export failed: ${error.message}`, 'error');
     }
 }
 
-// Copy results to clipboard
+// Copy results to clipboard (existing function - keeping as is)
 async function copyResultsToClipboard() {
     if (!extractionState.currentData) {
         showNotification('No data to copy', 'error');
@@ -495,15 +623,15 @@ async function copyResultsToClipboard() {
     try {
         const dataString = JSON.stringify(extractionState.currentData, null, 2);
         await navigator.clipboard.writeText(dataString);
-        showNotification('Results copied to clipboard!', 'success');
+        showNotification('Day 8 results copied to clipboard!', 'success');
         
     } catch (error) {
-        console.error('[Popup] Copy error:', error);
+        console.error('[Popup] Day 8 copy error:', error);
         showNotification('Failed to copy to clipboard', 'error');
     }
 }
 
-// Convert object to CSV format
+// Convert object to CSV format (existing function - keeping as is)
 function convertToCSV(data) {
     const headers = Object.keys(data);
     const values = headers.map(header => {
@@ -520,7 +648,7 @@ function convertToCSV(data) {
     return headers.join(',') + '\n' + values.join(',');
 }
 
-// Display error analysis
+// Display error analysis (existing function - keeping as is)
 function displayErrorAnalysis() {
     if (extractionState.errorLog.length === 0) {
         if (elements.errorAnalysisSection) {
@@ -546,7 +674,7 @@ function displayErrorAnalysis() {
     }
 }
 
-// Update performance statistics
+// Update performance statistics (existing function - keeping as is)
 function updatePerformanceStats(testResults) {
     if (testResults && testResults.summary) {
         extractionState.performanceStats.lastTestTimestamp = Date.now();
@@ -565,7 +693,7 @@ function updatePerformanceStats(testResults) {
     savePerformanceStats();
 }
 
-// Update performance display
+// Update performance display (existing function - keeping as is)
 function updatePerformanceDisplay() {
     if (elements.totalExtractions) {
         elements.totalExtractions.textContent = extractionState.performanceStats.totalExtractions;
@@ -576,7 +704,7 @@ function updatePerformanceDisplay() {
     }
 }
 
-// Save performance stats to storage
+// Save performance stats to storage (existing function - keeping as is)
 function savePerformanceStats() {
     chrome.storage.local.set({
         performanceStats: extractionState.performanceStats,
@@ -584,7 +712,7 @@ function savePerformanceStats() {
     });
 }
 
-// Load stored performance data
+// Load stored performance data (existing function - keeping as is)
 function loadStoredData() {
     chrome.storage.local.get(['performanceStats', 'errorLog'], (result) => {
         if (result.performanceStats) {
@@ -599,31 +727,20 @@ function loadStoredData() {
     });
 }
 
-// Show notification
+// Show notification with Day 8 enhancements
 function showNotification(message, type = 'success') {
     if (!elements.notification) return;
     
     elements.notification.textContent = message;
     elements.notification.className = `notification ${type} show`;
     
+    // Auto-hide after appropriate time based on type
+    const hideDelay = type === 'error' ? 5000 : 3000;
     setTimeout(() => {
-        elements.notification.classList.remove('show');
-    }, 3000);
+        if (elements.notification) {
+            elements.notification.classList.remove('show');
+        }
+    }, hideDelay);
 }
 
-// Utility functions
-function formatBytes(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-function formatDuration(ms) {
-    if (ms < 1000) return `${ms}ms`;
-    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-    return `${(ms / 60000).toFixed(1)}m`;
-}
-
-console.log('[Popup] Day 7 SURGICAL Data Harvester Controller ready - Championship edition loaded');
+console.log('[Popup] Day 8 SURGICAL Data Harvester Controller ready - API fixed, championship edition loaded');
