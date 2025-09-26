@@ -1,11 +1,12 @@
-// Day 7 Championship Cross-Vertical Data Harvester Controller - SURGICAL ERROR ANALYSIS
+// Day 7 Championship Cross-Vertical Data Harvester Controller - OPERATION SURGICAL DATA++
 
-console.log('[Popup] Day 7 SURGICAL Data Harvester Controller - Championship ready');
+console.log('[Popup] Day 7 OPERATION SURGICAL DATA++ Controller - Stress test enabled');
 
 // Global state management
 let extractionState = {
     currentData: null,
     testResults: null,
+    stressResults: null,
     performanceStats: {
         totalExtractions: 0,
         averageAccuracy: 0,
@@ -19,7 +20,7 @@ const elements = {};
 
 // Initialize the popup when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('[Popup] Day 7 Data Harvester initializing...');
+    console.log('[Popup] Day 7 SURGICAL DATA++ initializing...');
     initializeElements();
     loadStoredData();
     setupEventListeners();
@@ -35,114 +36,701 @@ function initializeElements() {
     // Main extraction
     elements.extractBtn = document.getElementById('extractBtn');
     elements.enhancedBtn = document.getElementById('enhancedBtn');
-    elements.extractionLoading = document.getElementById('extractionLoading');
-    elements.extractionResults = document.getElementById('extractionResults');
-    elements.statsGrid = document.getElementById('statsGrid');
-    elements.resultsBadge = document.getElementById('resultsBadge');
     
-    // Day 7 Data Harvester
+    // Results display
+    elements.resultsContainer = document.getElementById('resultsContainer');
+    elements.jsonBtn = document.getElementById('jsonBtn');
+    elements.csvBtn = document.getElementById('csvBtn');
+    elements.copyBtn = document.getElementById('copyBtn');
+    
+    // Cross-vertical testing - UPDATED
     elements.copyLogBtn = document.getElementById('copyLogBtn');
-    elements.logLoading = document.getElementById('logLoading');
-    elements.logResults = document.getElementById('logResults');
-    elements.testProgress = document.getElementById('testProgress');
-    elements.progressFill = document.getElementById('progressFill');
-    elements.testSummary = document.getElementById('testSummary');
+    elements.stressTestBtn = document.getElementById('stressTestBtn');
     
-    // Export functionality
-    elements.exportCsvBtn = document.getElementById('exportCsvBtn');
-    elements.exportJsonBtn = document.getElementById('exportJsonBtn');
-    elements.exportJsonSingleBtn = document.getElementById('exportJsonSingleBtn');
-    elements.exportCsvSingleBtn = document.getElementById('exportCsvSingleBtn');
-    elements.copyResultsBtn = document.getElementById('copyResultsBtn');
-    
-    // Error analysis
-    elements.errorAnalysisSection = document.getElementById('errorAnalysisSection');
-    elements.errorSummary = document.getElementById('errorSummary');
-    elements.errorList = document.getElementById('errorList');
-    
-    // Performance monitoring
+    // Performance stats
     elements.totalExtractions = document.getElementById('totalExtractions');
     elements.averageAccuracy = document.getElementById('averageAccuracy');
     
-    // Notification
-    elements.notification = document.getElementById('notification');
+    console.log('[Popup] Day 7 SURGICAL DATA++ DOM elements cached successfully');
 }
 
-// Setup all event listeners
+// Setup event listeners
 function setupEventListeners() {
-    // API Configuration - FIXED with proper error handling
+    // API key management
     if (elements.saveApiKey) {
-        elements.saveApiKey.addEventListener('click', saveApiKeyFixed);
+        elements.saveApiKey.addEventListener('click', handleSaveApiKey);
     }
-    
-    // Main extraction
+
+    // Main extraction buttons
     if (elements.extractBtn) {
-        elements.extractBtn.addEventListener('click', () => performExtraction('basic'));
+        elements.extractBtn.addEventListener('click', () => handleExtraction('basic'));
     }
+    
     if (elements.enhancedBtn) {
-        elements.enhancedBtn.addEventListener('click', () => performExtraction('enhanced'));
+        elements.enhancedBtn.addEventListener('click', () => handleExtraction('enhanced'));
+    }
+
+    // Export buttons
+    if (elements.jsonBtn) {
+        elements.jsonBtn.addEventListener('click', () => exportData('json'));
     }
     
-    // Day 7 Data Harvester - The Championship Feature
+    if (elements.csvBtn) {
+        elements.csvBtn.addEventListener('click', () => exportData('csv'));
+    }
+    
+    if (elements.copyBtn) {
+        elements.copyBtn.addEventListener('click', () => exportData('copy'));
+    }
+
+    // Cross-vertical testing - Legacy support
     if (elements.copyLogBtn) {
-        elements.copyLogBtn.addEventListener('click', runCrossVerticalTest);
+        elements.copyLogBtn.addEventListener('click', handleLegacyCrossVerticalTest);
     }
+
+    // 🎯 NEW: Operation Surgical Data++ stress test
+    if (elements.stressTestBtn) {
+        elements.stressTestBtn.addEventListener('click', handleStressTest);
+    }
+
+    console.log('[Popup] Day 7 SURGICAL DATA++ event listeners set up successfully');
+}
+
+// 🎯 NEW: Operation Surgical Data++ stress test handler
+async function handleStressTest() {
+    console.log('[Popup] Day 7 OPERATION SURGICAL DATA++ stress test starting...');
     
-    // Export functionality
-    if (elements.exportCsvBtn) {
-        elements.exportCsvBtn.addEventListener('click', () => exportTestResults('csv'));
-    }
-    if (elements.exportJsonBtn) {
-        elements.exportJsonBtn.addEventListener('click', () => exportTestResults('json'));
-    }
-    if (elements.exportJsonSingleBtn) {
-        elements.exportJsonSingleBtn.addEventListener('click', () => exportSingleResult('json'));
-    }
-    if (elements.exportCsvSingleBtn) {
-        elements.exportCsvSingleBtn.addEventListener('click', () => exportSingleResult('csv'));
-    }
-    if (elements.copyResultsBtn) {
-        elements.copyResultsBtn.addEventListener('click', copyResultsToClipboard);
+    try {
+        // Update UI to show stress test in progress
+        elements.stressTestBtn.disabled = true;
+        elements.stressTestBtn.textContent = '🔄 Infiltrating Enemy Domains...';
+        
+        // Clear previous error logs
+        extractionState.errorLog = [];
+        updateErrorDisplay();
+        
+        console.log('[Popup] Launching OPERATION SURGICAL DATA++ to background...');
+        
+        // Launch stress test operation
+        const response = await new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage({
+                action: 'runStressTest'
+            }, (response) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(response);
+                }
+            });
+        });
+        
+        console.log('[Popup] Day 7 OPERATION SURGICAL DATA++ response:', response);
+        
+        if (response && response.success) {
+            // Store stress test results
+            extractionState.stressResults = response;
+            
+            // Auto-save JSONL to clipboard for manual logging
+            try {
+                await copyToClipboardSafe(response.jsonlData);
+                console.log('[Popup] JSONL iteration log copied to clipboard for manual save');
+            } catch (clipboardError) {
+                console.warn('[Popup] JSONL clipboard copy failed, showing modal:', clipboardError);
+                showJSONLModal(response.jsonlData);
+            }
+            
+            // Update UI with stress test success
+            updateStressTestUI(response.summary);
+            showSuccessMessage(`OPERATION SURGICAL DATA++ complete! Infiltrated ${response.summary.domainsInfiltrated}/${response.summary.sitesTestedCount} domains. Overall accuracy: ${response.summary.overallAIScore}%. JSONL log copied for manual save.`);
+            
+            console.log('[Popup] Day 7 OPERATION SURGICAL DATA++ completed successfully');
+            
+        } else {
+            throw new Error(response?.error || 'OPERATION SURGICAL DATA++ failed - no response data');
+        }
+        
+    } catch (error) {
+        console.error('[Popup] Day 7 OPERATION SURGICAL DATA++ error:', error);
+        
+        // Add to error log with proper error message extraction
+        const errorMessage = error.message || error.toString() || 'Unknown error occurred';
+        extractionState.errorLog.push({
+            type: 'DAY7_STRESS_TEST_ERROR',
+            message: errorMessage,
+            timestamp: new Date().toLocaleTimeString(),
+            operation: 'SURGICAL DATA++',
+            errorDetails: error
+        });
+        
+        updateErrorDisplay();
+        showErrorMessage(`OPERATION SURGICAL DATA++ failed: ${errorMessage}`);
+        
+    } finally {
+        // Always reset button state
+        elements.stressTestBtn.disabled = false;
+        elements.stressTestBtn.textContent = '🚀 Run Stress Test';
     }
 }
 
-// Day 7 FIXED API Key management with proper async handling
-async function saveApiKeyFixed() {
-    console.log('[Popup] Day 7 API key save attempt...');
+// Legacy support for existing cross-vertical test
+async function handleLegacyCrossVerticalTest() {
+    console.log('[Popup] Day 7 legacy cross-vertical test starting...');
     
-    const apiKey = elements.geminiApiKey?.value?.trim();
+    try {
+        // Update UI to show test in progress
+        elements.copyLogBtn.disabled = true;
+        elements.copyLogBtn.textContent = '🔄 Testing 5 Sites...';
+        
+        // Clear previous error logs
+        extractionState.errorLog = [];
+        updateErrorDisplay();
+        
+        console.log('[Popup] Sending legacy cross-vertical test request to background...');
+        
+        // Send message to background script
+        const response = await new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage({
+                action: 'getIterationLog'
+            }, (response) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(response);
+                }
+            });
+        });
+        
+        console.log('[Popup] Day 7 legacy cross-vertical test response:', response);
+        
+        if (response && response.success) {
+            // Store results
+            extractionState.testResults = response;
+            
+            // 🎯 CRITICAL FIX: Safe clipboard copy with proper error handling
+            try {
+                await copyToClipboardSafe(response.csvData);
+                console.log('[Popup] CSV data copied to clipboard successfully');
+            } catch (clipboardError) {
+                console.warn('[Popup] Clipboard copy failed, data available in modal:', clipboardError);
+                // Continue execution even if clipboard fails
+            }
+            
+            // Update UI with success
+            updateTestResultsUI(response.summary);
+            showSuccessMessage(`Day 7 surgical test complete! ${response.summary.usingRealAI ? 'AI' : 'Basic'} mode. ${response.summary.overallAIScore}% baseline captured. CSV copied to clipboard.`);
+            
+            console.log('[Popup] Day 7 legacy cross-vertical test completed successfully');
+            
+        } else {
+            throw new Error(response?.error || 'Cross-vertical test failed - no response data');
+        }
+        
+    } catch (error) {
+        console.error('[Popup] Day 7 legacy cross-vertical test error:', error);
+        
+        // Add to error log with proper error message extraction
+        const errorMessage = error.message || error.toString() || 'Unknown error occurred';
+        extractionState.errorLog.push({
+            type: 'DAY7_LEGACY_CROSS_VERTICAL_TEST_ERROR',
+            message: errorMessage,
+            timestamp: new Date().toLocaleTimeString(),
+            errorDetails: error
+        });
+        
+        updateErrorDisplay();
+        showErrorMessage(`Day 7 legacy test failed: ${errorMessage}`);
+        
+    } finally {
+        // Always reset button state
+        elements.copyLogBtn.disabled = false;
+        elements.copyLogBtn.textContent = '📋 Copy Iteration Log';
+    }
+}
+
+// 🎯 CRITICAL FIX: Enhanced safe clipboard copy function
+async function copyToClipboardSafe(text) {
+    console.log('[Popup] Attempting safe clipboard copy...');
     
-    if (!apiKey || apiKey.length === 0) {
-        console.error('[Popup] Day 7 - Empty API key provided');
-        showNotification('Please enter a valid API key', 'error');
-        return;
+    if (!text || typeof text !== 'string') {
+        throw new Error('Invalid text data for clipboard');
     }
     
-    if (apiKey.length < 20) {
-        console.error('[Popup] Day 7 - API key too short');
-        showNotification('API key appears to be too short. Please check your key.', 'error');
+    try {
+        // Method 1: Modern clipboard API with proper checks
+        if (navigator.clipboard && window.isSecureContext) {
+            console.log('[Popup] Trying modern clipboard API...');
+            await navigator.clipboard.writeText(text);
+            console.log('[Popup] Modern clipboard API succeeded');
+            return;
+        }
+    } catch (clipboardError) {
+        console.warn('[Popup] Modern clipboard API failed:', clipboardError.message);
+    }
+    
+    try {
+        // Method 2: Fallback to textarea method with better error handling
+        console.log('[Popup] Trying fallback clipboard method...');
+        
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.cssText = 'position: fixed; left: -999999px; top: -999999px; opacity: 0;';
+        document.body.appendChild(textArea);
+        
+        // Focus and select with error handling
+        try {
+            textArea.focus();
+            textArea.select();
+            textArea.setSelectionRange(0, text.length);
+        } catch (selectionError) {
+            console.warn('[Popup] Text selection failed:', selectionError);
+        }
+        
+        // Execute copy command
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (successful) {
+            console.log('[Popup] Fallback clipboard method succeeded');
+            return;
+        } else {
+            throw new Error('execCommand copy returned false');
+        }
+    } catch (fallbackError) {
+        console.error('[Popup] Fallback clipboard failed:', fallbackError.message);
+        
+        // Method 3: Show data in a modal for manual copy (don't throw error)
+        console.log('[Popup] Showing manual copy modal as final fallback');
+        showDataModal(text);
+        
+        // Don't throw error - just warn user
+        console.warn('[Popup] Automatic clipboard failed - manual copy modal displayed');
+        return; // Success - user can manually copy
+    }
+}
+
+// Enhanced JSONL modal for manual save
+function showJSONLModal(jsonlData) {
+    console.log('[Popup] Creating JSONL manual save modal...');
+    
+    try {
+        // Remove any existing modals
+        const existingModal = document.getElementById('jsonlModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Create modal
+        const modal = document.createElement('div');
+        modal.id = 'jsonlModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        `;
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        `;
+        
+        const header = document.createElement('h3');
+        header.textContent = 'OPERATION SURGICAL DATA++ - JSONL Log for Manual Save';
+        header.style.cssText = 'margin: 0 0 15px 0; color: #333; font-size: 18px;';
+        
+        const instruction = document.createElement('p');
+        instruction.textContent = 'Copy this JSONL data to testing/logs/iteration_log.jsonl:';
+        instruction.style.cssText = 'margin: 0 0 15px 0; color: #666; font-size: 14px; font-weight: bold;';
+        
+        const textarea = document.createElement('textarea');
+        textarea.value = jsonlData;
+        textarea.style.cssText = `
+            width: 600px; 
+            height: 400px; 
+            font-family: 'Courier New', monospace; 
+            font-size: 11px;
+            resize: none;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 15px;
+        `;
+        
+        // Auto-select text
+        setTimeout(() => {
+            try {
+                textarea.select();
+                textarea.setSelectionRange(0, jsonlData.length);
+            } catch (selectError) {
+                console.warn('[Popup] Auto-select failed:', selectError);
+            }
+        }, 100);
+        
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = 'display: flex; gap: 10px; justify-content: flex-end;';
+        
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Copy JSONL';
+        copyBtn.style.cssText = `
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        `;
+        copyBtn.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(jsonlData);
+                showSuccessMessage('JSONL data copied successfully!');
+                modal.remove();
+            } catch (retryError) {
+                console.warn('[Popup] Retry copy failed:', retryError);
+                textarea.select();
+            }
+        };
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'Close';
+        closeBtn.style.cssText = `
+            padding: 8px 16px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        `;
+        closeBtn.onclick = () => modal.remove();
+        
+        buttonContainer.appendChild(copyBtn);
+        buttonContainer.appendChild(closeBtn);
+        
+        modalContent.appendChild(header);
+        modalContent.appendChild(instruction);
+        modalContent.appendChild(textarea);
+        modalContent.appendChild(buttonContainer);
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        console.log('[Popup] JSONL manual save modal created successfully');
+        
+    } catch (modalError) {
+        console.error('[Popup] Failed to create JSONL modal:', modalError);
+        // Final fallback - just log the data
+        console.log('[Popup] MANUAL SAVE JSONL DATA:', jsonlData);
+    }
+}
+
+// Enhanced data modal for manual copy
+function showDataModal(data) {
+    console.log('[Popup] Creating manual copy modal...');
+    
+    try {
+        // Remove any existing modals
+        const existingModal = document.getElementById('dataModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Create modal
+        const modal = document.createElement('div');
+        modal.id = 'dataModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        `;
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        `;
+        
+        const header = document.createElement('h3');
+        header.textContent = 'Day 7 Test Results - Manual Copy Required';
+        header.style.cssText = 'margin: 0 0 15px 0; color: #333; font-size: 18px;';
+        
+        const instruction = document.createElement('p');
+        instruction.textContent = 'Automatic clipboard copy failed. Please manually copy the data below:';
+        instruction.style.cssText = 'margin: 0 0 15px 0; color: #666; font-size: 14px;';
+        
+        const textarea = document.createElement('textarea');
+        textarea.value = data;
+        textarea.style.cssText = `
+            width: 500px; 
+            height: 300px; 
+            font-family: 'Courier New', monospace; 
+            font-size: 12px;
+            resize: none;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 15px;
+        `;
+        
+        // Auto-select text
+        setTimeout(() => {
+            try {
+                textarea.select();
+                textarea.setSelectionRange(0, data.length);
+            } catch (selectError) {
+                console.warn('[Popup] Auto-select failed:', selectError);
+            }
+        }, 100);
+        
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = 'display: flex; gap: 10px; justify-content: flex-end;';
+        
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Try Copy Again';
+        copyBtn.style.cssText = `
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        `;
+        copyBtn.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(data);
+                showSuccessMessage('Data copied successfully!');
+                modal.remove();
+            } catch (retryError) {
+                console.warn('[Popup] Retry copy failed:', retryError);
+                textarea.select();
+            }
+        };
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'Close';
+        closeBtn.style.cssText = `
+            padding: 8px 16px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        `;
+        closeBtn.onclick = () => modal.remove();
+        
+        buttonContainer.appendChild(copyBtn);
+        buttonContainer.appendChild(closeBtn);
+        
+        modalContent.appendChild(header);
+        modalContent.appendChild(instruction);
+        modalContent.appendChild(textarea);
+        modalContent.appendChild(buttonContainer);
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        console.log('[Popup] Manual copy modal created successfully');
+        
+    } catch (modalError) {
+        console.error('[Popup] Failed to create manual copy modal:', modalError);
+        // Final fallback - just log the data
+        console.log('[Popup] MANUAL COPY DATA:', data);
+    }
+}
+
+// Update stress test results UI
+function updateStressTestUI(summary) {
+    if (!summary) return;
+    
+    try {
+        // Update performance stats with stress test data
+        if (elements.totalExtractions) {
+            elements.totalExtractions.textContent = summary.domainsInfiltrated || 0;
+        }
+        
+        if (elements.averageAccuracy) {
+            elements.averageAccuracy.textContent = `${summary.overallAIScore || 0}%`;
+        }
+        
+        // Update test status display
+        const testStatusEl = document.getElementById('testStatus');
+        if (testStatusEl) {
+            testStatusEl.innerHTML = `
+                <div class="stress-test-summary">
+                    <div class="metric">
+                        <span class="value">${summary.domainsInfiltrated || 0}/${summary.sitesTestedCount || 0}</span>
+                        <span class="label">Domains Infiltrated</span>
+                    </div>
+                    <div class="metric">
+                        <span class="value">${summary.overallAIScore || 0}%</span>
+                        <span class="label">${summary.usingRealAI ? '🤖 AI' : '⚙️ Basic'} Accuracy</span>
+                    </div>
+                    <div class="status">
+                        <span class="label">Operation</span>
+                        <span class="value">${summary.operationName || 'SURGICAL DATA++'}</span>
+                    </div>
+                    <div class="status">
+                        <span class="label">Status</span>
+                        <span class="value">📊 Complete</span>
+                    </div>
+                    <div class="status">
+                        <span class="label">Day 8 Ready</span>
+                        <span class="value">✅ Baseline Established</span>
+                    </div>
+                    <div class="weak-fields">
+                        <span class="label">Weak Fields Analysis:</span>
+                        <span class="value">${Object.entries(summary.weakFieldAnalysis || {}).slice(0, 3).map(([field, count]) => `${field} (${count})`).join(', ')}</span>
+                    </div>
+                </div>
+                <div class="export-options">
+                    <button onclick="exportStressResults('jsonl')">📄 Export JSONL</button>
+                    <button onclick="exportStressResults('csv')">📋 Export CSV</button>
+                </div>
+            `;
+        }
+        
+        console.log('[Popup] Stress test results UI updated successfully');
+        
+    } catch (uiError) {
+        console.error('[Popup] Failed to update stress test results UI:', uiError);
+    }
+}
+
+// Update test results UI (legacy support)
+function updateTestResultsUI(summary) {
+    if (!summary) return;
+    
+    try {
+        // Update performance stats
+        if (elements.totalExtractions) {
+            elements.totalExtractions.textContent = summary.sitesTestedCount || 0;
+        }
+        
+        if (elements.averageAccuracy) {
+            elements.averageAccuracy.textContent = `${summary.overallAIScore || 0}%`;
+        }
+        
+        // Update test status display
+        const testStatusEl = document.getElementById('testStatus');
+        if (testStatusEl) {
+            testStatusEl.innerHTML = `
+                <div class="test-summary">
+                    <div class="metric">
+                        <span class="value">${summary.sitesTestedCount || 0}</span>
+                        <span class="label">Sites Tested</span>
+                    </div>
+                    <div class="metric">
+                        <span class="value">${summary.overallAIScore || 0}%</span>
+                        <span class="label">${summary.usingRealAI ? '🤖 AI' : '⚙️ Basic'} Accuracy</span>
+                    </div>
+                    <div class="status">
+                        <span class="label">Cross-Vertical Average</span>
+                        <span class="value">${summary.overallAIScore || 0}%</span>
+                    </div>
+                    <div class="status">
+                        <span class="label">Day 7 Surgical Analysis</span>
+                        <span class="value">📊 Complete</span>
+                    </div>
+                    <div class="status">
+                        <span class="label">Day 8 Optimization Ready</span>
+                        <span class="value">✅ Data Captured</span>
+                    </div>
+                </div>
+                <div class="export-options">
+                    <button onclick="exportTestResults('csv')">📄 Export CSV</button>
+                    <button onclick="exportTestResults('json')">📋 Export JSON</button>
+                </div>
+            `;
+        }
+        
+        console.log('[Popup] Test results UI updated successfully');
+        
+    } catch (uiError) {
+        console.error('[Popup] Failed to update test results UI:', uiError);
+    }
+}
+
+// Error display update
+function updateErrorDisplay() {
+    try {
+        const errorContainer = document.getElementById('errorContainer');
+        if (!errorContainer) return;
+        
+        if (extractionState.errorLog.length === 0) {
+            errorContainer.style.display = 'none';
+            return;
+        }
+        
+        const errorHtml = extractionState.errorLog.map(error => `
+            <div class="error-item">
+                <strong>${error.type}</strong>
+                <p>${error.message}</p>
+                <small>${error.timestamp}</small>
+            </div>
+        `).join('');
+        
+        errorContainer.innerHTML = `
+            <div class="error-header">🔍 Error Analysis</div>
+            <div class="error-list">
+                <div class="error-summary">Extraction Errors Detected:</div>
+                ${errorHtml}
+            </div>
+        `;
+        
+        errorContainer.style.display = 'block';
+        
+    } catch (displayError) {
+        console.error('[Popup] Failed to update error display:', displayError);
+    }
+}
+
+// API key management
+async function handleSaveApiKey() {
+    if (!elements.geminiApiKey) return;
+    
+    const apiKey = elements.geminiApiKey.value.trim();
+    if (!apiKey) {
+        showErrorMessage('Please enter a valid Gemini API key');
         return;
     }
     
     try {
-        console.log(`[Popup] Day 7 - Attempting to save API key (length: ${apiKey.length})`);
-        
-        // Show loading state
-        if (elements.saveApiKey) {
-            elements.saveApiKey.disabled = true;
-            elements.saveApiKey.textContent = 'Saving...';
-        }
+        elements.saveApiKey.disabled = true;
+        elements.saveApiKey.textContent = 'Saving...';
         
         const response = await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                reject(new Error('API key save timeout'));
-            }, 10000);
-            
             chrome.runtime.sendMessage({
                 action: 'setApiKey',
                 apiKey: apiKey
             }, (response) => {
-                clearTimeout(timeout);
                 if (chrome.runtime.lastError) {
                     reject(new Error(chrome.runtime.lastError.message));
                 } else {
@@ -151,323 +739,26 @@ async function saveApiKeyFixed() {
             });
         });
         
-        console.log('[Popup] Day 7 API key save response:', response);
-        
         if (response && response.success) {
-            console.log('[Popup] Day 7 API key saved successfully');
-            showNotification(`API key saved successfully! (Length: ${response.keyLength || apiKey.length})`, 'success');
-            if (elements.geminiApiKey) elements.geminiApiKey.value = '';
-            
-            // Update API key status immediately
-            setTimeout(loadApiKeyStatus, 500);
+            showSuccessMessage('API key saved successfully!');
+            await loadApiKeyStatus();
         } else {
-            const errorMessage = response?.error || 'Failed to save API key';
-            console.error('[Popup] Day 7 API key save failed:', errorMessage);
-            throw new Error(errorMessage);
+            throw new Error(response?.error || 'Failed to save API key');
         }
-        
     } catch (error) {
-        console.error('[Popup] Day 7 API key save error:', error);
-        showNotification(`Failed to save API key: ${error.message}`, 'error');
+        console.error('[Popup] API key save error:', error);
+        showErrorMessage(`Failed to save API key: ${error.message}`);
     } finally {
-        // Reset button state
-        if (elements.saveApiKey) {
-            elements.saveApiKey.disabled = false;
-            elements.saveApiKey.textContent = 'Save API Key';
-        }
+        elements.saveApiKey.disabled = false;
+        elements.saveApiKey.textContent = 'Save API Key';
     }
 }
 
-// Day 7 Championship Feature: Cross-Vertical Data Harvester for SURGICAL ERROR ANALYSIS
-async function runCrossVerticalTest() {
-    console.log('[Popup] Day 7 Cross-Vertical Test: Starting SURGICAL data collection...');
-    
-    try {
-        // Show loading state
-        showLoadingState();
-        updateProgress(0);
-        
-        // Send request to background script for Day 7 surgical testing
-        const response = await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                reject(new Error('Cross-vertical test timeout'));
-            }, 45000);
-            
-            chrome.runtime.sendMessage({
-                action: 'getIterationLog',
-                timestamp: Date.now()
-            }, (response) => {
-                clearTimeout(timeout);
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                } else {
-                    resolve(response);
-                }
-            });
-        });
-        
-        if (response && response.success) {
-            console.log('[Popup] Day 7 cross-vertical test completed successfully');
-            
-            // Store test results
-            extractionState.testResults = response;
-            
-            // Update UI with results
-            displayTestResults(response);
-            
-            // Copy CSV to clipboard
-            await navigator.clipboard.writeText(response.csvData);
-            
-            // Update performance stats
-            updatePerformanceStats(response);
-            
-            // Show success notification with Day 7 surgical focus
-            const aiStatus = response.summary?.usingRealAI ? 'with AI' : 'basic mode';
-            const accuracy = response.summary?.overallAIScore || 0;
-            
-            showNotification(`Day 7 surgical test complete ${aiStatus}! ${accuracy}% baseline captured. CSV copied to clipboard.`, 'success');
-            
-        } else {
-            throw new Error(response?.error || 'Day 7 cross-vertical test failed');
-        }
-        
-    } catch (error) {
-        console.error('[Popup] Day 7 cross-vertical test error:', error);
-        hideLoadingState();
-        showNotification(`Day 7 test failed: ${error.message}`, 'error');
-        
-        // Log error for analysis
-        extractionState.errorLog.push({
-            type: 'DAY7_CROSS_VERTICAL_TEST_ERROR',
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-        
-        displayErrorAnalysis();
-    }
-}
-
-// Show loading state for cross-vertical test
-function showLoadingState() {
-    if (elements.logLoading) elements.logLoading.classList.add('show');
-    if (elements.logResults) elements.logResults.classList.remove('show');
-    if (elements.copyLogBtn) {
-        elements.copyLogBtn.disabled = true;
-        elements.copyLogBtn.textContent = 'Running Surgical Analysis...';
-    }
-    if (elements.testProgress) elements.testProgress.style.display = 'block';
-    
-    // Animate progress bar
-    animateProgress();
-}
-
-// Hide loading state
-function hideLoadingState() {
-    if (elements.logLoading) elements.logLoading.classList.remove('show');
-    if (elements.copyLogBtn) {
-        elements.copyLogBtn.disabled = false;
-        elements.copyLogBtn.textContent = '📋 Run Cross-Vertical Test';
-    }
-    if (elements.testProgress) elements.testProgress.style.display = 'none';
-}
-
-// Display cross-vertical test results with Day 7 surgical analysis focus
-function displayTestResults(response) {
-    hideLoadingState();
-    updateProgress(100);
-    
-    if (elements.logResults) {
-        elements.logResults.classList.add('show');
-    }
-    
-    if (elements.testSummary && response.summary) {
-        const summary = response.summary;
-        const aiStatus = summary.usingRealAI ? '🤖 AI' : '⚙️ Basic';
-        
-        elements.testSummary.innerHTML = `
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number">${summary.sitesTestedCount}</div>
-                    <div class="stat-label">Sites Tested</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number ${summary.overallAIScore >= 50 ? 'text-success' : summary.overallAIScore >= 25 ? 'text-warning' : 'text-error'}">${summary.overallAIScore}%</div>
-                    <div class="stat-label">${aiStatus} Accuracy</div>
-                </div>
-            </div>
-            <div class="site-results" style="margin-top: 12px;">
-                <div class="site-status">
-                    <span class="site-name">Cross-Vertical Average</span>
-                    <span class="site-score ${getScoreClass(summary.overallAIScore)}">${summary.overallAIScore}%</span>
-                </div>
-                <div class="site-status">
-                    <span class="site-name">Day 7 Surgical Analysis</span>
-                    <span class="site-score score-good">📊 Complete</span>
-                </div>
-                <div class="site-status">
-                    <span class="site-name">Day 8 Optimization Ready</span>
-                    <span class="site-score score-excellent">✅ Data Captured</span>
-                </div>
-            </div>
-        `;
-    }
-}
-
-// Display single extraction results with Day 7 focus
-function displayExtractionResults(data, mode, metadata) {
-    if (elements.extractionResults) {
-        elements.extractionResults.classList.add('show');
-    }
-    
-    if (elements.resultsBadge) {
-        const isAI = metadata?.realAI;
-        const badgeClass = isAI ? 'badge-ai' : (mode === 'enhanced' ? 'badge-ai' : 'badge-basic');
-        const icon = isAI ? '🤖' : (mode === 'enhanced' ? '🚀' : '⚡');
-        const label = isAI ? 'AI Enhanced' : (mode === 'enhanced' ? 'Enhanced' : 'Basic');
-        
-        elements.resultsBadge.innerHTML = `${icon} ${label} Extraction Complete`;
-        elements.resultsBadge.parentElement.className = `badge ${badgeClass}`;
-    }
-    
-    if (elements.statsGrid && data) {
-        let fieldsExtracted = 0;
-        let totalFields = 0;
-        
-        // Count extracted fields
-        const fields = ['title', 'author', 'publication_date', 'main_content_summary', 'category', 'description', 'price', 'ingredients', 'instructions', 'reviews_rating'];
-        
-        fields.forEach(field => {
-            totalFields++;
-            if (data[field] && data[field] !== null && data[field] !== '') {
-                if (Array.isArray(data[field])) {
-                    if (data[field].length > 0) fieldsExtracted++;
-                } else {
-                    fieldsExtracted++;
-                }
-            }
-        });
-        
-        const accuracy = Math.round((fieldsExtracted / totalFields) * 100);
-        const isAI = metadata?.realAI;
-        const duration = metadata?.extractionTime || data.extractionMetadata?.duration || 'N/A';
-        const strategy = data.extractionMetadata?.strategy || metadata?.method || 'AUTO';
-        
-        elements.statsGrid.innerHTML = `
-            <div class="stat-card">
-                <div class="stat-number">${fieldsExtracted}</div>
-                <div class="stat-label">Fields Extracted</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number ${accuracy >= 50 ? 'text-success' : accuracy >= 25 ? 'text-warning' : 'text-error'}">${accuracy}%</div>
-                <div class="stat-label">Accuracy</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">${typeof duration === 'number' ? duration + 'ms' : duration}</div>
-                <div class="stat-label">Duration</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">${strategy}</div>
-                <div class="stat-label">${isAI ? '🤖 AI' : 'Basic'}</div>
-            </div>
-        `;
-    }
-}
-
-// Perform single page extraction with Day 7 focus
-async function performExtraction(mode) {
-    console.log(`[Popup] Day 7 performing ${mode} extraction...`);
-    
-    try {
-        // Show loading state
-        if (elements.extractionLoading) elements.extractionLoading.classList.add('show');
-        if (elements.extractionResults) elements.extractionResults.classList.remove('show');
-        if (elements.extractBtn) {
-            elements.extractBtn.disabled = true;
-            elements.extractBtn.textContent = 'Extracting...';
-        }
-        if (elements.enhancedBtn) {
-            elements.enhancedBtn.disabled = true;
-            elements.enhancedBtn.textContent = 'Processing...';
-        }
-        
-        // Send extraction request
-        const action = mode === 'enhanced' ? 'extractData' : 'extractPageData';
-        
-        const response = await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                reject(new Error('Extraction timeout'));
-            }, 20000);
-            
-            chrome.runtime.sendMessage({ action }, (response) => {
-                clearTimeout(timeout);
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                } else {
-                    resolve(response);
-                }
-            });
-        });
-        
-        if (response && response.success) {
-            console.log('[Popup] Day 7 extraction successful');
-            
-            // Store extraction data
-            extractionState.currentData = response.data;
-            
-            // Display results
-            displayExtractionResults(response.data, mode, response.metadata);
-            
-            // Update performance stats
-            extractionState.performanceStats.totalExtractions++;
-            updatePerformanceDisplay();
-            
-            const aiStatus = response.metadata?.realAI ? ' with AI' : '';
-            showNotification(`Day 7 extraction completed successfully${aiStatus}!`, 'success');
-            
-        } else {
-            throw new Error(response?.error || 'Day 7 extraction failed');
-        }
-        
-    } catch (error) {
-        console.error('[Popup] Day 7 extraction error:', error);
-        showNotification(`Day 7 extraction failed: ${error.message}`, 'error');
-        
-        // Log error
-        extractionState.errorLog.push({
-            type: 'DAY7_SINGLE_EXTRACTION_ERROR',
-            message: error.message,
-            mode: mode,
-            timestamp: new Date().toISOString()
-        });
-        
-        displayErrorAnalysis();
-        
-    } finally {
-        // Reset button states
-        if (elements.extractionLoading) elements.extractionLoading.classList.remove('show');
-        if (elements.extractBtn) {
-            elements.extractBtn.disabled = false;
-            elements.extractBtn.textContent = '🎯 Extract Current Page';
-        }
-        if (elements.enhancedBtn) {
-            elements.enhancedBtn.disabled = false;
-            elements.enhancedBtn.textContent = '🚀 Enhanced Extraction';
-        }
-    }
-}
-
-// Load API key status with Day 7 messaging
+// Load API key status
 async function loadApiKeyStatus() {
     try {
         const response = await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                reject(new Error('API key status check timeout'));
-            }, 5000);
-            
-            chrome.runtime.sendMessage({
-                action: 'getApiKey'
-            }, (response) => {
-                clearTimeout(timeout);
+            chrome.runtime.sendMessage({ action: 'getApiKey' }, (response) => {
                 if (chrome.runtime.lastError) {
                     reject(new Error(chrome.runtime.lastError.message));
                 } else {
@@ -477,262 +768,316 @@ async function loadApiKeyStatus() {
         });
         
         if (response && response.hasKey) {
-            const keyInfo = response.keyLength ? ` (${response.keyLength} chars)` : '';
-            showNotification(`Day 7 AI extraction enabled${keyInfo}`, 'success');
-            console.log('[Popup] Day 7 AI extraction ready');
-        } else {
-            console.log('[Popup] Day 7 - No API key configured, basic extraction only');
+            const keyDisplay = `${'*'.repeat(Math.max(0, response.keyLength - 8))}${response.keyLength > 8 ? '********' : ''}`;
+            if (elements.geminiApiKey) {
+                elements.geminiApiKey.placeholder = `API Key Set (${keyDisplay})`;
+            }
         }
-        
     } catch (error) {
-        console.log('[Popup] Day 7 - Could not check API key status:', error.message);
+        console.warn('[Popup] API key status check failed:', error);
     }
 }
 
-// Get CSS class for score styling (Day 7 baseline expectations)
-function getScoreClass(score) {
-    if (score >= 70) return 'score-excellent';
-    if (score >= 50) return 'score-good';
-    if (score >= 30) return 'score-fair';
-    return 'score-poor';
-}
-
-// Animate progress bar during testing
-function animateProgress() {
-    let progress = 0;
-    const interval = setInterval(() => {
-        progress += Math.random() * 12;
-        if (progress >= 95) {
-            clearInterval(interval);
-            progress = 95;
-        }
-        updateProgress(progress);
-    }, 600);
+// Basic extraction handler
+async function handleExtraction(type) {
+    console.log(`[Popup] Starting Day 7 ${type} extraction...`);
     
-    // Clear interval after 40 seconds (timeout)
-    setTimeout(() => {
-        clearInterval(interval);
-        updateProgress(100);
-    }, 40000);
-}
-
-// Update progress bar
-function updateProgress(percentage) {
-    if (elements.progressFill) {
-        elements.progressFill.style.width = `${percentage}%`;
-    }
-}
-
-// Export test results (keeping existing functionality)
-async function exportTestResults(format) {
-    if (!extractionState.testResults) {
-        showNotification('No test results to export', 'error');
-        return;
-    }
+    const button = type === 'basic' ? elements.extractBtn : elements.enhancedBtn;
+    const originalText = button.textContent;
     
     try {
-        let data, filename, mimeType;
+        // Update button state
+        button.disabled = true;
+        button.textContent = '⏳ Extracting...';
         
-        if (format === 'csv') {
-            data = extractionState.testResults.csvData;
-            filename = `day7-surgical-results-${new Date().toISOString().split('T')[0]}.csv`;
-            mimeType = 'text/csv';
+        // Clear previous results
+        extractionState.currentData = null;
+        
+        // Send extraction request
+        const response = await new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage({
+                action: type === 'basic' ? 'extractPageData' : 'extractData'
+            }, (response) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(response);
+                }
+            });
+        });
+        
+        console.log(`[Popup] Day 7 ${type} extraction response:`, response);
+        
+        if (response && response.success) {
+            extractionState.currentData = response;
+            displayExtractionResults(response, type);
+            updatePerformanceStats();
+            showSuccessMessage(`Day 7 ${type} extraction completed successfully!`);
         } else {
-            data = JSON.stringify(extractionState.testResults, null, 2);
-            filename = `day7-surgical-results-${new Date().toISOString().split('T')[0]}.json`;
-            mimeType = 'application/json';
+            throw new Error(response?.error || `${type} extraction failed`);
         }
         
-        // Create download
-        const blob = new Blob([data], { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        
-        URL.revokeObjectURL(url);
-        
-        showNotification(`Day 7 surgical data exported as ${format.toUpperCase()}`, 'success');
-        
     } catch (error) {
-        console.error('[Popup] Day 7 export error:', error);
-        showNotification(`Day 7 export failed: ${error.message}`, 'error');
+        console.error(`[Popup] Day 7 ${type} extraction error:`, error);
+        showErrorMessage(`Day 7 ${type} extraction failed: ${error.message}`);
+    } finally {
+        // Reset button state
+        button.disabled = false;
+        button.textContent = originalText;
     }
 }
 
-// Export single extraction result
-async function exportSingleResult(format) {
-    if (!extractionState.currentData) {
-        showNotification('No extraction data to export', 'error');
-        return;
-    }
+// Display extraction results
+function displayExtractionResults(data, type) {
+    if (!elements.resultsContainer || !data) return;
     
     try {
-        let data, filename, mimeType;
+        const fieldsExtracted = Object.keys(data.data || {}).filter(key => 
+            data.data[key] && data.data[key] !== null && 
+            (Array.isArray(data.data[key]) ? data.data[key].length > 0 : true)
+        ).length;
         
-        if (format === 'csv') {
-            data = convertToCSV(extractionState.currentData);
-            filename = `day7-extraction-result-${new Date().toISOString().split('T')[0]}.csv`;
-            mimeType = 'text/csv';
-        } else {
-            data = JSON.stringify(extractionState.currentData, null, 2);
-            filename = `day7-extraction-result-${new Date().toISOString().split('T')[0]}.json`;
-            mimeType = 'application/json';
-        }
+        const totalFields = Object.keys(data.data || {}).length;
+        const accuracy = totalFields > 0 ? Math.round((fieldsExtracted / totalFields) * 100) : 0;
         
-        // Create download
-        const blob = new Blob([data], { type: mimeType });
-        const url = URL.createObjectURL(blob);
+        const extractionTime = data.metadata?.extractionTime || 0;
+        const strategy = data.metadata?.strategy || 'AUTO';
         
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        
-        URL.revokeObjectURL(url);
-        
-        showNotification(`Day 7 data exported as ${format.toUpperCase()}`, 'success');
-        
-    } catch (error) {
-        console.error('[Popup] Day 7 single export error:', error);
-        showNotification(`Day 7 export failed: ${error.message}`, 'error');
-    }
-}
-
-// Copy results to clipboard
-async function copyResultsToClipboard() {
-    if (!extractionState.currentData) {
-        showNotification('No data to copy', 'error');
-        return;
-    }
-    
-    try {
-        const dataString = JSON.stringify(extractionState.currentData, null, 2);
-        await navigator.clipboard.writeText(dataString);
-        showNotification('Day 7 results copied to clipboard!', 'success');
-        
-    } catch (error) {
-        console.error('[Popup] Day 7 copy error:', error);
-        showNotification('Failed to copy to clipboard', 'error');
-    }
-}
-
-// Convert object to CSV format
-function convertToCSV(data) {
-    const headers = Object.keys(data);
-    const values = headers.map(header => {
-        const value = data[header];
-        if (Array.isArray(value)) {
-            return `"${value.join('; ')}"`;
-        } else if (value === null || value === undefined) {
-            return '';
-        } else {
-            return `"${String(value).replace(/"/g, '""')}"`;
-        }
-    });
-    
-    return headers.join(',') + '\n' + values.join(',');
-}
-
-// Display error analysis
-function displayErrorAnalysis() {
-    if (extractionState.errorLog.length === 0) {
-        if (elements.errorAnalysisSection) {
-            elements.errorAnalysisSection.style.display = 'none';
-        }
-        return;
-    }
-    
-    if (elements.errorAnalysisSection) {
-        elements.errorAnalysisSection.style.display = 'block';
-    }
-    
-    if (elements.errorList) {
-        const errorHTML = extractionState.errorLog.slice(-5).map(error => `
-            <div style="margin-bottom: 8px; padding: 6px; background: #fff; border-radius: 4px; border-left: 3px solid #ef4444;">
-                <div style="font-weight: 600; font-size: 10px;">${error.type}</div>
-                <div style="font-size: 10px; margin-top: 2px;">${error.message}</div>
-                <div style="font-size: 9px; color: #6b7280; margin-top: 2px;">${new Date(error.timestamp).toLocaleTimeString()}</div>
+        elements.resultsContainer.innerHTML = `
+            <div class="extraction-summary">
+                <div class="summary-card">
+                    <div class="metric-large">
+                        <span class="value">${fieldsExtracted}</span>
+                        <span class="label">Fields Extracted</span>
+                    </div>
+                    <div class="metric-large">
+                        <span class="value">${accuracy}%</span>
+                        <span class="label">Accuracy</span>
+                    </div>
+                    <div class="metric-large">
+                        <span class="value">${extractionTime}ms</span>
+                        <span class="label">Duration</span>
+                    </div>
+                </div>
+                <div class="extraction-details">
+                    <span class="strategy">${strategy}</span>
+                    <span class="method">${type === 'basic' ? 'Basic' : data.metadata?.realAI ? 'AI' : 'Basic'}</span>
+                </div>
             </div>
-        `).join('');
+        `;
         
-        elements.errorList.innerHTML = errorHTML;
+        elements.resultsContainer.style.display = 'block';
+        
+    } catch (displayError) {
+        console.error('[Popup] Failed to display extraction results:', displayError);
     }
 }
 
-// Update performance statistics
-function updatePerformanceStats(testResults) {
-    if (testResults && testResults.summary) {
-        extractionState.performanceStats.lastTestTimestamp = Date.now();
+// Performance stats update
+function updatePerformanceStats() {
+    try {
+        extractionState.performanceStats.totalExtractions++;
         
-        // Update average accuracy (simple moving average)
-        const newAccuracy = testResults.summary.overallAIScore;
-        const currentAvg = extractionState.performanceStats.averageAccuracy;
-        const totalTests = extractionState.performanceStats.totalExtractions + 1;
+        if (extractionState.currentData) {
+            const fieldsExtracted = Object.keys(extractionState.currentData.data || {}).filter(key => 
+                extractionState.currentData.data[key] && extractionState.currentData.data[key] !== null
+            ).length;
+            const totalFields = Object.keys(extractionState.currentData.data || {}).length;
+            const accuracy = totalFields > 0 ? Math.round((fieldsExtracted / totalFields) * 100) : 0;
+            
+            // Simple running average
+            const currentAvg = extractionState.performanceStats.averageAccuracy || 0;
+            const count = extractionState.performanceStats.totalExtractions;
+            extractionState.performanceStats.averageAccuracy = Math.round(
+                (currentAvg * (count - 1) + accuracy) / count
+            );
+        }
         
-        extractionState.performanceStats.averageAccuracy = Math.round(
-            ((currentAvg * (totalTests - 1)) + newAccuracy) / totalTests
-        );
+        extractionState.performanceStats.lastTestTimestamp = new Date().toISOString();
+        
+        // Update UI
+        if (elements.totalExtractions) {
+            elements.totalExtractions.textContent = extractionState.performanceStats.totalExtractions;
+        }
+        if (elements.averageAccuracy) {
+            elements.averageAccuracy.textContent = `${extractionState.performanceStats.averageAccuracy}%`;
+        }
+        
+        // Save to storage
+        saveStateToStorage();
+        
+    } catch (statsError) {
+        console.error('[Popup] Failed to update performance stats:', statsError);
+    }
+}
+
+// Data export
+async function exportData(format) {
+    if (!extractionState.currentData) {
+        showErrorMessage('No data to export. Please run an extraction first.');
+        return;
     }
     
-    updatePerformanceDisplay();
-    savePerformanceStats();
+    try {
+        let exportText = '';
+        
+        switch (format) {
+            case 'json':
+                exportText = JSON.stringify(extractionState.currentData, null, 2);
+                break;
+            case 'csv':
+                exportText = convertToCSV(extractionState.currentData.data);
+                break;
+            case 'copy':
+                exportText = JSON.stringify(extractionState.currentData, null, 2);
+                break;
+        }
+        
+        if (format === 'copy') {
+            await copyToClipboardSafe(exportText);
+            showSuccessMessage('Data copied to clipboard!');
+        } else {
+            // For file downloads, show in modal
+            showDataModal(exportText);
+        }
+        
+    } catch (error) {
+        console.error(`[Popup] ${format} export error:`, error);
+        showErrorMessage(`${format.toUpperCase()} export failed: ${error.message}`);
+    }
 }
 
-// Update performance display
-function updatePerformanceDisplay() {
-    if (elements.totalExtractions) {
-        elements.totalExtractions.textContent = extractionState.performanceStats.totalExtractions;
-    }
+// CSV conversion utility
+function convertToCSV(data) {
+    if (!data || typeof data !== 'object') return '';
     
-    if (elements.averageAccuracy) {
-        elements.averageAccuracy.textContent = `${extractionState.performanceStats.averageAccuracy}%`;
+    try {
+        const headers = Object.keys(data);
+        const values = headers.map(key => {
+            const value = data[key];
+            if (Array.isArray(value)) {
+                return `"${value.join('; ')}"`;
+            }
+            if (typeof value === 'string') {
+                return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value || '';
+        });
+        
+        return `${headers.join(',')}\n${values.join(',')}`;
+        
+    } catch (csvError) {
+        console.error('[Popup] CSV conversion error:', csvError);
+        return '';
     }
 }
 
-// Save performance stats to storage
-function savePerformanceStats() {
-    chrome.storage.local.set({
-        performanceStats: extractionState.performanceStats,
-        errorLog: extractionState.errorLog
-    });
+// Storage management
+function saveStateToStorage() {
+    try {
+        chrome.storage.local.set({
+            extractionState: extractionState
+        });
+    } catch (error) {
+        console.warn('[Popup] Failed to save state to storage:', error);
+    }
 }
 
-// Load stored performance data
 function loadStoredData() {
-    chrome.storage.local.get(['performanceStats', 'errorLog'], (result) => {
-        if (result.performanceStats) {
-            extractionState.performanceStats = { ...extractionState.performanceStats, ...result.performanceStats };
-        }
-        if (result.errorLog) {
-            extractionState.errorLog = result.errorLog;
+    try {
+        chrome.storage.local.get(['extractionState'], (result) => {
+            if (chrome.runtime.lastError) {
+                console.warn('[Popup] Storage access error:', chrome.runtime.lastError);
+                return;
+            }
+            
+            if (result.extractionState) {
+                extractionState = { ...extractionState, ...result.extractionState };
+                
+                // Update UI with stored stats
+                if (elements.totalExtractions) {
+                    elements.totalExtractions.textContent = extractionState.performanceStats.totalExtractions || 0;
+                }
+                if (elements.averageAccuracy) {
+                    elements.averageAccuracy.textContent = `${extractionState.performanceStats.averageAccuracy || 0}%`;
+                }
+            }
+        });
+    } catch (error) {
+        console.warn('[Popup] Failed to load stored data:', error);
+    }
+}
+
+// Message display utilities
+function showSuccessMessage(message) {
+    showMessage(message, 'success');
+}
+
+function showErrorMessage(message) {
+    showMessage(message, 'error');
+}
+
+function showMessage(message, type) {
+    try {
+        // Create or update status message element
+        let statusEl = document.getElementById('statusMessage');
+        if (!statusEl) {
+            statusEl = document.createElement('div');
+            statusEl.id = 'statusMessage';
+            statusEl.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 10px 15px;
+                border-radius: 4px;
+                color: white;
+                font-weight: bold;
+                z-index: 1000;
+                max-width: 300px;
+                text-align: center;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                font-size: 14px;
+            `;
+            document.body.appendChild(statusEl);
         }
         
-        updatePerformanceDisplay();
-        displayErrorAnalysis();
+        statusEl.textContent = message;
+        statusEl.style.backgroundColor = type === 'success' ? '#4CAF50' : '#f44336';
+        statusEl.style.display = 'block';
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            if (statusEl && statusEl.parentNode) {
+                statusEl.style.display = 'none';
+            }
+        }, 5000);
+        
+    } catch (messageError) {
+        console.error('[Popup] Failed to show message:', messageError);
+        // Fallback to console
+        console.log(`[Popup] ${type.toUpperCase()}: ${message}`);
+    }
+}
+
+// Global error handler
+window.addEventListener('error', (event) => {
+    console.error('[Popup] Global error:', event.error);
+    extractionState.errorLog.push({
+        type: 'GLOBAL_ERROR',
+        message: event.error?.message || 'Unknown global error',
+        timestamp: new Date().toLocaleTimeString()
     });
-}
+});
 
-// Show notification
-function showNotification(message, type = 'success') {
-    if (!elements.notification) return;
-    
-    elements.notification.textContent = message;
-    elements.notification.className = `notification ${type} show`;
-    
-    // Auto-hide after appropriate time based on type
-    const hideDelay = type === 'error' ? 5000 : 3000;
-    setTimeout(() => {
-        if (elements.notification) {
-            elements.notification.classList.remove('show');
-        }
-    }, hideDelay);
-}
+// Global unhandled promise rejection handler
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('[Popup] Unhandled promise rejection:', event.reason);
+    extractionState.errorLog.push({
+        type: 'PROMISE_REJECTION',
+        message: event.reason?.message || 'Unhandled promise rejection',
+        timestamp: new Date().toLocaleTimeString()
+    });
+});
 
-console.log('[Popup] Day 7 SURGICAL Data Harvester Controller ready - Surgical error analysis edition loaded');
+console.log('[Popup] Day 7 OPERATION SURGICAL DATA++ Controller loaded - Stress test ready');

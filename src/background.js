@@ -1,10 +1,10 @@
-// Day 7 Championship Cross-Vertical Data Harvester Engine - REAL TESTING ONLY
+// Day 7 Championship Cross-Vertical Data Harvester Engine - OPERATION SURGICAL DATA++
 
-console.log('[Background] Day 7 SURGICAL Data Harvester Engine - Real cross-vertical testing FIXED');
+console.log('[Background] Day 7 SURGICAL Data++ Engine - Real cross-vertical stress testing');
 
-// Day 7 AI Configuration
+// Day 7 AI Configuration - CRITICAL FIX: Correct model name
 let AI_CONFIG = {
-    model: 'gemini-1.5-flash-latest',
+    model: 'gemini-1.5-flash', // 🎯 FIXED: Correct model
     maxTokens: 3000,
     temperature: 0.1,
     apiKey: null
@@ -20,7 +20,7 @@ chrome.storage.local.get(['geminiApiKey'], (result) => {
     }
 });
 
-// Day 7 Enhanced message listener - REAL TESTING ONLY
+// Day 7 Enhanced message listener - REAL STRESS TESTING
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log(`[Background] Day 7 request received: ${request.action}`);
     
@@ -35,8 +35,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 return true;
                 
             case 'getIterationLog':
-                // 🎯 CRITICAL FIX: Only call REAL testing function
-                handleDay7RealCrossVerticalTest(request, sendResponse);
+                // Legacy support - redirect to stress test
+                handleDay7StressTest(request, sendResponse);
+                return true;
+                
+            case 'runStressTest':
+                // 🎯 NEW: Operation Surgical Data++ stress test
+                handleDay7StressTest(request, sendResponse);
                 return true;
                 
             case 'setApiKey':
@@ -196,7 +201,7 @@ async function handleDay7EnhancedExtraction(request, sender, sendResponse) {
         if (AI_CONFIG.apiKey && AI_CONFIG.apiKey.length > 0) {
             try {
                 console.log('[Background] Running Day 7 AI extraction with valid API key...');
-                const aiResult = await executeDay7AIExtraction(pageDataResponse.data, AI_CONFIG);
+                const aiResult = await executeDay7AIExtractionV4(pageDataResponse.data, AI_CONFIG);
                 
                 if (aiResult && aiResult.success) {
                     console.log('[Background] Day 7 AI extraction successful');
@@ -224,73 +229,75 @@ async function handleDay7EnhancedExtraction(request, sender, sendResponse) {
     }
 }
 
-// 🎯 **DAY 7 REAL CROSS-VERTICAL TEST - FIXED VERSION**
-async function handleDay7RealCrossVerticalTest(request, sendResponse) {
-    console.log('[Background] Day 7 REAL Cross-Vertical Test: Starting surgical validation across real sites...');
+// 🎯 **OPERATION SURGICAL DATA++ - REAL STRESS TEST**
+async function handleDay7StressTest(request, sendResponse) {
+    console.log('[Background] Day 7 OPERATION SURGICAL DATA++ - Starting real stress test across enemy terrain...');
     
     const testStartTime = Date.now();
     const errorLog = [];
+    const jsonlEntries = [];
     
     try {
-        // Day 7 REAL test sites with actual URLs - NO SIMULATION
-        const testSites = [
+        // Day 7 STRESS TEST SITES - Real enemy terrain with wildcard
+        const stressSites = [
             {
                 name: 'Bloomberg',
                 url: 'https://www.bloomberg.com/news/articles/2024-08-15/tech-stocks-rise-as-inflation-data-boosts-rate-cut-hopes',
+                domain: 'bloomberg.com',
+                type: 'news',
                 fields: ['title', 'author', 'publication_date', 'main_content_summary', 'category'],
                 timeout: 15000
             },
             {
                 name: 'Amazon', 
                 url: 'https://www.amazon.com/dp/B08N5WRWNW',
+                domain: 'amazon.com',
+                type: 'ecommerce',
                 fields: ['title', 'price', 'reviews_rating', 'description', 'images'],
                 timeout: 20000
             },
             {
                 name: 'AllRecipes',
                 url: 'https://www.allrecipes.com/recipe/213742/cheesy-chicken-broccoli-casserole/',
+                domain: 'allrecipes.com',
+                type: 'recipe',
                 fields: ['title', 'ingredients', 'instructions', 'main_content_summary'],
                 timeout: 15000
             },
             {
-                name: 'Wikipedia',
-                url: 'https://en.wikipedia.org/wiki/Artificial_intelligence',
-                fields: ['title', 'main_content_summary', 'links', 'category'],
-                timeout: 12000
-            },
-            {
-                name: 'Medium',
-                url: 'https://medium.com/javascript-scene/master-the-javascript-interview-what-s-the-difference-between-class-prototypal-inheritance-e4cd0a7562e9',
-                fields: ['title', 'author', 'publication_date', 'main_content_summary'],
+                name: 'ProductHunt',
+                url: 'https://www.producthunt.com/posts/notion-2',
+                domain: 'producthunt.com', 
+                type: 'wildcard',
+                fields: ['title', 'description', 'main_content_summary', 'category'],
                 timeout: 15000
             }
         ];
 
-        const testResults = [];
+        const stressResults = [];
 
-        // Day 7 Enhanced CSV headers with real testing data
-        const csvHeaders = 'Site,Field,PromptVersion,BasicAccuracy,AIAccuracy,NullReturned,Timestamp,FieldScore,Quality,ErrorType,Day7Target,UsingRealAI,RealSiteTested\n';
-        let csvData = csvHeaders;
+        // Day 7 JSONL format initialization
+        let csvData = 'Site,Field,PromptVersion,BasicAccuracy,AIAccuracy,NullReturned,Timestamp,FieldScore,Quality,ErrorType,Day7Target,UsingRealAI,RealSiteTested\n';
         const timestamp = new Date().toISOString();
 
-        console.log(`[Background] Day 7 REAL testing: Will test ${testSites.length} actual sites...`);
+        console.log(`[Background] Day 7 STRESS TEST: Will traverse ${stressSites.length} enemy domains...`);
 
-        // 🎯 REAL CROSS-VERTICAL TESTING - Test each actual site
-        for (const site of testSites) {
-            console.log(`[Background] Day 7 REAL testing: Starting ${site.name} at ${site.url}...`);
+        // 🎯 REAL CROSS-DOMAIN TRAVERSAL - No simulations, only truth
+        for (const site of stressSites) {
+            console.log(`[Background] Day 7 STRESS TEST: Infiltrating ${site.name} at ${site.domain}...`);
             
             let siteResult = null;
             let testTab = null;
             
             try {
-                // Create new tab for this site
+                // Create new tab for enemy domain infiltration
                 testTab = await chrome.tabs.create({
                     url: site.url,
                     active: false
                 });
-                console.log(`[Background] Day 7 created tab ${testTab.id} for ${site.name}`);
+                console.log(`[Background] Day 7 created stealth tab ${testTab.id} for ${site.domain}`);
 
-                // Wait for page load with timeout
+                // Wait for domain load with tactical timeout
                 await new Promise((resolve, reject) => {
                     let loadTimeout;
                     let isResolved = false;
@@ -306,110 +313,164 @@ async function handleDay7RealCrossVerticalTest(request, sendResponse) {
 
                     chrome.tabs.onUpdated.addListener(onUpdated);
 
-                    // Set timeout for page load
+                    // Set tactical timeout for domain load
                     loadTimeout = setTimeout(() => {
                         if (!isResolved) {
                             isResolved = true;
                             chrome.tabs.onUpdated.removeListener(onUpdated);
-                            console.warn(`[Background] Day 7 ${site.name} load timeout, proceeding anyway...`);
-                            resolve(); // Don't reject, just proceed
+                            console.warn(`[Background] Day 7 ${site.domain} load timeout, proceeding with tactical extraction...`);
+                            resolve(); // Continue mission
                         }
                     }, site.timeout);
                 });
 
-                console.log(`[Background] Day 7 ${site.name} loaded, injecting content script...`);
+                console.log(`[Background] Day 7 ${site.domain} infiltrated, deploying extraction payload...`);
 
-                // Inject content script
+                // Deploy content script payload
                 await chrome.scripting.executeScript({
                     target: { tabId: testTab.id },
                     files: ['content.js']
                 });
 
-                // Wait for script initialization
+                // Wait for payload initialization
                 await new Promise(resolve => setTimeout(resolve, 2000));
 
-                // Extract data from the real site
+                // Execute data extraction from enemy domain
                 const extractionResponse = await chrome.tabs.sendMessage(testTab.id, {
                     action: "extractPageData"
                 });
 
                 if (extractionResponse && extractionResponse.success) {
-                    console.log(`[Background] Day 7 ${site.name} extraction successful`);
+                    console.log(`[Background] Day 7 ${site.domain} extraction successful - data acquired`);
 
-                    // Run Day 7 Basic extraction
+                    // Run Day 7 Basic extraction (tactical baseline)
                     const basicResult = executeDay7BasicExtraction(extractionResponse.data);
 
-                    // Run Day 7 AI extraction if API key available
+                    // Run Day 7 AI extraction with prompt_v4 (strategic enhancement)
                     let aiResult = basicResult;
                     let usingRealAI = false;
                     
                     if (AI_CONFIG.apiKey && AI_CONFIG.apiKey.length > 0 && extractionResponse.data.main_content_summary) {
                         try {
-                            console.log(`[Background] Day 7 ${site.name} - attempting AI extraction...`);
-                            const aiResponse = await executeDay7AIExtraction(extractionResponse.data, AI_CONFIG);
+                            console.log(`[Background] Day 7 ${site.domain} - deploying AI enhancement with prompt_v4...`);
+                            const aiResponse = await executeDay7AIExtractionV4(extractionResponse.data, AI_CONFIG);
                             
                             if (aiResponse && aiResponse.success) {
                                 aiResult = aiResponse;
                                 usingRealAI = aiResponse.metadata?.realAI || false;
-                                console.log(`[Background] Day 7 ${site.name} AI extraction: ${usingRealAI ? 'SUCCESS' : 'FALLBACK'}`);
+                                console.log(`[Background] Day 7 ${site.domain} AI enhancement: ${usingRealAI ? 'STRATEGIC SUCCESS' : 'TACTICAL FALLBACK'}`);
                             }
                         } catch (aiError) {
-                            console.warn(`[Background] Day 7 ${site.name} AI extraction failed:`, aiError);
+                            console.warn(`[Background] Day 7 ${site.domain} AI enhancement failed:`, aiError);
                         }
                     }
 
-                    // Calculate scores for this real site
+                    // Calculate stress test scores for this domain
                     let siteBasicScore = 0;
                     let siteAIScore = 0;
+                    const weakFields = [];
                     
                     for (const field of site.fields) {
                         const basicValue = basicResult.data[field];
                         const aiValue = aiResult.data[field];
 
-                        // Day 7 field scoring
+                        // Day 7 field scoring with stress test precision
                         const basicScore = calculateDay7FieldScore(basicValue, field);
                         const aiScore = calculateDay7FieldScore(aiValue, field);
                         
                         siteBasicScore += basicScore;
                         siteAIScore += aiScore;
 
-                        // Add to Day 7 CSV with REAL site data
-                        csvData += `${site.name},${field},day7-surgical,${basicScore},${aiScore},${!aiValue},"${timestamp}",${aiScore},${getDay7QualityLabel(aiScore)},${!aiValue ? 'MISSING_FIELD' : 'SUCCESS'},surgical-baseline,${usingRealAI},TRUE\n`;
+                        // Track weak fields for strategic analysis
+                        if (aiScore < 60) {
+                            weakFields.push(field);
+                        }
+
+                        // Add to Day 7 CSV with REAL domain data
+                        csvData += `${site.name},${field},prompt_v4,${basicScore},${aiScore},${!aiValue},"${timestamp}",${aiScore},${getDay7QualityLabel(aiScore)},${!aiValue ? 'MISSING_FIELD' : 'SUCCESS'},stress-test-baseline,${usingRealAI},TRUE\n`;
                     }
 
                     const avgBasicScore = Math.round(siteBasicScore / site.fields.length);
                     const avgAIScore = Math.round(siteAIScore / site.fields.length);
+                    const accuracy = avgAIScore / 100; // Convert to 0-1 scale for JSONL
+
+                    // Create JSONL entry for this domain stress test
+                    const jsonlEntry = {
+                        timestamp: timestamp,
+                        domain: site.domain,
+                        site_name: site.name,
+                        site_type: site.type,
+                        accuracy: accuracy,
+                        basic_accuracy: avgBasicScore / 100,
+                        ai_accuracy: avgAIScore / 100,
+                        weak_fields: weakFields,
+                        fields_tested: site.fields.length,
+                        fields_extracted: site.fields.filter(f => aiResult.data[f]).length,
+                        using_real_ai: usingRealAI,
+                        extraction_time: aiResult.metadata?.extractionTime || 0,
+                        day7_version: 'surgical-stress-test'
+                    };
+
+                    jsonlEntries.push(jsonlEntry);
 
                     siteResult = {
                         site: site.name,
+                        domain: site.domain,
                         url: site.url,
+                        type: site.type,
                         basicScore: avgBasicScore,
                         aiScore: avgAIScore,
+                        accuracy: accuracy,
+                        weakFields: weakFields,
                         fieldsExtracted: site.fields.filter(f => aiResult.data[f]).length,
                         totalFields: site.fields.length,
                         usingRealAI: usingRealAI,
                         realSiteTested: true
                     };
 
-                    testResults.push(siteResult);
-                    console.log(`[Background] Day 7 ${site.name} REAL TEST COMPLETE - Basic: ${avgBasicScore}%, AI: ${avgAIScore}%`);
+                    stressResults.push(siteResult);
+                    console.log(`[Background] Day 7 ${site.domain} STRESS TEST COMPLETE - Basic: ${avgBasicScore}%, AI: ${avgAIScore}%, Weak Fields: [${weakFields.join(', ')}]`);
                 } else {
-                    throw new Error(`Failed to extract data from real ${site.name} site`);
+                    throw new Error(`Failed to extract data from enemy domain ${site.domain}`);
                 }
             } catch (siteError) {
-                console.error(`[Background] Day 7 ${site.name} test failed:`, siteError);
+                console.error(`[Background] Day 7 ${site.domain} stress test failed:`, siteError);
                 
-                // Add error entry to CSV
+                // Add error entries to CSV
                 for (const field of site.fields) {
-                    csvData += `${site.name},${field},day7-surgical,0,0,TRUE,"${timestamp}",0,poor,SITE_TEST_FAILED,surgical-baseline,FALSE,FALSE\n`;
+                    csvData += `${site.name},${field},prompt_v4,0,0,TRUE,"${timestamp}",0,failed,DOMAIN_INFILTRATION_FAILED,stress-test-baseline,FALSE,FALSE\n`;
                 }
 
-                // Add failed site to results  
-                testResults.push({
+                // Add failed domain to JSONL
+                const jsonlEntry = {
+                    timestamp: timestamp,
+                    domain: site.domain,
+                    site_name: site.name,
+                    site_type: site.type,
+                    accuracy: 0,
+                    basic_accuracy: 0,
+                    ai_accuracy: 0,
+                    weak_fields: site.fields,
+                    fields_tested: site.fields.length,
+                    fields_extracted: 0,
+                    using_real_ai: false,
+                    extraction_time: 0,
+                    error: siteError.message,
+                    day7_version: 'surgical-stress-test-failed'
+                };
+
+                jsonlEntries.push(jsonlEntry);
+
+                // Add failed domain to results  
+                stressResults.push({
                     site: site.name,
+                    domain: site.domain,
                     url: site.url,
+                    type: site.type,
                     basicScore: 0,
                     aiScore: 0,
+                    accuracy: 0,
+                    weakFields: site.fields,
                     fieldsExtracted: 0,
                     totalFields: site.fields.length,
                     usingRealAI: false,
@@ -418,85 +479,100 @@ async function handleDay7RealCrossVerticalTest(request, sendResponse) {
                 });
 
                 errorLog.push({
-                    type: 'DAY7_REAL_SITE_TEST_ERROR',
+                    type: 'DAY7_STRESS_TEST_DOMAIN_ERROR',
+                    domain: site.domain,
                     site: site.name,
                     url: site.url,
                     message: siteError.message,
                     timestamp: new Date().toISOString()
                 });
             } finally {
-                // Always clean up the test tab
+                // Always extract from enemy domain (stealth cleanup)
                 if (testTab && testTab.id) {
                     try {
                         await chrome.tabs.remove(testTab.id);
-                        console.log(`[Background] Day 7 cleaned up tab ${testTab.id} for ${site.name}`);
+                        console.log(`[Background] Day 7 extracted from ${site.domain} - stealth tab ${testTab.id} eliminated`);
                     } catch (cleanupError) {
-                        console.warn(`[Background] Day 7 cleanup warning for ${site.name}:`, cleanupError);
+                        console.warn(`[Background] Day 7 extraction warning from ${site.domain}:`, cleanupError);
                     }
                 }
             }
         }
 
-        // Calculate Day 7 overall scores from REAL tests  
-        const successfulTests = testResults.filter(r => r.realSiteTested);
-        const overallBasicScore = successfulTests.length > 0 ? 
-            Math.round(successfulTests.reduce((sum, r) => sum + r.basicScore, 0) / successfulTests.length) : 0;
-        const overallAIScore = successfulTests.length > 0 ?
-            Math.round(successfulTests.reduce((sum, r) => sum + r.aiScore, 0) / successfulTests.length) : 0;
+        // Calculate Day 7 STRESS TEST overall intelligence
+        const successfulDomains = stressResults.filter(r => r.realSiteTested);
+        const overallBasicScore = successfulDomains.length > 0 ? 
+            Math.round(successfulDomains.reduce((sum, r) => sum + r.basicScore, 0) / successfulDomains.length) : 0;
+        const overallAIScore = successfulDomains.length > 0 ?
+            Math.round(successfulDomains.reduce((sum, r) => sum + r.aiScore, 0) / successfulDomains.length) : 0;
 
-        // Add Day 7 REAL testing summary row
-        const usingRealAI = successfulTests.some(r => r.usingRealAI);
-        csvData += `OVERALL,summary,day7-surgical,${overallBasicScore},${overallAIScore},false,"${timestamp}",${overallAIScore},${getDay7QualityLabel(overallAIScore)},${successfulTests.length === testSites.length ? 'ALL_SITES_TESTED' : 'PARTIAL_TESTING'},surgical-baseline,${usingRealAI},TRUE\n`;
+        // Identify most problematic domains and fields
+        const allWeakFields = successfulDomains.flatMap(r => r.weakFields);
+        const weakFieldAnalysis = allWeakFields.reduce((acc, field) => {
+            acc[field] = (acc[field] || 0) + 1;
+            return acc;
+        }, {});
 
-        console.log(`[Background] Day 7 REAL CROSS-VERTICAL TEST COMPLETE - Overall AI: ${overallAIScore}% from ${successfulTests.length}/${testSites.length} real sites`);
+        // Add Day 7 STRESS TEST summary row to CSV
+        const usingRealAI = successfulDomains.some(r => r.usingRealAI);
+        csvData += `OVERALL,summary,prompt_v4,${overallBasicScore},${overallAIScore},false,"${timestamp}",${overallAIScore},${getDay7QualityLabel(overallAIScore)},${successfulDomains.length === stressSites.length ? 'ALL_DOMAINS_INFILTRATED' : 'PARTIAL_INFILTRATION'},stress-test-baseline,${usingRealAI},TRUE\n`;
+
+        // Create JSONL string for auto-save
+        const jsonlData = jsonlEntries.map(entry => JSON.stringify(entry)).join('\n');
+
+        console.log(`[Background] Day 7 OPERATION SURGICAL DATA++ COMPLETE - Overall AI: ${overallAIScore}% from ${successfulDomains.length}/${stressSites.length} enemy domains`);
+        console.log(`[Background] Day 7 Most problematic fields:`, Object.entries(weakFieldAnalysis).sort((a, b) => b[1] - a[1]).slice(0, 3));
 
         sendResponse({
             success: true,
             csvData: csvData,
+            jsonlData: jsonlData,
             timestamp: timestamp,
             summary: {
-                sitesTestedCount: testSites.length,
-                sitesSuccessful: successfulTests.length,
-                sitesFailed: testSites.length - successfulTests.length,
+                sitesTestedCount: stressSites.length,
+                domainsInfiltrated: successfulDomains.length,
+                domainsFailed: stressSites.length - successfulDomains.length,
                 overallBasicScore,
                 overallAIScore,
                 testDuration: Date.now() - testStartTime,
                 errorLog: errorLog,
-                siteResults: testResults,
+                stressResults: stressResults,
+                weakFieldAnalysis: weakFieldAnalysis,
                 usingRealAI: usingRealAI,
-                day7Version: 'surgical-real-testing',
-                realCrossVerticalTest: true,
+                day7Version: 'surgical-stress-test',
+                operationName: 'SURGICAL DATA++',
+                realCrossDomainTest: true,
                 apiKeyConfigured: !!(AI_CONFIG.apiKey && AI_CONFIG.apiKey.length > 0)
             }
         });
     } catch (error) {
         const criticalError = {
-            type: 'DAY7_REAL_CROSS_VERTICAL_TEST_CRITICAL_ERROR',
-            message: `Day 7 real cross-vertical test failed: ${error.message}`,
+            type: 'DAY7_STRESS_TEST_CRITICAL_ERROR',
+            message: `Day 7 OPERATION SURGICAL DATA++ failed: ${error.message}`,
             stack: error.stack,
             timestamp: new Date().toISOString(),
             testDuration: Date.now() - testStartTime
         };
         errorLog.push(criticalError);
         
-        console.error('[Background] Day 7 real cross-vertical test critical error:', error);
+        console.error('[Background] Day 7 OPERATION SURGICAL DATA++ critical error:', error);
         
         sendResponse({
             success: false,
             error: error.message,
             errorLog: errorLog,
             testDuration: Date.now() - testStartTime,
-            day7Version: 'surgical-real-testing'
+            day7Version: 'surgical-stress-test-failed'
         });
     }
 }
 
-// Day 7 Enhanced AI Extraction with CORRECT API endpoint
-async function executeDay7AIExtraction(pageData, apiConfig) {
+// 🎯 Day 7 Enhanced AI Extraction with PROMPT_V4
+async function executeDay7AIExtractionV4(pageData, apiConfig) {
     const startTime = Date.now();
     
     try {
-        console.log('[Background] Running Day 7 AI extraction - targeting surgical accuracy...');
+        console.log('[Background] Running Day 7 AI extraction with prompt_v4 - targeting championship accuracy...');
         
         if (!apiConfig.apiKey || apiConfig.apiKey.length === 0) {
             throw new Error('Day 7 Gemini API key required for AI extraction');
@@ -511,33 +587,33 @@ async function executeDay7AIExtraction(pageData, apiConfig) {
             strategy: pageData.extractionMetadata?.strategy || 'AUTO'
         };
 
-        // Day 7 Surgical prompt for accurate extraction
-        const day7Prompt = `You are a Day 7 surgical data extraction specialist optimizing cross-vertical content extraction. Extract structured data from this web content with high precision.
+        // Day 7 Championship Prompt V4 for cross-vertical mastery
+        const promptV4 = `You are a championship-grade data extraction specialist with SURGICAL PRECISION capabilities optimized for cross-vertical content analysis. Your mission is to extract structured data from webpage content with balanced accuracy and completeness across news, e-commerce, recipes, educational, and blog content.
 
-DAY 7 SURGICAL EXTRACTION SCHEMA:
+ENHANCED EXTRACTION SCHEMA - CROSS-VERTICAL MASTERY:
 {
-    "title": "string",
-    "author": "string",
-    "publication_date": "string", 
-    "main_content_summary": "string",
-    "category": "string",
-    "links": ["string"],
-    "images": ["string"],
-    "description": "string",
-    "price": "string",
-    "ingredients": ["string"],
-    "instructions": ["string"],
-    "reviews_rating": "string"
+  "title": "string",
+  "author": "string", 
+  "publication_date": "string",
+  "main_content_summary": "string",
+  "category": "string",
+  "links": ["string"],
+  "images": ["string"],
+  "description": "string",
+  "price": "string",
+  "ingredients": ["string"],
+  "instructions": ["string"],
+  "reviews_rating": "string"
 }
 
-DAY 7 SURGICAL RULES FOR PRECISION EXTRACTION:
-1. Extract information when 60%+ confident for all fields
-2. Use contextual clues, meta tags, and structured data aggressively
-3. Return meaningful data or null - no empty strings or placeholder values
-4. For arrays (ingredients, instructions, links, images) - include all relevant items found
-5. Prioritize accuracy over coverage - better precise data than inaccurate guesses
-6. For missing data, look in page title, meta description, and surrounding context
-7. Focus on surgical precision for Day 7 baseline establishment
+BALANCED EXTRACTION RULES - DAY 7 OPTIMIZATION:
+1. Extract information when 70%+ confident (balanced approach vs Day 6 conservatism)
+2. Use contextual clues and surrounding elements to infer missing metadata
+3. Return null only when genuinely no relevant information exists
+4. Prioritize completeness with accuracy over extreme caution
+5. For aggregated content pages (homepages), focus SURGICALLY on the MOST PROMINENT or FIRST article only
+6. Cross-reference multiple page elements to validate extracted information
+7. Adapt extraction strategy based on detected content type
 
 SITE TYPE: ${basicInfo.strategy}
 DOMAIN: ${basicInfo.domain}
@@ -547,11 +623,11 @@ PAGE TITLE: ${basicInfo.title}
 CONTENT FOR ANALYSIS:
 ${content}
 
-Return ONLY valid JSON with the exact schema above. Focus on surgical precision for Day 7 baseline data collection.`;
+Return ONLY valid JSON with the exact schema above. Focus on championship accuracy with balanced completeness for Day 7 stress test baseline.`;
 
         const payload = {
             contents: [{
-                parts: [{ text: day7Prompt }]
+                parts: [{ text: promptV4 }]
             }],
             generationConfig: {
                 temperature: apiConfig.temperature,
@@ -563,36 +639,36 @@ Return ONLY valid JSON with the exact schema above. Focus on surgical precision 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-        console.log(`[Background] Day 7 making API request to: https://generativelanguage.googleapis.com/v1beta/models/${apiConfig.model}:generateContent`);
+        console.log(`[Background] Day 7 making API request with prompt_v4 to: https://generativelanguage.googleapis.com/v1beta/models/${apiConfig.model}:generateContent`);
         
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiConfig.model}:generateContent?key=${apiConfig.apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'User-Agent': 'Day7-WebWeaver-Surgical/1.0'
+                'User-Agent': 'Day7-WebWeaver-SurgicalV4/1.0'
             },
             body: JSON.stringify(payload),
             signal: controller.signal
         });
 
         clearTimeout(timeoutId);
-        console.log(`[Background] Day 7 API response status: ${response.status}`);
+        console.log(`[Background] Day 7 prompt_v4 API response status: ${response.status}`);
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('[Background] Day 7 API response error:', response.status, errorText);
+            console.error('[Background] Day 7 prompt_v4 API response error:', response.status, errorText);
             throw new Error(`Day 7 Gemini API error: ${response.status} - ${errorText.substring(0, 200)}`);
         }
 
         const result = await response.json();
         
         if (!result.candidates || !result.candidates[0] || !result.candidates[0].content) {
-            console.error('[Background] Day 7 invalid API response structure:', result);
+            console.error('[Background] Day 7 prompt_v4 invalid API response structure:', result);
             throw new Error('Day 7 invalid API response structure');
         }
 
         const generatedText = result.candidates[0].content.parts[0].text;
-        console.log('[Background] Day 7 API response received, parsing JSON...');
+        console.log('[Background] Day 7 prompt_v4 API response received, parsing JSON...');
 
         // Parse and validate JSON response with Day 7 precision
         let aiData;
@@ -602,13 +678,13 @@ Return ONLY valid JSON with the exact schema above. Focus on surgical precision 
                 aiData = aiData[0] || {};
             }
         } catch (parseError) {
-            console.warn('[Background] Day 7 JSON parse failed, attempting extraction...');
+            console.warn('[Background] Day 7 prompt_v4 JSON parse failed, attempting extraction...');
             const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 try {
                     aiData = JSON.parse(jsonMatch[0]);
                 } catch (secondParseError) {
-                    console.error('[Background] Day 7 second JSON parse also failed');
+                    console.error('[Background] Day 7 prompt_v4 second JSON parse also failed');
                     throw new Error('Day 7 failed to parse AI response as JSON');
                 }
             } else {
@@ -616,7 +692,7 @@ Return ONLY valid JSON with the exact schema above. Focus on surgical precision 
             }
         }
 
-        // Day 7 Enhanced field validation and completion
+        // Day 7 Enhanced field validation and completion with prompt_v4 schema
         const requiredFields = ['title', 'author', 'publication_date', 'main_content_summary', 'category', 'description', 'links', 'images', 'price', 'ingredients', 'instructions', 'reviews_rating'];
         
         requiredFields.forEach(field => {
@@ -631,7 +707,7 @@ Return ONLY valid JSON with the exact schema above. Focus on surgical precision 
         });
 
         const duration = Date.now() - startTime;
-        console.log(`[Background] Day 7 AI extraction completed successfully in ${duration}ms`);
+        console.log(`[Background] Day 7 prompt_v4 AI extraction completed successfully in ${duration}ms`);
 
         return {
             success: true,
@@ -640,13 +716,13 @@ Return ONLY valid JSON with the exact schema above. Focus on surgical precision 
                 model: apiConfig.model,
                 extractionTime: duration,
                 realAI: true,
-                day7Version: 'surgical-precision',
-                promptVersion: 'day7-surgical',
+                day7Version: 'surgical-precision-v4',
+                promptVersion: 'prompt_v4',
                 apiKeyLength: apiConfig.apiKey.length
             }
         };
     } catch (error) {
-        console.error('[Background] Day 7 AI extraction failed:', error);
+        console.error('[Background] Day 7 prompt_v4 AI extraction failed:', error);
         
         // Return Day 7 basic extraction as fallback
         const basicFallback = executeDay7BasicExtraction(pageData);
@@ -660,7 +736,7 @@ Return ONLY valid JSON with the exact schema above. Focus on surgical precision 
                 fallbackUsed: true,
                 realAI: false,
                 error: error.message,
-                day7Version: 'surgical-basic-fallback'
+                day7Version: 'surgical-basic-fallback-v4'
             }
         };
     }
@@ -798,4 +874,4 @@ function getDay7QualityLabel(score) {
     return 'failed';
 }
 
-console.log('[Background] Day 7 SURGICAL Cross-Vertical Data Harvester Engine ready - REAL cross-vertical testing ONLY');
+console.log('[Background] Day 7 OPERATION SURGICAL DATA++ Engine ready - Real cross-domain stress testing enabled');
