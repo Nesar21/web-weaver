@@ -1,0 +1,15 @@
+{
+  "title": "Classic Chocolate Chip Cookies",
+  "author": "Chef Maria Rodriguez",
+  "publication_date": "2024-01-15",
+  "main_content_summary": "Perfectly chewy chocolate chip cookies with crispy edges and soft centers, made with brown butter for enhanced flavor and using high-quality chocolate chips.",
+  "category": "Desserts",
+  "links": ["https://allrecipes.com/baking-tips", "https://allrecipes.com/chocolate-guide"],
+  "images": ["https://example.com/cookies-main.jpg", "https://example.com/cookies-process.jpg"],
+  "description": "The ultimate chocolate chip cookie recipe that delivers bakery-quality results every time with simple ingredients and foolproof techniques.",
+  "ingredients": ["2¼ cups all-purpose flour", "1 tsp baking soda", "1 tsp salt", "1 cup butter", "¾ cup granulated sugar", "¾ cup brown sugar", "2 large eggs", "2 tsp vanilla extract", "2 cups chocolate chips"],
+  "instructions": ["Preheat oven to 375°F", "Mix flour, baking soda, and salt", "Cream butter and sugars", "Beat in eggs and vanilla", "Gradually mix in flour mixture", "Stir in chocolate chips", "Drop onto baking sheets", "Bake 9-11 minutes"],
+  "prep_time": "15 minutes",
+  "cook_time": "10 minutes",
+  "servings": "48 cookies"
+}

@@ -1,0 +1,14 @@
+{
+  "title": "Apple iPhone 15 Pro Max, 256GB, Blue Titanium",
+  "author": "Apple Inc.",
+  "publication_date": "2023-09-15",
+  "main_content_summary": "The iPhone 15 Pro Max features a titanium design, A17 Pro chip, advanced camera system with 5x telephoto zoom, and USB-C connectivity in a 6.7-inch display.",
+  "category": "Electronics",
+  "links": ["https://www.apple.com/iphone-15-pro/", "https://support.apple.com/iphone"],
+  "images": ["https://example.com/iphone15pro-front.jpg", "https://example.com/iphone15pro-back.jpg"],
+  "description": "Revolutionary iPhone 15 Pro Max with titanium construction, professional-grade camera system, and industry-leading performance powered by A17 Pro chip.",
+  "price": "$1199.00",
+  "reviews": "4.5/5 stars based on 2,847 customer reviews",
+  "availability": "In Stock",
+  "shipping": "Free shipping on orders over $35"
+}

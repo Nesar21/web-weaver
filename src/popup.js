@@ -1,5 +1,6 @@
-// Day 6 REAL Validation Popup Script - Championship Edition
-console.log('Day 6 REAL Validation Popup Script loaded - Championship ready');
+// Day 6 FINAL POLISH Popup Script - Championship Edition
+
+console.log('Day 6 FINAL POLISH Popup Script loaded - Championship ready');
 
 // DOM Elements
 let elements = {};
@@ -11,13 +12,11 @@ let apiKeyConfigured = false;
 
 // Initialize popup
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[Popup] Day 6 REAL Validation initializing...');
-    
+    console.log('[Popup] Day 6 FINAL POLISH initializing...');
     initializeElements();
     checkApiStatus();
     setupEventListeners();
-    
-    console.log('[Popup] Day 6 REAL Validation ready');
+    console.log('[Popup] Day 6 FINAL POLISH ready');
 });
 
 // Initialize DOM elements
@@ -28,39 +27,39 @@ function initializeElements() {
         apiStatusText: document.getElementById('apiStatusText'),
         methodIndicator: document.getElementById('methodIndicator'),
         methodText: document.getElementById('methodText'),
-        
+
         // Form elements
         apiKey: document.getElementById('apiKey'),
         saveApiKey: document.getElementById('saveApiKey'),
-        
+
         // Action buttons
         extractBtn: document.getElementById('extractBtn'),
         validateBtn: document.getElementById('validateBtn'),
-        
+
         // Loading indicators
         extractLoading: document.getElementById('extractLoading'),
         validateLoading: document.getElementById('validateLoading'),
-        
+
         // Results containers
         results: document.getElementById('results'),
         validationResults: document.getElementById('validationResults'),
-        
+
         // Result content
         extractionBadge: document.getElementById('extractionBadge'),
         badgeText: document.getElementById('badgeText'),
         fieldGrid: document.getElementById('fieldGrid'),
-        
+
         // Metrics
         contentLength: document.getElementById('contentLength'),
         extractionTime: document.getElementById('extractionTime'),
         fieldsFound: document.getElementById('fieldsFound'),
-        
+
         // Comparison
         comparisonToggle: document.getElementById('comparisonToggle'),
         comparisonContent: document.getElementById('comparisonContent'),
         aiComparison: document.getElementById('aiComparison'),
         basicComparison: document.getElementById('basicComparison'),
-        
+
         // Validation results
         validationScore: document.getElementById('validationScore'),
         scoreMain: document.getElementById('scoreMain'),
@@ -69,7 +68,7 @@ function initializeElements() {
         successRate: document.getElementById('successRate'),
         avgResponse: document.getElementById('avgResponse'),
         validationMethod: document.getElementById('validationMethod'),
-        
+
         // Export buttons
         exportJson: document.getElementById('exportJson'),
         exportCsv: document.getElementById('exportCsv'),
@@ -84,19 +83,18 @@ function initializeElements() {
 function setupEventListeners() {
     // API Configuration
     elements.saveApiKey.addEventListener('click', saveApiKey);
-    
+
     // Actions
     elements.extractBtn.addEventListener('click', performExtraction);
     elements.validateBtn.addEventListener('click', performValidation);
-    
+
     // Comparison toggle
     elements.comparisonToggle.addEventListener('click', toggleComparison);
-    
+
     // Export actions
     elements.exportJson.addEventListener('click', () => exportData('json'));
     elements.exportCsv.addEventListener('click', () => exportData('csv'));
     elements.copyResults.addEventListener('click', copyResults);
-    
     elements.exportValidation.addEventListener('click', () => exportValidation('json'));
     elements.exportValidationCsv.addEventListener('click', () => exportValidation('csv'));
     elements.copyValidation.addEventListener('click', copyValidationResults);
@@ -107,10 +105,8 @@ async function checkApiStatus() {
     try {
         const response = await sendMessage({ action: "getApiKey" });
         apiKeyConfigured = response.hasKey;
-        
         updateApiStatus(apiKeyConfigured);
         updateMethodIndicator(apiKeyConfigured ? 'ai' : 'basic');
-        
     } catch (error) {
         console.error('[Popup] API status check failed:', error);
         updateApiStatus(false);
@@ -132,21 +128,20 @@ function updateMethodIndicator(method) {
 // Save API key
 async function saveApiKey() {
     const apiKey = elements.apiKey.value.trim();
-    
     if (!apiKey) {
         showNotification('Please enter an API key', 'error');
         return;
     }
-    
+
     try {
         elements.saveApiKey.disabled = true;
         elements.saveApiKey.textContent = 'Saving...';
-        
+
         const response = await sendMessage({ 
             action: "setApiKey", 
             apiKey: apiKey 
         });
-        
+
         if (response.success) {
             apiKeyConfigured = true;
             updateApiStatus(true);
@@ -156,7 +151,6 @@ async function saveApiKey() {
         } else {
             throw new Error(response.message || 'Configuration failed');
         }
-        
     } catch (error) {
         console.error('[Popup] API key save failed:', error);
         showNotification('Configuration failed: ' + error.message, 'error');
@@ -166,17 +160,17 @@ async function saveApiKey() {
     }
 }
 
-// Perform extraction
+// Perform extraction with animations
 async function performExtraction() {
     try {
         elements.extractBtn.disabled = true;
         elements.extractLoading.style.display = 'flex';
         elements.results.classList.remove('show');
-        
+
         console.log('[Popup] Starting REAL extraction...');
-        
+
         const response = await sendMessage({ action: "extractData" });
-        
+
         if (response.success) {
             currentResults = response.data;
             displayExtractionResults(response.data);
@@ -184,7 +178,6 @@ async function performExtraction() {
         } else {
             throw new Error(response.error || 'Extraction failed');
         }
-        
     } catch (error) {
         console.error('[Popup] Extraction failed:', error);
         showNotification('Extraction failed: ' + error.message, 'error');
@@ -194,17 +187,17 @@ async function performExtraction() {
     }
 }
 
-// Perform real validation
+// Perform real validation with championship scoring
 async function performValidation() {
     try {
         elements.validateBtn.disabled = true;
         elements.validateLoading.style.display = 'flex';
         elements.validationResults.classList.remove('show');
-        
+
         console.log('[Popup] Starting REAL validation on current page...');
-        
+
         const response = await sendMessage({ action: "runRealValidation" });
-        
+
         if (response.success) {
             currentValidation = response.results;
             displayValidationResults(response.results);
@@ -212,7 +205,6 @@ async function performValidation() {
         } else {
             throw new Error(response.error || 'Validation failed');
         }
-        
     } catch (error) {
         console.error('[Popup] Validation failed:', error);
         showNotification('Validation failed: ' + error.message, 'error');
@@ -222,17 +214,17 @@ async function performValidation() {
     }
 }
 
-// Display extraction results with enhanced UI
+// Display extraction results with enhanced UI and animations
 function displayExtractionResults(data) {
     // Update badge based on method
     const isAI = data.enhancedWithAI;
     elements.extractionBadge.className = `extraction-badge badge-${isAI ? 'ai' : 'basic'}`;
     elements.badgeText.textContent = isAI ? '🤖 Enhanced AI' : '⚡ Enhanced Basic';
-    
+
     // Update metrics
     elements.contentLength.textContent = data.content?.length || 0;
     elements.extractionTime.textContent = data.extractionTime || '-';
-    
+
     // Count fields with values
     const aiData = data.ai || {};
     const fieldsWithValues = Object.values(aiData).filter(value => 
@@ -240,17 +232,69 @@ function displayExtractionResults(data) {
         !(Array.isArray(value) && value.length === 0)
     ).length;
     elements.fieldsFound.textContent = fieldsWithValues;
-    
-    // Display field grid
+
+    // Display field grid with enhanced visuals
     displayFieldGrid(aiData);
-    
+
     // Display comparison if both AI and basic are available
     if (data.ai && data.enhancedBasic) {
         displayComparison(data.ai, data.enhancedBasic);
     }
-    
-    // Show results
+
+    // Show results with slide-in animation
+    elements.results.style.transform = 'translateY(20px)';
+    elements.results.style.opacity = '0';
     elements.results.classList.add('show');
+    
+    // Trigger animation
+    requestAnimationFrame(() => {
+        elements.results.style.transition = 'all 0.3s ease-out';
+        elements.results.style.transform = 'translateY(0)';
+        elements.results.style.opacity = '1';
+    });
+}
+
+// Display validation results with championship visual indicators
+function displayValidationResults(results) {
+    const score = Math.round(results.overallScore || 0);
+    const isChampionship = score >= 75;
+    const isTarget = score >= 60;
+    
+    // Championship score visual enhancement
+    elements.scoreMain.textContent = score + '%';
+    
+    // Add championship trophy for high scores
+    if (isChampionship) {
+        elements.scoreMain.innerHTML = `🏆 ${score}%`;
+        elements.scoreMain.style.color = '#FFD700'; // Gold color
+        elements.validationScore.style.background = 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)';
+    } else if (isTarget) {
+        elements.scoreMain.style.color = '#28a745'; // Green color
+        elements.validationScore.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+    } else {
+        elements.scoreMain.style.color = '#dc3545'; // Red color
+        elements.validationScore.style.background = 'linear-gradient(135deg, #dc3545 0%, #fd7e14 100%)';
+    }
+
+    // Update target indicator
+    elements.scoreTarget.textContent = isChampionship ? 'Championship: ≥75% 🏆' : 
+                                      isTarget ? 'Target: ≥60% ✅' : 'Target: ≥60% ❌';
+
+    // Update other metrics
+    elements.testsRun.textContent = results.sitesCount || 0;
+    elements.successRate.textContent = Math.round((results.passedCount / results.sitesCount) * 100) + '%';
+    elements.avgResponse.textContent = Math.round(results.avgResponseTime || 0) + 'ms';
+    elements.validationMethod.textContent = results.methodology || 'Real AI';
+
+    // Show results with fade-in animation
+    elements.validationResults.style.opacity = '0';
+    elements.validationResults.classList.add('show');
+    
+    // Trigger animation
+    requestAnimationFrame(() => {
+        elements.validationResults.style.transition = 'opacity 0.4s ease-in';
+        elements.validationResults.style.opacity = '1';
+    });
 }
 
 // Display field grid with visual indicators
@@ -263,169 +307,206 @@ function displayFieldGrid(data) {
         { key: 'description', label: 'Description' },
         { key: 'main_content_summary', label: 'Summary' }
     ];
-    
+
     elements.fieldGrid.innerHTML = '';
-    
+
     fields.forEach(field => {
         const value = data[field.key];
         const hasValue = value !== null && value !== undefined && value !== '' && 
-                         !(Array.isArray(value) && value.length === 0);
-        
+                        !(Array.isArray(value) && value.length === 0);
+
         const fieldElement = document.createElement('div');
         fieldElement.className = `field-item ${hasValue ? 'has-value' : 'no-value'}`;
-        
         fieldElement.innerHTML = `
             <div class="field-label">${field.label}</div>
-            <div class="field-value ${hasValue ? '' : 'empty'}">
-                ${hasValue ? truncateText(formatValue(value), 50) : 'Not found'}
+            <div class="field-indicator ${hasValue ? 'success' : 'empty'}">
+                ${hasValue ? '✓' : '○'}
             </div>
+            <div class="field-preview">${hasValue ? String(value).substring(0, 50) + (String(value).length > 50 ? '...' : '') : 'Not found'}</div>
         `;
-        
+
         elements.fieldGrid.appendChild(fieldElement);
     });
 }
 
-// Display AI vs Basic comparison
+// Display AI vs Basic comparison with enhanced styling
 function displayComparison(aiData, basicData) {
-    // AI Results
-    elements.aiComparison.innerHTML = createComparisonContent(aiData);
+    const fields = ['title', 'author', 'publication_date', 'description', 'main_content_summary', 'category'];
     
-    // Basic Results
-    elements.basicComparison.innerHTML = createComparisonContent(basicData);
-}
+    let aiHTML = '<div class="comparison-header ai-header">🤖 Enhanced AI</div>';
+    let basicHTML = '<div class="comparison-header basic-header">⚡ Enhanced Basic</div>';
 
-// Create comparison content
-function createComparisonContent(data) {
-    const fields = ['title', 'author', 'description', 'main_content_summary'];
-    
-    return fields.map(field => {
-        const value = data[field];
-        const hasValue = value !== null && value !== undefined && value !== '';
-        
-        return `
-            <div style="margin-bottom: 8px; padding: 6px; background: ${hasValue ? 'rgba(22, 163, 74, 0.05)' : 'rgba(100, 116, 139, 0.05)'}; border-radius: 4px;">
-                <div style="font-size: 9px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">
-                    ${field.replace('_', ' ')}
-                </div>
-                <div style="font-size: 10px; color: ${hasValue ? 'var(--text)' : 'var(--text-muted)'};">
-                    ${hasValue ? truncateText(formatValue(value), 40) : 'Not extracted'}
-                </div>
+    fields.forEach(field => {
+        const aiValue = aiData[field] || 'Not found';
+        const basicValue = basicData[field] || 'Not found';
+        const aiHasValue = aiData[field] !== null && aiData[field] !== undefined && aiData[field] !== '';
+        const basicHasValue = basicData[field] !== null && basicData[field] !== undefined && basicData[field] !== '';
+
+        aiHTML += `
+            <div class="comparison-field ${aiHasValue ? 'has-value' : 'no-value'}">
+                <strong>${field.replace(/_/g, ' ').toUpperCase()}</strong>
+                <div class="field-value">${typeof aiValue === 'string' ? aiValue.substring(0, 100) + (aiValue.length > 100 ? '...' : '') : JSON.stringify(aiValue).substring(0, 100)}</div>
             </div>
         `;
-    }).join('');
-}
 
-// Display validation results with real metrics
-function displayValidationResults(results) {
-    // Calculate real performance metrics
-    const realScore = calculateRealPerformance(results);
-    
-    // Update main score
-    elements.scoreMain.textContent = `${realScore.overall}%`;
-    elements.scoreTarget.textContent = `Real Performance on Current Page`;
-    
-    // Set score styling
-    const scoreClass = realScore.overall >= 75 ? 'excellent' : 
-                      realScore.overall >= 60 ? 'good' : 'poor';
-    elements.validationScore.className = `validation-score ${scoreClass}`;
-    
-    // Update metrics
-    elements.testsRun.textContent = results.testsPerformed || 1;
-    elements.successRate.textContent = `${realScore.successRate}%`;
-    elements.avgResponse.textContent = `${results.avgResponseTime || results.extractionTime || 0}ms`;
-    elements.validationMethod.textContent = results.method || 'Real AI';
-    
-    // Show validation results
-    elements.validationResults.classList.add('show');
-}
+        basicHTML += `
+            <div class="comparison-field ${basicHasValue ? 'has-value' : 'no-value'}">
+                <strong>${field.replace(/_/g, ' ').toUpperCase()}</strong>
+                <div class="field-value">${typeof basicValue === 'string' ? basicValue.substring(0, 100) + (basicValue.length > 100 ? '...' : '') : JSON.stringify(basicValue).substring(0, 100)}</div>
+            </div>
+        `;
+    });
 
-// Calculate real performance metrics
-function calculateRealPerformance(results) {
-    const data = results.extractedData || results.data || results;
-    const aiData = data.ai || {};
-    
-    // Count successful extractions
-    const fields = ['title', 'author', 'publication_date', 'category', 'description', 'main_content_summary'];
-    const successful = fields.filter(field => {
-        const value = aiData[field];
-        return value !== null && value !== undefined && value !== '' && 
-               !(Array.isArray(value) && value.length === 0);
-    }).length;
-    
-    const overall = Math.round((successful / fields.length) * 100);
-    const successRate = Math.round((successful / fields.length) * 100);
-    
-    return {
-        overall,
-        successRate,
-        fieldsFound: successful,
-        totalFields: fields.length
-    };
+    elements.aiComparison.innerHTML = aiHTML;
+    elements.basicComparison.innerHTML = basicHTML;
+
+    // Apply distinct background colors for better readability
+    elements.aiComparison.style.backgroundColor = 'rgba(0, 123, 255, 0.05)';
+    elements.basicComparison.style.backgroundColor = 'rgba(40, 167, 69, 0.05)';
 }
 
 // Toggle comparison view
 function toggleComparison() {
-    const content = elements.comparisonContent;
-    content.classList.toggle('show');
+    const isVisible = elements.comparisonContent.style.display !== 'none';
+    elements.comparisonContent.style.display = isVisible ? 'none' : 'block';
+    elements.comparisonToggle.innerHTML = isVisible ? 
+        '🔍 View AI vs Basic Comparison <span>Click to expand</span>' : 
+        '🔍 Hide AI vs Basic Comparison <span>Click to collapse</span>';
 }
 
-// Export functions
+// Export data functionality
 function exportData(format) {
     if (!currentResults) {
-        showNotification('No data to export', 'error');
+        showNotification('No extraction results to export', 'error');
         return;
     }
+
+    const data = currentResults.ai || currentResults.enhancedBasic || {};
     
     if (format === 'json') {
-        downloadFile(JSON.stringify(currentResults, null, 2), 'extraction-results.json', 'application/json');
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        downloadFile(blob, 'extraction-results.json');
     } else if (format === 'csv') {
-        const csv = convertToCSV(currentResults.ai || {});
-        downloadFile(csv, 'extraction-results.csv', 'text/csv');
+        const csv = convertToCSV(data);
+        const blob = new Blob([csv], { type: 'text/csv' });
+        downloadFile(blob, 'extraction-results.csv');
     }
 }
 
-function copyResults() {
-    if (!currentResults) {
-        showNotification('No data to copy', 'error');
-        return;
-    }
-    
-    const text = JSON.stringify(currentResults, null, 2);
-    navigator.clipboard.writeText(text).then(() => {
-        showNotification('Results copied to clipboard!', 'success');
-    });
-}
-
+// Export validation results
 function exportValidation(format) {
     if (!currentValidation) {
-        showNotification('No validation data to export', 'error');
+        showNotification('No validation results to export', 'error');
         return;
     }
     
     if (format === 'json') {
-        downloadFile(JSON.stringify(currentValidation, null, 2), 'validation-results.json', 'application/json');
+        const blob = new Blob([JSON.stringify(currentValidation, null, 2)], { type: 'application/json' });
+        downloadFile(blob, 'validation-results.json');
     } else if (format === 'csv') {
         const csv = convertValidationToCSV(currentValidation);
-        downloadFile(csv, 'validation-results.csv', 'text/csv');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        downloadFile(blob, 'validation-results.csv');
     }
 }
 
-function copyValidationResults() {
-    if (!currentValidation) {
-        showNotification('No validation data to copy', 'error');
+// Convert object to CSV
+function convertToCSV(obj) {
+    const headers = Object.keys(obj);
+    const values = Object.values(obj).map(value => 
+        typeof value === 'object' ? JSON.stringify(value) : String(value)
+    );
+    
+    return headers.join(',') + '\n' + values.join(',');
+}
+
+// Convert validation results to CSV
+function convertValidationToCSV(validation) {
+    let csv = 'Site,Field,Score,Status,Weight\n';
+    
+    validation.results.forEach(siteResult => {
+        Object.keys(siteResult.fieldScores || {}).forEach(field => {
+            const fieldScore = siteResult.fieldScores[field];
+            csv += `"${siteResult.site}","${field}",${fieldScore.raw || 0},"${fieldScore.status || 'unknown'}",${fieldScore.weight || 0}\n`;
+        });
+    });
+    
+    return csv;
+}
+
+// Download file helper
+function downloadFile(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showNotification(`Downloaded ${filename}`, 'success');
+}
+
+// Copy results to clipboard
+function copyResults() {
+    if (!currentResults) {
+        showNotification('No results to copy', 'error');
         return;
     }
-    
-    const text = JSON.stringify(currentValidation, null, 2);
-    navigator.clipboard.writeText(text).then(() => {
-        showNotification('Validation results copied to clipboard!', 'success');
+
+    const data = JSON.stringify(currentResults.ai || currentResults.enhancedBasic || {}, null, 2);
+    navigator.clipboard.writeText(data).then(() => {
+        showNotification('Results copied to clipboard', 'success');
+    }).catch(() => {
+        showNotification('Failed to copy results', 'error');
     });
 }
 
-// Utility functions
+// Copy validation results to clipboard
+function copyValidationResults() {
+    if (!currentValidation) {
+        showNotification('No validation results to copy', 'error');
+        return;
+    }
+
+    const data = JSON.stringify(currentValidation, null, 2);
+    navigator.clipboard.writeText(data).then(() => {
+        showNotification('Validation results copied to clipboard', 'success');
+    }).catch(() => {
+        showNotification('Failed to copy validation results', 'error');
+    });
+}
+
+// Show notification
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Show with animation
+    requestAnimationFrame(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateY(0)';
+    });
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+// Send message helper
 function sendMessage(message) {
     return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(message, response => {
+        chrome.runtime.sendMessage(message, (response) => {
             if (chrome.runtime.lastError) {
                 reject(new Error(chrome.runtime.lastError.message));
             } else {
@@ -435,63 +516,4 @@ function sendMessage(message) {
     });
 }
 
-function showNotification(message, type) {
-    // Simple notification system
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        background: ${type === 'success' ? 'var(--success)' : 'var(--error)'};
-        color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 600;
-        z-index: 1000;
-        animation: slideIn 0.3s ease;
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
-
-function formatValue(value) {
-    if (Array.isArray(value)) {
-        return value.join(', ');
-    }
-    return String(value);
-}
-
-function truncateText(text, maxLength) {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-}
-
-function convertToCSV(data) {
-    const headers = Object.keys(data);
-    const values = headers.map(header => JSON.stringify(data[header] || ''));
-    return headers.join(',') + '\n' + values.join(',');
-}
-
-function convertValidationToCSV(data) {
-    return `Metric,Value\nOverall Score,${data.overallScore || 0}\nTests Run,${data.testsPerformed || 1}\nSuccess Rate,${data.successRate || 0}\nAvg Response Time,${data.avgResponseTime || 0}`;
-}
-
-function downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-console.log('[Popup] Day 6 REAL Validation Popup Script ready - Championship grade');
+console.log('📋 Day 6 FINAL POLISH Popup Script ready - Championship grade UI');
