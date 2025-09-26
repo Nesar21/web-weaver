@@ -2,9 +2,9 @@
 
 console.log('[Background] Day 7 SURGICAL Data++ Engine - Real cross-vertical stress testing');
 
-// Day 7 AI Configuration - CRITICAL FIX: Correct model name
+// Day 7 AI Configuration - CRITICAL FIX: Use correct model for September 2024 API
 let AI_CONFIG = {
-    model: 'gemini-1.5-flash', // 🎯 FIXED: Correct model
+    model: 'gemini-1.5-flash-8b-001', // 🎯 FIXED: Stable model for your Sep 2024 API key
     maxTokens: 3000,
     temperature: 0.1,
     apiKey: null
@@ -73,18 +73,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-// Day 7 API key handling
+// Day 7 Enhanced API key handling with validation
 function handleDay7ApiKeySet(request, sendResponse) {
-    console.log('[Background] Day 7 API key set request received');
+    console.log('[Background] Day 7 API key validation starting...');
     
     if (!request.apiKey || request.apiKey.trim().length === 0) {
         console.error('[Background] Day 7 - No API key provided');
-        sendResponse({ success: false, error: 'No API key provided for Day 7', day7Version: true });
+        sendResponse({ 
+            success: false, 
+            error: 'Please provide a valid Gemini API key for AI testing',
+            day7Version: true 
+        });
         return;
     }
 
     const apiKey = request.apiKey.trim();
-    console.log(`[Background] Day 7 - Saving API key (length: ${apiKey.length})`);
+    console.log(`[Background] Day 7 - Validating API key (length: ${apiKey.length})`);
+    
+    // Enhanced validation - check key format
+    if (!apiKey.startsWith('AIza') || apiKey.length < 30) {
+        console.error('[Background] Day 7 - Invalid API key format');
+        sendResponse({
+            success: false,
+            error: 'Invalid Gemini API key format. Key should start with "AIza" and be at least 30 characters.',
+            day7Version: true
+        });
+        return;
+    }
     
     AI_CONFIG.apiKey = apiKey;
     
@@ -97,12 +112,13 @@ function handleDay7ApiKeySet(request, sendResponse) {
                 day7Version: true
             });
         } else {
-            console.log('[Background] Day 7 API key saved successfully to storage');
+            console.log('[Background] Day 7 API key CONFIGURED SUCCESSFULLY - AI testing enabled');
             sendResponse({
                 success: true,
                 day7Version: true,
-                message: 'API key saved successfully',
-                keyLength: apiKey.length
+                message: '✅ API key configured successfully! AI testing now enabled.',
+                keyLength: apiKey.length,
+                aiEnabled: true
             });
         }
     });
@@ -265,12 +281,12 @@ async function handleDay7StressTest(request, sendResponse) {
                 timeout: 15000
             },
             {
-                name: 'ProductHunt',
-                url: 'https://www.producthunt.com/posts/notion-2',
-                domain: 'producthunt.com', 
-                type: 'wildcard',
-                fields: ['title', 'description', 'main_content_summary', 'category'],
-                timeout: 15000
+                name: 'Wikipedia',
+                url: 'https://en.wikipedia.org/wiki/Artificial_intelligence',
+                domain: 'wikipedia.org',
+                type: 'educational',
+                fields: ['title', 'main_content_summary', 'links', 'category'],
+                timeout: 12000
             }
         ];
 
@@ -567,12 +583,12 @@ async function handleDay7StressTest(request, sendResponse) {
     }
 }
 
-// 🎯 Day 7 Enhanced AI Extraction with PROMPT_V4
+// 🎯 Day 7 Enhanced AI Extraction with PROMPT_V4 and CORRECT MODEL
 async function executeDay7AIExtractionV4(pageData, apiConfig) {
     const startTime = Date.now();
     
     try {
-        console.log('[Background] Running Day 7 AI extraction with prompt_v4 - targeting championship accuracy...');
+        console.log('[Background] Running Day 7 AI extraction with prompt_v4 and gemini-1.5-flash-8b-001...');
         
         if (!apiConfig.apiKey || apiConfig.apiKey.length === 0) {
             throw new Error('Day 7 Gemini API key required for AI extraction');
@@ -639,9 +655,11 @@ Return ONLY valid JSON with the exact schema above. Focus on championship accura
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-        console.log(`[Background] Day 7 making API request with prompt_v4 to: https://generativelanguage.googleapis.com/v1beta/models/${apiConfig.model}:generateContent`);
+        // 🎯 CRITICAL FIX: Use correct model for your September 2024 API key
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiConfig.model}:generateContent?key=${apiConfig.apiKey}`;
+        console.log(`[Background] Day 7 making API request with ${apiConfig.model} to: ${apiUrl}`);
         
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiConfig.model}:generateContent?key=${apiConfig.apiKey}`, {
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -652,23 +670,23 @@ Return ONLY valid JSON with the exact schema above. Focus on championship accura
         });
 
         clearTimeout(timeoutId);
-        console.log(`[Background] Day 7 prompt_v4 API response status: ${response.status}`);
+        console.log(`[Background] Day 7 ${apiConfig.model} API response status: ${response.status}`);
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('[Background] Day 7 prompt_v4 API response error:', response.status, errorText);
+            console.error(`[Background] Day 7 ${apiConfig.model} API response error:`, response.status, errorText);
             throw new Error(`Day 7 Gemini API error: ${response.status} - ${errorText.substring(0, 200)}`);
         }
 
         const result = await response.json();
         
         if (!result.candidates || !result.candidates[0] || !result.candidates[0].content) {
-            console.error('[Background] Day 7 prompt_v4 invalid API response structure:', result);
+            console.error(`[Background] Day 7 ${apiConfig.model} invalid API response structure:`, result);
             throw new Error('Day 7 invalid API response structure');
         }
 
         const generatedText = result.candidates[0].content.parts[0].text;
-        console.log('[Background] Day 7 prompt_v4 API response received, parsing JSON...');
+        console.log(`[Background] Day 7 ${apiConfig.model} API response received, parsing JSON...`);
 
         // Parse and validate JSON response with Day 7 precision
         let aiData;
@@ -678,13 +696,13 @@ Return ONLY valid JSON with the exact schema above. Focus on championship accura
                 aiData = aiData[0] || {};
             }
         } catch (parseError) {
-            console.warn('[Background] Day 7 prompt_v4 JSON parse failed, attempting extraction...');
+            console.warn(`[Background] Day 7 ${apiConfig.model} JSON parse failed, attempting extraction...`);
             const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 try {
                     aiData = JSON.parse(jsonMatch[0]);
                 } catch (secondParseError) {
-                    console.error('[Background] Day 7 prompt_v4 second JSON parse also failed');
+                    console.error(`[Background] Day 7 ${apiConfig.model} second JSON parse also failed`);
                     throw new Error('Day 7 failed to parse AI response as JSON');
                 }
             } else {
@@ -707,7 +725,7 @@ Return ONLY valid JSON with the exact schema above. Focus on championship accura
         });
 
         const duration = Date.now() - startTime;
-        console.log(`[Background] Day 7 prompt_v4 AI extraction completed successfully in ${duration}ms`);
+        console.log(`[Background] Day 7 ${apiConfig.model} AI extraction completed successfully in ${duration}ms`);
 
         return {
             success: true,
@@ -722,7 +740,7 @@ Return ONLY valid JSON with the exact schema above. Focus on championship accura
             }
         };
     } catch (error) {
-        console.error('[Background] Day 7 prompt_v4 AI extraction failed:', error);
+        console.error(`[Background] Day 7 ${apiConfig.model} AI extraction failed:`, error);
         
         // Return Day 7 basic extraction as fallback
         const basicFallback = executeDay7BasicExtraction(pageData);
@@ -874,4 +892,4 @@ function getDay7QualityLabel(score) {
     return 'failed';
 }
 
-console.log('[Background] Day 7 OPERATION SURGICAL DATA++ Engine ready - Real cross-domain stress testing enabled');
+console.log('[Background] Day 7 OPERATION SURGICAL DATA++ Engine ready with gemini-1.5-flash-8b-001 - Real cross-domain stress testing enabled');
