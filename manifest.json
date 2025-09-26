@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Web Weaver Lightning - Day 8 Championship",
-  "version": "8.0.0",
-  "description": "Day 8 Championship Cross-Vertical Data Harvester with ≥80% Accuracy Target",
+  "name": "Web Weaver Lightning - Day 7 Surgical",
+  "version": "7.0.0",
+  "description": "Day 7 Surgical Cross-Vertical Data Harvester - Real Testing Baseline",
   "permissions": [
     "storage",
     "activeTab",
@@ -31,6 +31,6 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Day 8 Championship Data Harvester"
+    "default_title": "Day 7 Surgical Data Harvester"
   }
 }
