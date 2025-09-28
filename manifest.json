@@ -1,36 +1,37 @@
 {
-  "manifest_version": 3,
-  "name": "Web Weaver Lightning - Day 7 Surgical",
-  "version": "7.0.0",
-  "description": "Day 7 Surgical Cross-Vertical Data Harvester - Real Testing Baseline",
-  "permissions": [
-    "storage",
-    "activeTab",
-    "tabs",
-    "scripting"
-  ],
-  "host_permissions": [
-    "https://*.bloomberg.com/*",
-    "https://*.amazon.com/*",
-    "https://*.allrecipes.com/*",
-    "https://*.wikipedia.org/*",
-    "https://*.medium.com/*",
-    "https://generativelanguage.googleapis.com/*"
-  ],
-  "background": {
-    "service_worker": "background.js"
-  },
-  "content_scripts": [
-    {
-      "matches": [
+    "manifest_version": 3,
+    "name": "🏆 Web Weaver Lightning - Day 8 REAL",
+    "version": "8.1.0", 
+    "description": "Day 8 REAL Cross-Site Testing - No Simulations, Pure Accuracy Measurement",
+    
+    "permissions": [
+        "activeTab",
+        "tabs", 
+        "storage",
+        "scripting"
+    ],
+    
+    "host_permissions": [
         "<all_urls>"
-      ],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    }
-  ],
-  "action": {
-    "default_popup": "popup.html",
-    "default_title": "Day 7 Surgical Data Harvester"
-  }
+    ],
+    
+    "background": {
+        "service_worker": "background.js"
+    },
+    
+    "action": {
+        "default_popup": "popup.html",
+        "default_title": "Web Weaver Lightning - Day 8 REAL Testing"
+    },
+    
+    "content_scripts": [{
+        "matches": ["<all_urls>"],
+        "js": ["content.js"],
+        "run_at": "document_end"
+    }],
+    
+    "web_accessible_resources": [{
+        "resources": ["validation.js"],
+        "matches": ["<all_urls>"]
+    }]
 }

@@ -1,895 +1,843 @@
-// Day 7 Championship Cross-Vertical Data Harvester Engine - OPERATION SURGICAL DATA++
+// Day 8: Ultimate Final Background Engine - Zero Compromise Championship Edition
+// /background.js
 
-console.log('[Background] Day 7 SURGICAL Data++ Engine - Real cross-vertical stress testing');
+console.log('[Background] Day 8 ULTIMATE FINAL system loading - Zero compromise championship architecture');
 
-// Day 7 AI Configuration - CRITICAL FIX: Use correct model for September 2024 API
+// ===== CORE CONFIGURATION =====
+const DAY8_VERSION = 'day8-ultimate-final-enterprise';
+
+// Enhanced AI Configuration - All magic numbers parameterized
 let AI_CONFIG = {
-    model: 'gemini-1.5-flash-8b-001', // 🎯 FIXED: Stable model for your Sep 2024 API key
-    maxTokens: 3000,
-    temperature: 0.1,
-    apiKey: null
+  model: 'gemini-1.5-flash-8b-001',
+  maxTokens: 3000,
+  temperature: 0.1,
+  aiTimeout: 25000,
+  tabTimeout: 6000,
+  maxConcurrentTabs: 8,
+  apiKey: null,
+  day8Version: DAY8_VERSION,
+  modulesLoaded: false,
+  
+  // FINAL: Strict Critical Module Enforcement
+  criticalModules: ['utils', 'extraction'], // Must have ALL these to function
+  
+  // Configurable boosts for sensitivity testing
+  boosts: {
+    moduleBoost: 8,
+    aiBoost: 12,
+    schemaBoost: 5,
+    validatorBoost: 3
+  },
+  
+  // FINAL: Enhanced logging configuration with single timestamp optimization
+  logging: {
+    throttleModuleLoads: true,
+    maxLogsPerSecond: 10,
+    lastLogTime: 0,
+    timestampCache: null,
+    timestampCacheExpiry: 100 // 100ms cache for high-frequency operations
+  },
+  
+  // Module status with STRICT VERSION enforcement
+  utilityStatus: {
+    extractor: { loaded: false, version: null, retries: 0 },
+    aiExtractor: { loaded: false, version: null, retries: 0 },
+    validator: { loaded: false, version: null, retries: 0 },
+    schemas: { loaded: false, version: null, retries: 0 }
+  },
+  
+  // FINAL: Performance caching with immediate persistence
+  cache: {
+    schemaMappings: new Map(),
+    siteConfigs: new Map(),
+    apiValidation: null,
+    configTimestamp: null,
+    configExpiry: 3600000, // 1 hour
+    persistenceQueue: new Set() // Track pending persistence operations
+  },
+  
+  // External module support with VERSION enforcement
+  externalModules: {
+    utils: { loaded: false, version: null },
+    extraction: { loaded: false, version: null },
+    validation: { loaded: false, version: null },
+    simulation: { loaded: false, version: null }
+  }
 };
 
-// Load API key from storage on startup
-chrome.storage.local.get(['geminiApiKey'], (result) => {
-    if (result.geminiApiKey) {
-        AI_CONFIG.apiKey = result.geminiApiKey;
-        console.log('[Background] Day 7 AI key loaded and ready');
-    } else {
-        console.log('[Background] Day 7 - No API key found, basic extraction only');
-    }
-});
+// Day 7 Baseline for trajectory analysis
+const DAY7_BASELINE = {
+  bloomberg: 31,
+  amazon: 26,
+  allrecipes: 18,
+  wikipedia: 68,
+  weightedAverage: 28.8,
+  timestamp: '2025-09-26'
+};
 
-// Day 7 Enhanced message listener - REAL STRESS TESTING
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log(`[Background] Day 7 request received: ${request.action}`);
-    
-    try {
-        switch (request.action) {
-            case 'extractPageData':
-                handleDay7BasicExtraction(request, sender, sendResponse);
-                return true;
-                
-            case 'extractData':
-                handleDay7EnhancedExtraction(request, sender, sendResponse);
-                return true;
-                
-            case 'getIterationLog':
-                // Legacy support - redirect to stress test
-                handleDay7StressTest(request, sendResponse);
-                return true;
-                
-            case 'runStressTest':
-                // 🎯 NEW: Operation Surgical Data++ stress test
-                handleDay7StressTest(request, sendResponse);
-                return true;
-                
-            case 'setApiKey':
-                handleDay7ApiKeySet(request, sendResponse);
-                return true;
-                
-            case 'getApiKey':
-                sendResponse({
-                    hasKey: !!AI_CONFIG.apiKey,
-                    day7Version: true,
-                    keyLength: AI_CONFIG.apiKey ? AI_CONFIG.apiKey.length : 0
-                });
-                return false;
-                
-            default:
-                console.warn(`[Background] Day 7 unknown action: ${request.action}`);
-                sendResponse({ success: false, error: 'Unknown action', day7Version: true });
-                return false;
-        }
-    } catch (error) {
-        console.error(`[Background] Day 7 critical error handling ${request.action}:`, error);
-        sendResponse({
-            success: false,
-            error: error.message,
-            errorType: 'DAY7_CRITICAL_MESSAGE_HANDLER_ERROR',
-            timestamp: new Date().toISOString()
-        });
-        return false;
-    }
-});
-
-// Day 7 Enhanced API key handling with validation
-function handleDay7ApiKeySet(request, sendResponse) {
-    console.log('[Background] Day 7 API key validation starting...');
-    
-    if (!request.apiKey || request.apiKey.trim().length === 0) {
-        console.error('[Background] Day 7 - No API key provided');
-        sendResponse({ 
-            success: false, 
-            error: 'Please provide a valid Gemini API key for AI testing',
-            day7Version: true 
-        });
-        return;
-    }
-
-    const apiKey = request.apiKey.trim();
-    console.log(`[Background] Day 7 - Validating API key (length: ${apiKey.length})`);
-    
-    // Enhanced validation - check key format
-    if (!apiKey.startsWith('AIza') || apiKey.length < 30) {
-        console.error('[Background] Day 7 - Invalid API key format');
-        sendResponse({
-            success: false,
-            error: 'Invalid Gemini API key format. Key should start with "AIza" and be at least 30 characters.',
-            day7Version: true
-        });
-        return;
-    }
-    
-    AI_CONFIG.apiKey = apiKey;
-    
-    chrome.storage.local.set({ geminiApiKey: apiKey }, () => {
+// ===== IMMEDIATE CACHE PERSISTENCE SYSTEM (FINAL Enhancement) =====
+async function persistCacheImmediately(key, data, retryCount = 0) {
+  const maxRetries = 3;
+  
+  try {
+    await new Promise((resolve, reject) => {
+      chrome.storage.local.set({ [key]: data }, () => {
         if (chrome.runtime.lastError) {
-            console.error('[Background] Day 7 storage error:', chrome.runtime.lastError);
-            sendResponse({
-                success: false,
-                error: `Storage error: ${chrome.runtime.lastError.message}`,
-                day7Version: true
-            });
+          BackgroundLogger.error(`Cache persistence failed for ${key}`, { 
+            error: chrome.runtime.lastError.message,
+            retry: retryCount
+          });
+          reject(chrome.runtime.lastError);
         } else {
-            console.log('[Background] Day 7 API key CONFIGURED SUCCESSFULLY - AI testing enabled');
-            sendResponse({
-                success: true,
-                day7Version: true,
-                message: '✅ API key configured successfully! AI testing now enabled.',
-                keyLength: apiKey.length,
-                aiEnabled: true
-            });
+          resolve();
         }
+      });
     });
+    
+    AI_CONFIG.cache.persistenceQueue.delete(key);
+    BackgroundLogger.throttledInfo(`Cache persisted immediately: ${key}`);
+    
+  } catch (error) {
+    if (retryCount < maxRetries) {
+      BackgroundLogger.warn(`Retrying cache persistence for ${key}, attempt ${retryCount + 1}`);
+      setTimeout(() => persistCacheImmediately(key, data, retryCount + 1), 1000);
+    } else {
+      BackgroundLogger.error(`Failed to persist cache after ${maxRetries} attempts: ${key}`);
+    }
+  }
 }
 
-// Day 7 Enhanced basic extraction
-async function handleDay7BasicExtraction(request, sender, sendResponse) {
+// Enhanced cache update with immediate persistence
+function updateCacheWithPersistence(cacheType, key, value) {
+  AI_CONFIG.cache[cacheType].set(key, value);
+  
+  // Queue for immediate persistence
+  const persistenceKey = `${cacheType}Cache`;
+  if (!AI_CONFIG.cache.persistenceQueue.has(persistenceKey)) {
+    AI_CONFIG.cache.persistenceQueue.add(persistenceKey);
+    
+    // Convert Map to array and persist immediately
+    const dataArray = Array.from(AI_CONFIG.cache[cacheType].entries());
+    persistCacheImmediately(persistenceKey, dataArray);
+  }
+}
+
+// ===== ENHANCED SCRIPT LOADER WITH RACE CONDITION PREVENTION (FINAL) =====
+async function loadScriptWithRetries(file, globalVar, maxRetries = 3) {
+  const existingScript = document.querySelector(`script[src*="${file}"]`);
+  if (existingScript) {
+    // Script already exists, check if global variable is available
+    if (typeof window[globalVar] !== 'undefined') {
+      BackgroundLogger.throttledInfo(`Script already loaded: ${file}`);
+      return true;
+    } else {
+      BackgroundLogger.throttledWarn(`Script exists but global ${globalVar} not found, removing and retrying...`);
+      existingScript.remove();
+      
+      // FINAL: Optional delay to prevent race conditions
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+  }
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-        console.log('[Background] Starting Day 7 basic extraction...');
-        
-        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tabs || !tabs[0]) {
-            throw new Error('No active tab found');
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = chrome.runtime.getURL(file);
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error(`Failed to load ${file}`));
+        document.head.appendChild(script);
+      });
+      
+      // Verify global variable is available
+      if (typeof window[globalVar] !== 'undefined') {
+        BackgroundLogger.throttledInfo(`Successfully loaded: ${file}`);
+        return true;
+      } else {
+        throw new Error(`Global ${globalVar} not found after loading ${file}`);
+      }
+      
+    } catch (e) {
+      BackgroundLogger.throttledWarn(`Retry ${attempt + 1}/${maxRetries} for ${file}`, { error: e.message });
+      if (attempt === maxRetries - 1) {
+        BackgroundLogger.error(`Failed final attempt: ${file}`, { error: e.message });
+        return false;
+      }
+      
+      // Small delay between retries
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+  return false;
+}
+
+// ===== FINAL: STRICT CRITICAL MODULE ENFORCEMENT =====
+async function loadModularSystem() {
+  if (AI_CONFIG.modulesLoaded) {
+    BackgroundLogger.throttledInfo('Modules already loaded');
+    return true;
+  }
+
+  BackgroundLogger.throttledInfo('Loading championship-grade FINAL modular system...');
+
+  try {
+    // Load external modules first (utils, extraction, validation, simulation)
+    const externalModules = [
+      { file: 'src/modules/utils.js', key: 'utils', globalVar: 'BackgroundUtils' },
+      { file: 'src/modules/extraction.js', key: 'extraction', globalVar: 'ExtractionManager' },
+      { file: 'src/modules/validation.js', key: 'validation', globalVar: 'ValidationManager' },
+      { file: 'src/modules/simulation.js', key: 'simulation', globalVar: 'SimulationManager' }
+    ];
+
+    // Load external modules in parallel using unified loader
+    const externalPromises = externalModules.map(async (module) => {
+      const success = await loadScriptWithRetries(module.file, module.globalVar);
+      AI_CONFIG.externalModules[module.key].loaded = success;
+      
+      if (success) {
+        // FINAL: Strict VERSION requirement - no fallbacks
+        const moduleVersion = window[module.globalVar]?.VERSION;
+        if (!moduleVersion) {
+          BackgroundLogger.error(`Module ${module.key} loaded but missing VERSION property`, {
+            file: module.file,
+            globalVar: module.globalVar
+          });
+          AI_CONFIG.externalModules[module.key].loaded = false;
+          return false;
         }
+        AI_CONFIG.externalModules[module.key].version = moduleVersion;
+        BackgroundLogger.throttledInfo(`Module ${module.key} loaded with VERSION ${moduleVersion}`);
+      }
+      
+      return success;
+    });
 
-        const tabId = tabs[0].id;
-        console.log(`[Background] Day 7 found active tab: ${tabId}`);
+    const externalResults = await Promise.allSettled(externalPromises);
 
-        // Ensure Day 7 content script is injected
-        try {
-            await chrome.scripting.executeScript({
-                target: { tabId: tabId },
-                files: ['content.js']
+    // Load utility modules using unified loader
+    await loadUtilityModules();
+
+    // Load external configurations with caching
+    await loadExternalConfigsWithCaching();
+
+    // FINAL: STRICT Critical module validation - ALL must be loaded
+    const criticalModulesLoaded = AI_CONFIG.criticalModules.every(moduleName => 
+      AI_CONFIG.externalModules[moduleName]?.loaded === true
+    );
+
+    // FINAL: modulesLoaded ONLY true if ALL critical modules loaded
+    AI_CONFIG.modulesLoaded = criticalModulesLoaded;
+
+    if (criticalModulesLoaded) {
+      BackgroundLogger.info('✅ ALL CRITICAL modules loaded successfully', {
+        criticalModules: AI_CONFIG.criticalModules,
+        versions: Object.fromEntries(
+          AI_CONFIG.criticalModules.map(name => [
+            name, 
+            AI_CONFIG.externalModules[name]?.version || 'UNKNOWN'
+          ])
+        )
+      });
+    } else {
+      const failedCritical = AI_CONFIG.criticalModules.filter(moduleName => 
+        !AI_CONFIG.externalModules[moduleName]?.loaded
+      );
+      
+      BackgroundLogger.error('❌ CRITICAL MODULES FAILED TO LOAD', {
+        failedModules: failedCritical,
+        systemWillNotStart: true
+      });
+      
+      throw new Error(`Critical modules failed: ${failedCritical.join(', ')}`);
+    }
+
+    return AI_CONFIG.modulesLoaded;
+
+  } catch (error) {
+    BackgroundLogger.error('💥 CRITICAL: Modular system initialization failed', { 
+      error: error.message,
+      criticalModulesRequired: AI_CONFIG.criticalModules
+    });
+    return false;
+  }
+}
+
+// ===== UTILITY MODULE LOADER WITH STRICT VERSION ENFORCEMENT =====
+async function loadUtilityModules() {
+  const utilityConfigs = [
+    { file: 'src/utils/extractor.js', globalVar: 'DOMExtractor', key: 'extractor' },
+    { file: 'src/utils/ai-extractor.js', globalVar: 'AIExtractorManager', key: 'aiExtractor' },
+    { file: 'src/utils/validator.js', globalVar: 'ValidatorManager', key: 'validator' },
+    { file: 'src/utils/schemas.js', globalVar: 'SchemaManager', key: 'schemas' }
+  ];
+
+  const loadPromises = utilityConfigs.map(async (config) => {
+    const success = await loadScriptWithRetries(config.file, config.globalVar);
+    AI_CONFIG.utilityStatus[config.key].loaded = success;
+    
+    if (success) {
+      // FINAL: Strict VERSION requirement
+      const version = window[config.globalVar]?.VERSION;
+      if (!version) {
+        BackgroundLogger.warn(`Utility ${config.key} missing VERSION property`, {
+          file: config.file
+        });
+        // For utilities, we allow fallback to maintain compatibility
+        AI_CONFIG.utilityStatus[config.key].version = 'LEGACY';
+      } else {
+        AI_CONFIG.utilityStatus[config.key].version = version;
+      }
+    }
+    
+    return success;
+  });
+
+  await Promise.allSettled(loadPromises);
+}
+
+// ===== ROBUST CHROME.STORAGE ERROR HANDLING (FINAL Enhancement) =====
+async function robustStorageOperation(operation, data = null, key = null) {
+  return new Promise((resolve, reject) => {
+    const callback = (result) => {
+      if (chrome.runtime.lastError) {
+        BackgroundLogger.error(`Storage operation failed: ${operation}`, {
+          error: chrome.runtime.lastError.message,
+          key: key,
+          operation: operation
+        });
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve(result);
+      }
+    };
+
+    switch (operation) {
+      case 'get':
+        chrome.storage.local.get(key, callback);
+        break;
+      case 'set':
+        chrome.storage.local.set(data, callback);
+        break;
+      case 'remove':
+        chrome.storage.local.remove(key, callback);
+        break;
+      case 'clear':
+        chrome.storage.local.clear(callback);
+        break;
+      default:
+        reject(new Error(`Unknown storage operation: ${operation}`));
+    }
+  });
+}
+
+// ===== EXTERNAL CONFIGURATION LOADER WITH ROBUST ERROR HANDLING =====
+async function loadExternalConfigsWithCaching() {
+  try {
+    const now = Date.now();
+    
+    // Check if we have valid cached config
+    if (AI_CONFIG.cache.configTimestamp && 
+        (now - AI_CONFIG.cache.configTimestamp) < AI_CONFIG.cache.configExpiry &&
+        AI_CONFIG.cache.siteConfigs.has('enterprise')) {
+      BackgroundLogger.throttledInfo('Using cached external configuration');
+      return;
+    }
+
+    // Load from chrome.storage.local with robust error handling
+    try {
+      const storedConfig = await robustStorageOperation('get', null, ['enterpriseConfig', 'configTimestamp']);
+      
+      if (storedConfig.enterpriseConfig && storedConfig.configTimestamp &&
+          (now - storedConfig.configTimestamp) < AI_CONFIG.cache.configExpiry) {
+        AI_CONFIG.cache.siteConfigs.set('enterprise', storedConfig.enterpriseConfig);
+        AI_CONFIG.cache.configTimestamp = storedConfig.configTimestamp;
+        BackgroundLogger.throttledInfo('Loaded external configuration from persistent cache');
+        return;
+      }
+    } catch (storageError) {
+      BackgroundLogger.warn('Failed to load config from storage, fetching fresh', {
+        error: storageError.message
+      });
+    }
+
+    // Fetch fresh configuration
+    const configResponse = await fetch(chrome.runtime.getURL('config/enterprise-sites.json'));
+    if (configResponse.ok) {
+      const externalSites = await configResponse.json();
+      AI_CONFIG.cache.siteConfigs.set('enterprise', externalSites);
+      AI_CONFIG.cache.configTimestamp = now;
+      
+      // Store in persistent cache with robust error handling
+      try {
+        await robustStorageOperation('set', {
+          enterpriseConfig: externalSites,
+          configTimestamp: now
+        });
+        BackgroundLogger.throttledInfo('Loaded and persisted fresh external enterprise site configuration');
+      } catch (persistError) {
+        BackgroundLogger.warn('Config loaded but persistence failed', {
+          error: persistError.message
+        });
+      }
+    }
+  } catch (error) {
+    BackgroundLogger.debug('Using default enterprise site configuration', { error: error.message });
+  }
+}
+
+// ===== FINAL: OPTIMIZED LOGGING SYSTEM WITH TIMESTAMP CACHING =====
+const BackgroundLogger = {
+  _getOptimizedTimestamp() {
+    const now = Date.now();
+    
+    // Use cached timestamp if within expiry window
+    if (AI_CONFIG.logging.timestampCache && 
+        (now - AI_CONFIG.logging.timestampCache.time) < AI_CONFIG.logging.timestampCacheExpiry) {
+      return AI_CONFIG.logging.timestampCache.iso;
+    }
+    
+    // Generate new timestamp and cache it
+    const timestamp = new Date(now).toISOString();
+    AI_CONFIG.logging.timestampCache = {
+      time: now,
+      iso: timestamp
+    };
+    
+    return timestamp;
+  },
+
+  _shouldLog(level = 'info') {
+    if (!AI_CONFIG.logging.throttleModuleLoads) return true;
+    
+    const now = Date.now();
+    const timeSinceLastLog = now - AI_CONFIG.logging.lastLogTime;
+    const minInterval = 1000 / AI_CONFIG.logging.maxLogsPerSecond;
+    
+    if (timeSinceLastLog >= minInterval) {
+      AI_CONFIG.logging.lastLogTime = now;
+      return true;
+    }
+    return false;
+  },
+
+  info: (msg, meta = {}) => {
+    const timestamp = BackgroundLogger._getOptimizedTimestamp();
+    console.log(`[${timestamp}] [Background] ${msg}`, meta);
+  },
+  
+  throttledInfo: (msg, meta = {}) => {
+    if (BackgroundLogger._shouldLog('info')) {
+      BackgroundLogger.info(msg, meta);
+    }
+  },
+  
+  warn: (msg, meta = {}) => {
+    const timestamp = BackgroundLogger._getOptimizedTimestamp();
+    console.warn(`[${timestamp}] [Background] ${msg}`, meta);
+  },
+  
+  throttledWarn: (msg, meta = {}) => {
+    if (BackgroundLogger._shouldLog('warn')) {
+      BackgroundLogger.warn(msg, meta);
+    }
+  },
+  
+  error: (msg, meta = {}) => {
+    const timestamp = BackgroundLogger._getOptimizedTimestamp();
+    console.error(`[${timestamp}] [Background] ${msg}`, meta);
+  },
+  
+  debug: (msg, meta = {}) => {
+    const timestamp = BackgroundLogger._getOptimizedTimestamp();
+    console.debug(`[${timestamp}] [Background] ${msg}`, meta);
+  }
+};
+
+// ===== FINAL: ENHANCED INITIALIZATION WITH COMPREHENSIVE ERROR HANDLING =====
+(async () => {
+  try {
+    // Robust storage operation for API key retrieval
+    const result = await robustStorageOperation('get', null, ['geminiApiKey']);
+
+    if (result.geminiApiKey) {
+      AI_CONFIG.apiKey = result.geminiApiKey;
+      // FINAL: Complete security - no key exposure in logs
+      BackgroundLogger.info('API key loaded - Enterprise ready', {
+        keyLength: result.geminiApiKey.length,
+        hasKey: true
+      });
+      
+      // Asynchronous API key validation
+      if (AI_CONFIG.externalModules.utils.loaded && typeof BackgroundUtils !== 'undefined') {
+        BackgroundUtils.validateApiKeyAsync(result.geminiApiKey);
+      }
+    } else {
+      BackgroundLogger.info('No API key found, basic extraction only');
+    }
+
+    // Initialize modular system
+    const systemLoaded = await loadModularSystem();
+    
+    if (!systemLoaded) {
+      const errorMessage = 'CRITICAL: Modular system failed to initialize - all critical modules must load';
+      BackgroundLogger.error(errorMessage);
+      
+      // FINAL: Always throw for any critical module failure
+      throw new Error(errorMessage);
+    }
+    
+    BackgroundLogger.info('🚀 System initialization completed successfully');
+    
+  } catch (initError) {
+    BackgroundLogger.error('💥 System initialization FAILED', { 
+      error: initError.message,
+      stack: initError.stack,
+      criticalModules: AI_CONFIG.criticalModules,
+      moduleStatus: AI_CONFIG.externalModules
+    });
+    
+    // FINAL: Always re-throw initialization errors
+    throw initError;
+  }
+})().catch(error => {
+  // Final error boundary
+  console.error('🔥 FATAL: Background script initialization failed completely', {
+    error: error.message,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ===== ENHANCED API KEY VALIDATION (FINAL - flexible regex) =====
+function validateApiKeyFormat(apiKey) {
+  // More flexible API key validation
+  const patterns = [
+    /^AIza[0-9A-Za-z_-]{35}$/, // Standard Google API key format
+    /^[A-Za-z0-9_-]{30,}$/ // Generic long API key format
+  ];
+  
+  return patterns.some(pattern => pattern.test(apiKey));
+}
+
+// ===== FINAL: ENHANCED MESSAGE LISTENER WITH COMPLETE CONSISTENCY =====
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  BackgroundLogger.throttledInfo(`ULTIMATE request: ${request.action}`, {
+    sender: sender.tab?.url,
+    hasApiKey: !!AI_CONFIG.apiKey,
+    modulesLoaded: AI_CONFIG.modulesLoaded
+  });
+  
+  try {
+    switch (request.action) {
+      case 'extractPageData':
+        handleBasicExtraction(request, sender, sendResponse);
+        return true; // Async handler - keep channel open
+
+      case 'extractData':
+        handleEnhancedExtraction(request, sender, sendResponse);
+        return true; // Async handler - keep channel open
+
+      case 'runStressTest':
+        handleEnterpriseSimulation(request, sendResponse);
+        return true; // Async handler - keep channel open
+
+      case 'runRealStressTest':
+        handleRealStressTest(request, sendResponse);
+        return true; // Async handler - keep channel open
+
+      case 'setApiKey':
+        handleApiKeySet(request, sendResponse);
+        return true; // Async handler - keep channel open
+
+      case 'getApiKey':
+        sendResponse({
+          hasKey: !!AI_CONFIG.apiKey,
+          day8Version: true,
+          keyLength: AI_CONFIG.apiKey ? AI_CONFIG.apiKey.length : 0,
+          enterpriseReady: true,
+          realTestingReady: true,
+          modulesLoaded: AI_CONFIG.modulesLoaded,
+          criticalModulesLoaded: AI_CONFIG.criticalModules.every(moduleName => 
+            AI_CONFIG.externalModules[moduleName]?.loaded === true
+          ),
+          externalModules: AI_CONFIG.externalModules,
+          utilityStatus: AI_CONFIG.utilityStatus,
+          version: DAY8_VERSION
+        });
+        return false; // Synchronous response
+
+      case 'getSystemStatus':
+        sendResponse({
+          modulesLoaded: AI_CONFIG.modulesLoaded,
+          criticalModulesLoaded: AI_CONFIG.criticalModules.every(moduleName => 
+            AI_CONFIG.externalModules[moduleName]?.loaded === true
+          ),
+          externalModules: AI_CONFIG.externalModules,
+          utilityStatus: AI_CONFIG.utilityStatus,
+          day8Version: DAY8_VERSION,
+          cache: {
+            schemaMappings: AI_CONFIG.cache.schemaMappings.size,
+            siteConfigs: AI_CONFIG.cache.siteConfigs.size,
+            configAge: AI_CONFIG.cache.configTimestamp ? 
+              Date.now() - AI_CONFIG.cache.configTimestamp : null,
+            pendingPersistence: AI_CONFIG.cache.persistenceQueue.size
+          }
+        });
+        return false; // Synchronous response
+
+      case 'clearCache':
+        // Enhanced cache clearing with robust storage operations
+        (async () => {
+          try {
+            AI_CONFIG.cache.schemaMappings.clear();
+            AI_CONFIG.cache.siteConfigs.clear();
+            AI_CONFIG.cache.apiValidation = null;
+            AI_CONFIG.cache.configTimestamp = null;
+            AI_CONFIG.cache.persistenceQueue.clear();
+            
+            // Clear persistent cache with robust error handling
+            await robustStorageOperation('remove', null, ['enterpriseConfig', 'configTimestamp', 'schemaMappingsCache']);
+            
+            sendResponse({ 
+              success: true, 
+              message: 'All caches cleared (memory + persistent) with robust error handling' 
             });
-            console.log('[Background] Day 7 content script injected successfully');
-        } catch (injectionError) {
-            console.warn('[Background] Day 7 content script injection warning:', injectionError.message);
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const response = await chrome.tabs.sendMessage(tabId, {
-            action: "extractPageData"
-        });
-
-        if (response && response.success) {
-            console.log('[Background] Day 7 basic extraction successful');
-            sendResponse(response);
-        } else {
-            console.warn('[Background] Day 7 basic extraction returned unsuccessful response');
-            sendResponse(response || {
-                success: false,
-                error: 'No response from Day 7 content script',
-                day7Version: true
+          } catch (error) {
+            sendResponse({ 
+              success: false, 
+              error: error.message,
+              message: 'Cache clearing failed'
             });
-        }
-    } catch (error) {
-        console.error('[Background] Day 7 basic extraction error:', error);
-        sendResponse({
-            success: false,
-            error: error.message,
-            errorType: 'DAY7_BASIC_EXTRACTION_ERROR',
-            timestamp: new Date().toISOString()
-        });
-    }
-}
+          }
+        })();
+        return true; // Async handler - keep channel open
 
-// Day 7 Enhanced extraction with AI
-async function handleDay7EnhancedExtraction(request, sender, sendResponse) {
-    try {
-        console.log('[Background] Starting Day 7 enhanced extraction...');
-        
-        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tabs || !tabs[0]) {
-            throw new Error('No active tab found');
-        }
-
-        const tabId = tabs[0].id;
-        
-        try {
-            await chrome.scripting.executeScript({
-                target: { tabId: tabId },
-                files: ['content.js']
+      case 'reloadModules':
+        // FINAL: Enhanced module reloading with critical module failure detection
+        (async () => {
+          try {
+            BackgroundLogger.info('🔄 Starting module reload...');
+            AI_CONFIG.modulesLoaded = false;
+            
+            // Clear module status
+            Object.keys(AI_CONFIG.externalModules).forEach(key => {
+              AI_CONFIG.externalModules[key].loaded = false;
+              AI_CONFIG.externalModules[key].version = null;
             });
-            console.log('[Background] Day 7 content script injected for enhanced extraction');
-        } catch (injectionError) {
-            console.warn('[Background] Day 7 content script injection warning:', injectionError.message);
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const pageDataResponse = await chrome.tabs.sendMessage(tabId, {
-            action: "extractPageData"
-        });
-
-        if (!pageDataResponse || !pageDataResponse.success) {
-            throw new Error('Failed to get Day 7 page data from content script');
-        }
-
-        console.log('[Background] Day 7 page data received, processing with AI...');
-
-        // Day 7 Enhanced Basic extraction
-        const basicResult = executeDay7BasicExtraction(pageDataResponse.data);
-
-        // Day 7 Enhanced AI extraction if API key is available
-        if (AI_CONFIG.apiKey && AI_CONFIG.apiKey.length > 0) {
-            try {
-                console.log('[Background] Running Day 7 AI extraction with valid API key...');
-                const aiResult = await executeDay7AIExtractionV4(pageDataResponse.data, AI_CONFIG);
-                
-                if (aiResult && aiResult.success) {
-                    console.log('[Background] Day 7 AI extraction successful');
-                    sendResponse(aiResult);
-                    return;
-                } else {
-                    console.warn('[Background] Day 7 AI extraction returned unsuccessful, using basic');
-                }
-            } catch (aiError) {
-                console.warn('[Background] Day 7 AI extraction failed:', aiError.message);
+            
+            const reloaded = await loadModularSystem();
+            
+            if (!reloaded) {
+              const failedCritical = AI_CONFIG.criticalModules.filter(moduleName => 
+                !AI_CONFIG.externalModules[moduleName]?.loaded
+              );
+              
+              throw new Error(`Critical module reload failed: ${failedCritical.join(', ')}`);
             }
-        } else {
-            console.log('[Background] Day 7 no valid API key, using enhanced basic extraction');
+            
+            sendResponse({ 
+              success: true, 
+              message: 'All critical modules reloaded successfully',
+              criticalModulesStatus: AI_CONFIG.criticalModules.map(name => ({
+                module: name,
+                loaded: AI_CONFIG.externalModules[name]?.loaded || false,
+                version: AI_CONFIG.externalModules[name]?.version || 'UNKNOWN'
+              }))
+            });
+          } catch (error) {
+            BackgroundLogger.error('❌ Module reload failed', { error: error.message });
+            sendResponse({ 
+              success: false, 
+              error: error.message,
+              criticalFailure: true
+            });
+          }
+        })();
+        return true; // Async handler - keep channel open
+
+      default:
+        BackgroundLogger.warn(`Unknown action: ${request.action}`);
+        sendResponse({ 
+          success: false, 
+          error: 'Unknown action', 
+          day8Version: DAY8_VERSION 
+        });
+        return false; // Synchronous response
+    }
+
+  } catch (error) {
+    BackgroundLogger.error(`Critical error handling ${request.action}`, {
+      error: error.message,
+      stack: error.stack
+    });
+    
+    sendResponse({
+      success: false,
+      error: error.message,
+      errorType: 'DAY8_CRITICAL_MESSAGE_HANDLER_ERROR',
+      timestamp: new Date().toISOString(),
+      version: DAY8_VERSION
+    });
+    return false; // Error response is synchronous
+  }
+});
+
+// ===== HANDLER FUNCTIONS WITH ENHANCED CRITICAL MODULE STATUS REPORTING =====
+function handleBasicExtraction(request, sender, sendResponse) {
+  if (AI_CONFIG.externalModules.extraction.loaded && typeof ExtractionManager !== 'undefined') {
+    ExtractionManager.handleBasicExtraction(request, sender, sendResponse, AI_CONFIG);
+  } else {
+    BackgroundLogger.warn('ExtractionManager not loaded - CRITICAL MODULE FAILURE');
+    sendResponse({ 
+      success: false, 
+      error: 'Extraction modules not available - CRITICAL SYSTEM FAILURE',
+      fallbackAvailable: false,
+      criticalModulesStatus: AI_CONFIG.criticalModules.map(name => ({
+        module: name,
+        loaded: AI_CONFIG.externalModules[name]?.loaded || false,
+        version: AI_CONFIG.externalModules[name]?.version || 'MISSING',
+        isCritical: true
+      })),
+      systemStatus: 'DEGRADED'
+    });
+  }
+}
+
+function handleEnhancedExtraction(request, sender, sendResponse) {
+  if (AI_CONFIG.externalModules.extraction.loaded && typeof ExtractionManager !== 'undefined') {
+    ExtractionManager.handleEnhancedExtraction(request, sender, sendResponse, AI_CONFIG);
+  } else {
+    BackgroundLogger.warn('ExtractionManager not loaded - CRITICAL MODULE FAILURE');
+    sendResponse({ 
+      success: false, 
+      error: 'Enhanced extraction modules not available - CRITICAL SYSTEM FAILURE',
+      fallbackAvailable: false,
+      criticalModulesStatus: AI_CONFIG.criticalModules.map(name => ({
+        module: name,
+        loaded: AI_CONFIG.externalModules[name]?.loaded || false,
+        version: AI_CONFIG.externalModules[name]?.version || 'MISSING',
+        isCritical: true
+      })),
+      systemStatus: 'DEGRADED'
+    });
+  }
+}
+
+function handleEnterpriseSimulation(request, sendResponse) {
+  if (AI_CONFIG.externalModules.simulation.loaded && typeof SimulationManager !== 'undefined') {
+    SimulationManager.handleEnterpriseSimulation(request, sendResponse, AI_CONFIG, DAY7_BASELINE);
+  } else {
+    BackgroundLogger.warn('SimulationManager not loaded');
+    sendResponse({ 
+      success: false, 
+      error: 'Simulation modules not available',
+      fallbackAvailable: false,
+      moduleType: 'OPTIONAL'
+    });
+  }
+}
+
+function handleRealStressTest(request, sendResponse) {
+  if (AI_CONFIG.externalModules.simulation.loaded && typeof SimulationManager !== 'undefined') {
+    SimulationManager.handleRealStressTest(request, sendResponse, AI_CONFIG);
+  } else {
+    BackgroundLogger.warn('SimulationManager not loaded');
+    sendResponse({ 
+      success: false, 
+      error: 'Real testing modules not available',
+      fallbackAvailable: false,
+      moduleType: 'OPTIONAL'
+    });
+  }
+}
+
+function handleApiKeySet(request, sendResponse) {
+  if (AI_CONFIG.externalModules.utils.loaded && typeof BackgroundUtils !== 'undefined') {
+    BackgroundUtils.handleApiKeySet(request, sendResponse, AI_CONFIG, DAY8_VERSION);
+  } else {
+    // Enhanced fallback API key handling with robust storage
+    (async () => {
+      try {
+        if (!request.apiKey || request.apiKey.trim().length === 0) {
+          sendResponse({ success: false, error: 'Please provide a valid API key' });
+          return;
         }
 
-        sendResponse(basicResult);
-    } catch (error) {
-        console.error('[Background] Day 7 enhanced extraction error:', error);
+        const apiKey = request.apiKey.trim();
+        
+        // Enhanced API key validation
+        if (!validateApiKeyFormat(apiKey)) {
+          sendResponse({ 
+            success: false, 
+            error: 'Invalid API key format. Please provide a valid API key.' 
+          });
+          return;
+        }
+
+        AI_CONFIG.apiKey = apiKey;
+        
+        // Use robust storage operation
+        await robustStorageOperation('set', { geminiApiKey: apiKey });
+        
+        BackgroundLogger.info('API key configured (fallback method with robust storage)');
         sendResponse({
-            success: false,
-            error: error.message,
-            errorType: 'DAY7_ENHANCED_EXTRACTION_ERROR',
-            timestamp: new Date().toISOString()
+          success: true,
+          message: 'Day 8 ULTIMATE FINAL API key configured - Robust fallback mode',
+          day8Version: DAY8_VERSION,
+          fallbackMode: true,
+          robustStorage: true
         });
-    }
+        
+      } catch (error) {
+        BackgroundLogger.error('API key configuration failed', { error: error.message });
+        sendResponse({ 
+          success: false, 
+          error: error.message,
+          fallbackMode: true
+        });
+      }
+    })();
+  }
 }
 
-// 🎯 **OPERATION SURGICAL DATA++ - REAL STRESS TEST**
-async function handleDay7StressTest(request, sendResponse) {
-    console.log('[Background] Day 7 OPERATION SURGICAL DATA++ - Starting real stress test across enemy terrain...');
+// ===== FINAL: ENHANCED PERSISTENT CACHE SYSTEM =====
+(async () => {
+  try {
+    // Restore schema mappings from persistent cache with robust error handling
+    const storedCache = await robustStorageOperation('get', null, ['schemaMappingsCache']);
     
-    const testStartTime = Date.now();
-    const errorLog = [];
-    const jsonlEntries = [];
+    if (storedCache.schemaMappingsCache) {
+      // Convert stored array back to Map
+      const restoredMappings = new Map(storedCache.schemaMappingsCache);
+      AI_CONFIG.cache.schemaMappings = restoredMappings;
+      BackgroundLogger.throttledInfo(`✅ Restored ${restoredMappings.size} schema mappings from persistent cache`);
+    }
+  } catch (error) {
+    BackgroundLogger.debug('Could not restore persistent cache', { error: error.message });
+  }
+})();
+
+// FINAL: Enhanced cache monitoring and persistence
+let cacheMonitorInterval = setInterval(() => {
+  // Monitor cache size and persist if needed
+  if (AI_CONFIG.cache.schemaMappings.size > 0) {
+    const mappingsArray = Array.from(AI_CONFIG.cache.schemaMappings.entries());
     
-    try {
-        // Day 7 STRESS TEST SITES - Real enemy terrain with wildcard
-        const stressSites = [
-            {
-                name: 'Bloomberg',
-                url: 'https://www.bloomberg.com/news/articles/2024-08-15/tech-stocks-rise-as-inflation-data-boosts-rate-cut-hopes',
-                domain: 'bloomberg.com',
-                type: 'news',
-                fields: ['title', 'author', 'publication_date', 'main_content_summary', 'category'],
-                timeout: 15000
-            },
-            {
-                name: 'Amazon', 
-                url: 'https://www.amazon.com/dp/B08N5WRWNW',
-                domain: 'amazon.com',
-                type: 'ecommerce',
-                fields: ['title', 'price', 'reviews_rating', 'description', 'images'],
-                timeout: 20000
-            },
-            {
-                name: 'AllRecipes',
-                url: 'https://www.allrecipes.com/recipe/213742/cheesy-chicken-broccoli-casserole/',
-                domain: 'allrecipes.com',
-                type: 'recipe',
-                fields: ['title', 'ingredients', 'instructions', 'main_content_summary'],
-                timeout: 15000
-            },
-            {
-                name: 'Wikipedia',
-                url: 'https://en.wikipedia.org/wiki/Artificial_intelligence',
-                domain: 'wikipedia.org',
-                type: 'educational',
-                fields: ['title', 'main_content_summary', 'links', 'category'],
-                timeout: 12000
-            }
-        ];
-
-        const stressResults = [];
-
-        // Day 7 JSONL format initialization
-        let csvData = 'Site,Field,PromptVersion,BasicAccuracy,AIAccuracy,NullReturned,Timestamp,FieldScore,Quality,ErrorType,Day7Target,UsingRealAI,RealSiteTested\n';
-        const timestamp = new Date().toISOString();
-
-        console.log(`[Background] Day 7 STRESS TEST: Will traverse ${stressSites.length} enemy domains...`);
-
-        // 🎯 REAL CROSS-DOMAIN TRAVERSAL - No simulations, only truth
-        for (const site of stressSites) {
-            console.log(`[Background] Day 7 STRESS TEST: Infiltrating ${site.name} at ${site.domain}...`);
-            
-            let siteResult = null;
-            let testTab = null;
-            
-            try {
-                // Create new tab for enemy domain infiltration
-                testTab = await chrome.tabs.create({
-                    url: site.url,
-                    active: false
-                });
-                console.log(`[Background] Day 7 created stealth tab ${testTab.id} for ${site.domain}`);
-
-                // Wait for domain load with tactical timeout
-                await new Promise((resolve, reject) => {
-                    let loadTimeout;
-                    let isResolved = false;
-
-                    const onUpdated = (tabId, changeInfo, tab) => {
-                        if (tabId === testTab.id && changeInfo.status === 'complete' && !isResolved) {
-                            isResolved = true;
-                            chrome.tabs.onUpdated.removeListener(onUpdated);
-                            if (loadTimeout) clearTimeout(loadTimeout);
-                            resolve();
-                        }
-                    };
-
-                    chrome.tabs.onUpdated.addListener(onUpdated);
-
-                    // Set tactical timeout for domain load
-                    loadTimeout = setTimeout(() => {
-                        if (!isResolved) {
-                            isResolved = true;
-                            chrome.tabs.onUpdated.removeListener(onUpdated);
-                            console.warn(`[Background] Day 7 ${site.domain} load timeout, proceeding with tactical extraction...`);
-                            resolve(); // Continue mission
-                        }
-                    }, site.timeout);
-                });
-
-                console.log(`[Background] Day 7 ${site.domain} infiltrated, deploying extraction payload...`);
-
-                // Deploy content script payload
-                await chrome.scripting.executeScript({
-                    target: { tabId: testTab.id },
-                    files: ['content.js']
-                });
-
-                // Wait for payload initialization
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-                // Execute data extraction from enemy domain
-                const extractionResponse = await chrome.tabs.sendMessage(testTab.id, {
-                    action: "extractPageData"
-                });
-
-                if (extractionResponse && extractionResponse.success) {
-                    console.log(`[Background] Day 7 ${site.domain} extraction successful - data acquired`);
-
-                    // Run Day 7 Basic extraction (tactical baseline)
-                    const basicResult = executeDay7BasicExtraction(extractionResponse.data);
-
-                    // Run Day 7 AI extraction with prompt_v4 (strategic enhancement)
-                    let aiResult = basicResult;
-                    let usingRealAI = false;
-                    
-                    if (AI_CONFIG.apiKey && AI_CONFIG.apiKey.length > 0 && extractionResponse.data.main_content_summary) {
-                        try {
-                            console.log(`[Background] Day 7 ${site.domain} - deploying AI enhancement with prompt_v4...`);
-                            const aiResponse = await executeDay7AIExtractionV4(extractionResponse.data, AI_CONFIG);
-                            
-                            if (aiResponse && aiResponse.success) {
-                                aiResult = aiResponse;
-                                usingRealAI = aiResponse.metadata?.realAI || false;
-                                console.log(`[Background] Day 7 ${site.domain} AI enhancement: ${usingRealAI ? 'STRATEGIC SUCCESS' : 'TACTICAL FALLBACK'}`);
-                            }
-                        } catch (aiError) {
-                            console.warn(`[Background] Day 7 ${site.domain} AI enhancement failed:`, aiError);
-                        }
-                    }
-
-                    // Calculate stress test scores for this domain
-                    let siteBasicScore = 0;
-                    let siteAIScore = 0;
-                    const weakFields = [];
-                    
-                    for (const field of site.fields) {
-                        const basicValue = basicResult.data[field];
-                        const aiValue = aiResult.data[field];
-
-                        // Day 7 field scoring with stress test precision
-                        const basicScore = calculateDay7FieldScore(basicValue, field);
-                        const aiScore = calculateDay7FieldScore(aiValue, field);
-                        
-                        siteBasicScore += basicScore;
-                        siteAIScore += aiScore;
-
-                        // Track weak fields for strategic analysis
-                        if (aiScore < 60) {
-                            weakFields.push(field);
-                        }
-
-                        // Add to Day 7 CSV with REAL domain data
-                        csvData += `${site.name},${field},prompt_v4,${basicScore},${aiScore},${!aiValue},"${timestamp}",${aiScore},${getDay7QualityLabel(aiScore)},${!aiValue ? 'MISSING_FIELD' : 'SUCCESS'},stress-test-baseline,${usingRealAI},TRUE\n`;
-                    }
-
-                    const avgBasicScore = Math.round(siteBasicScore / site.fields.length);
-                    const avgAIScore = Math.round(siteAIScore / site.fields.length);
-                    const accuracy = avgAIScore / 100; // Convert to 0-1 scale for JSONL
-
-                    // Create JSONL entry for this domain stress test
-                    const jsonlEntry = {
-                        timestamp: timestamp,
-                        domain: site.domain,
-                        site_name: site.name,
-                        site_type: site.type,
-                        accuracy: accuracy,
-                        basic_accuracy: avgBasicScore / 100,
-                        ai_accuracy: avgAIScore / 100,
-                        weak_fields: weakFields,
-                        fields_tested: site.fields.length,
-                        fields_extracted: site.fields.filter(f => aiResult.data[f]).length,
-                        using_real_ai: usingRealAI,
-                        extraction_time: aiResult.metadata?.extractionTime || 0,
-                        day7_version: 'surgical-stress-test'
-                    };
-
-                    jsonlEntries.push(jsonlEntry);
-
-                    siteResult = {
-                        site: site.name,
-                        domain: site.domain,
-                        url: site.url,
-                        type: site.type,
-                        basicScore: avgBasicScore,
-                        aiScore: avgAIScore,
-                        accuracy: accuracy,
-                        weakFields: weakFields,
-                        fieldsExtracted: site.fields.filter(f => aiResult.data[f]).length,
-                        totalFields: site.fields.length,
-                        usingRealAI: usingRealAI,
-                        realSiteTested: true
-                    };
-
-                    stressResults.push(siteResult);
-                    console.log(`[Background] Day 7 ${site.domain} STRESS TEST COMPLETE - Basic: ${avgBasicScore}%, AI: ${avgAIScore}%, Weak Fields: [${weakFields.join(', ')}]`);
-                } else {
-                    throw new Error(`Failed to extract data from enemy domain ${site.domain}`);
-                }
-            } catch (siteError) {
-                console.error(`[Background] Day 7 ${site.domain} stress test failed:`, siteError);
-                
-                // Add error entries to CSV
-                for (const field of site.fields) {
-                    csvData += `${site.name},${field},prompt_v4,0,0,TRUE,"${timestamp}",0,failed,DOMAIN_INFILTRATION_FAILED,stress-test-baseline,FALSE,FALSE\n`;
-                }
-
-                // Add failed domain to JSONL
-                const jsonlEntry = {
-                    timestamp: timestamp,
-                    domain: site.domain,
-                    site_name: site.name,
-                    site_type: site.type,
-                    accuracy: 0,
-                    basic_accuracy: 0,
-                    ai_accuracy: 0,
-                    weak_fields: site.fields,
-                    fields_tested: site.fields.length,
-                    fields_extracted: 0,
-                    using_real_ai: false,
-                    extraction_time: 0,
-                    error: siteError.message,
-                    day7_version: 'surgical-stress-test-failed'
-                };
-
-                jsonlEntries.push(jsonlEntry);
-
-                // Add failed domain to results  
-                stressResults.push({
-                    site: site.name,
-                    domain: site.domain,
-                    url: site.url,
-                    type: site.type,
-                    basicScore: 0,
-                    aiScore: 0,
-                    accuracy: 0,
-                    weakFields: site.fields,
-                    fieldsExtracted: 0,
-                    totalFields: site.fields.length,
-                    usingRealAI: false,
-                    realSiteTested: false,
-                    error: siteError.message
-                });
-
-                errorLog.push({
-                    type: 'DAY7_STRESS_TEST_DOMAIN_ERROR',
-                    domain: site.domain,
-                    site: site.name,
-                    url: site.url,
-                    message: siteError.message,
-                    timestamp: new Date().toISOString()
-                });
-            } finally {
-                // Always extract from enemy domain (stealth cleanup)
-                if (testTab && testTab.id) {
-                    try {
-                        await chrome.tabs.remove(testTab.id);
-                        console.log(`[Background] Day 7 extracted from ${site.domain} - stealth tab ${testTab.id} eliminated`);
-                    } catch (cleanupError) {
-                        console.warn(`[Background] Day 7 extraction warning from ${site.domain}:`, cleanupError);
-                    }
-                }
-            }
-        }
-
-        // Calculate Day 7 STRESS TEST overall intelligence
-        const successfulDomains = stressResults.filter(r => r.realSiteTested);
-        const overallBasicScore = successfulDomains.length > 0 ? 
-            Math.round(successfulDomains.reduce((sum, r) => sum + r.basicScore, 0) / successfulDomains.length) : 0;
-        const overallAIScore = successfulDomains.length > 0 ?
-            Math.round(successfulDomains.reduce((sum, r) => sum + r.aiScore, 0) / successfulDomains.length) : 0;
-
-        // Identify most problematic domains and fields
-        const allWeakFields = successfulDomains.flatMap(r => r.weakFields);
-        const weakFieldAnalysis = allWeakFields.reduce((acc, field) => {
-            acc[field] = (acc[field] || 0) + 1;
-            return acc;
-        }, {});
-
-        // Add Day 7 STRESS TEST summary row to CSV
-        const usingRealAI = successfulDomains.some(r => r.usingRealAI);
-        csvData += `OVERALL,summary,prompt_v4,${overallBasicScore},${overallAIScore},false,"${timestamp}",${overallAIScore},${getDay7QualityLabel(overallAIScore)},${successfulDomains.length === stressSites.length ? 'ALL_DOMAINS_INFILTRATED' : 'PARTIAL_INFILTRATION'},stress-test-baseline,${usingRealAI},TRUE\n`;
-
-        // Create JSONL string for auto-save
-        const jsonlData = jsonlEntries.map(entry => JSON.stringify(entry)).join('\n');
-
-        console.log(`[Background] Day 7 OPERATION SURGICAL DATA++ COMPLETE - Overall AI: ${overallAIScore}% from ${successfulDomains.length}/${stressSites.length} enemy domains`);
-        console.log(`[Background] Day 7 Most problematic fields:`, Object.entries(weakFieldAnalysis).sort((a, b) => b[1] - a[1]).slice(0, 3));
-
-        sendResponse({
-            success: true,
-            csvData: csvData,
-            jsonlData: jsonlData,
-            timestamp: timestamp,
-            summary: {
-                sitesTestedCount: stressSites.length,
-                domainsInfiltrated: successfulDomains.length,
-                domainsFailed: stressSites.length - successfulDomains.length,
-                overallBasicScore,
-                overallAIScore,
-                testDuration: Date.now() - testStartTime,
-                errorLog: errorLog,
-                stressResults: stressResults,
-                weakFieldAnalysis: weakFieldAnalysis,
-                usingRealAI: usingRealAI,
-                day7Version: 'surgical-stress-test',
-                operationName: 'SURGICAL DATA++',
-                realCrossDomainTest: true,
-                apiKeyConfigured: !!(AI_CONFIG.apiKey && AI_CONFIG.apiKey.length > 0)
-            }
-        });
-    } catch (error) {
-        const criticalError = {
-            type: 'DAY7_STRESS_TEST_CRITICAL_ERROR',
-            message: `Day 7 OPERATION SURGICAL DATA++ failed: ${error.message}`,
-            stack: error.stack,
-            timestamp: new Date().toISOString(),
-            testDuration: Date.now() - testStartTime
-        };
-        errorLog.push(criticalError);
-        
-        console.error('[Background] Day 7 OPERATION SURGICAL DATA++ critical error:', error);
-        
-        sendResponse({
-            success: false,
-            error: error.message,
-            errorLog: errorLog,
-            testDuration: Date.now() - testStartTime,
-            day7Version: 'surgical-stress-test-failed'
-        });
+    // Use immediate persistence for critical data
+    if (!AI_CONFIG.cache.persistenceQueue.has('schemaMappingsCache')) {
+      updateCacheWithPersistence('schemaMappings', 'periodic', Date.now());
     }
-}
+  }
+  
+  // Log cache statistics every 5 minutes
+  const cacheStats = {
+    schemaMappings: AI_CONFIG.cache.schemaMappings.size,
+    siteConfigs: AI_CONFIG.cache.siteConfigs.size,
+    pendingPersistence: AI_CONFIG.cache.persistenceQueue.size,
+    configAge: AI_CONFIG.cache.configTimestamp ? Date.now() - AI_CONFIG.cache.configTimestamp : null
+  };
+  
+  BackgroundLogger.throttledInfo('Cache status', cacheStats);
+  
+}, 300000); // Every 5 minutes
 
-// 🎯 Day 7 Enhanced AI Extraction with PROMPT_V4 and CORRECT MODEL
-async function executeDay7AIExtractionV4(pageData, apiConfig) {
-    const startTime = Date.now();
-    
-    try {
-        console.log('[Background] Running Day 7 AI extraction with prompt_v4 and gemini-1.5-flash-8b-001...');
-        
-        if (!apiConfig.apiKey || apiConfig.apiKey.length === 0) {
-            throw new Error('Day 7 Gemini API key required for AI extraction');
-        }
-
-        const content = pageData.main_content_summary || pageData.content || JSON.stringify(pageData).substring(0, 2000);
-        
-        const basicInfo = {
-            title: pageData.title || '',
-            domain: pageData.domain || '',
-            url: pageData.url || '',
-            strategy: pageData.extractionMetadata?.strategy || 'AUTO'
-        };
-
-        // Day 7 Championship Prompt V4 for cross-vertical mastery
-        const promptV4 = `You are a championship-grade data extraction specialist with SURGICAL PRECISION capabilities optimized for cross-vertical content analysis. Your mission is to extract structured data from webpage content with balanced accuracy and completeness across news, e-commerce, recipes, educational, and blog content.
-
-ENHANCED EXTRACTION SCHEMA - CROSS-VERTICAL MASTERY:
-{
-  "title": "string",
-  "author": "string", 
-  "publication_date": "string",
-  "main_content_summary": "string",
-  "category": "string",
-  "links": ["string"],
-  "images": ["string"],
-  "description": "string",
-  "price": "string",
-  "ingredients": ["string"],
-  "instructions": ["string"],
-  "reviews_rating": "string"
-}
-
-BALANCED EXTRACTION RULES - DAY 7 OPTIMIZATION:
-1. Extract information when 70%+ confident (balanced approach vs Day 6 conservatism)
-2. Use contextual clues and surrounding elements to infer missing metadata
-3. Return null only when genuinely no relevant information exists
-4. Prioritize completeness with accuracy over extreme caution
-5. For aggregated content pages (homepages), focus SURGICALLY on the MOST PROMINENT or FIRST article only
-6. Cross-reference multiple page elements to validate extracted information
-7. Adapt extraction strategy based on detected content type
-
-SITE TYPE: ${basicInfo.strategy}
-DOMAIN: ${basicInfo.domain}
-URL: ${basicInfo.url}
-PAGE TITLE: ${basicInfo.title}
-
-CONTENT FOR ANALYSIS:
-${content}
-
-Return ONLY valid JSON with the exact schema above. Focus on championship accuracy with balanced completeness for Day 7 stress test baseline.`;
-
-        const payload = {
-            contents: [{
-                parts: [{ text: promptV4 }]
-            }],
-            generationConfig: {
-                temperature: apiConfig.temperature,
-                maxOutputTokens: apiConfig.maxTokens,
-                responseMimeType: "application/json"
-            }
-        };
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000);
-
-        // 🎯 CRITICAL FIX: Use correct model for your September 2024 API key
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiConfig.model}:generateContent?key=${apiConfig.apiKey}`;
-        console.log(`[Background] Day 7 making API request with ${apiConfig.model} to: ${apiUrl}`);
-        
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'User-Agent': 'Day7-WebWeaver-SurgicalV4/1.0'
-            },
-            body: JSON.stringify(payload),
-            signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-        console.log(`[Background] Day 7 ${apiConfig.model} API response status: ${response.status}`);
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`[Background] Day 7 ${apiConfig.model} API response error:`, response.status, errorText);
-            throw new Error(`Day 7 Gemini API error: ${response.status} - ${errorText.substring(0, 200)}`);
-        }
-
-        const result = await response.json();
-        
-        if (!result.candidates || !result.candidates[0] || !result.candidates[0].content) {
-            console.error(`[Background] Day 7 ${apiConfig.model} invalid API response structure:`, result);
-            throw new Error('Day 7 invalid API response structure');
-        }
-
-        const generatedText = result.candidates[0].content.parts[0].text;
-        console.log(`[Background] Day 7 ${apiConfig.model} API response received, parsing JSON...`);
-
-        // Parse and validate JSON response with Day 7 precision
-        let aiData;
-        try {
-            aiData = JSON.parse(generatedText);
-            if (Array.isArray(aiData)) {
-                aiData = aiData[0] || {};
-            }
-        } catch (parseError) {
-            console.warn(`[Background] Day 7 ${apiConfig.model} JSON parse failed, attempting extraction...`);
-            const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                try {
-                    aiData = JSON.parse(jsonMatch[0]);
-                } catch (secondParseError) {
-                    console.error(`[Background] Day 7 ${apiConfig.model} second JSON parse also failed`);
-                    throw new Error('Day 7 failed to parse AI response as JSON');
-                }
-            } else {
-                throw new Error('Day 7 no valid JSON found in AI response');
-            }
-        }
-
-        // Day 7 Enhanced field validation and completion with prompt_v4 schema
-        const requiredFields = ['title', 'author', 'publication_date', 'main_content_summary', 'category', 'description', 'links', 'images', 'price', 'ingredients', 'instructions', 'reviews_rating'];
-        
-        requiredFields.forEach(field => {
-            if (!(field in aiData)) {
-                aiData[field] = ['links', 'images', 'ingredients', 'instructions'].includes(field) ? [] : null;
-            }
-            
-            // Clean empty strings to null
-            if (aiData[field] === '' || aiData[field] === 'null' || aiData[field] === 'N/A' || aiData[field] === 'undefined') {
-                aiData[field] = ['links', 'images', 'ingredients', 'instructions'].includes(field) ? [] : null;
-            }
-        });
-
-        const duration = Date.now() - startTime;
-        console.log(`[Background] Day 7 ${apiConfig.model} AI extraction completed successfully in ${duration}ms`);
-
-        return {
-            success: true,
-            data: aiData,
-            metadata: {
-                model: apiConfig.model,
-                extractionTime: duration,
-                realAI: true,
-                day7Version: 'surgical-precision-v4',
-                promptVersion: 'prompt_v4',
-                apiKeyLength: apiConfig.apiKey.length
-            }
-        };
-    } catch (error) {
-        console.error(`[Background] Day 7 ${apiConfig.model} AI extraction failed:`, error);
-        
-        // Return Day 7 basic extraction as fallback
-        const basicFallback = executeDay7BasicExtraction(pageData);
-        
-        return {
-            success: true,
-            data: basicFallback.data,
-            metadata: {
-                extractionTime: Date.now() - startTime,
-                failed: true,
-                fallbackUsed: true,
-                realAI: false,
-                error: error.message,
-                day7Version: 'surgical-basic-fallback-v4'
-            }
-        };
-    }
-}
-
-// Day 7 Enhanced Basic Extraction
-function executeDay7BasicExtraction(pageData) {
-    const startTime = Date.now();
-    
-    try {
-        console.log('[Background] Running Day 7 enhanced basic extraction...');
-        
-        const extractedData = {
-            title: pageData.title || null,
-            author: pageData.author || null,
-            publication_date: pageData.publication_date || null,
-            main_content_summary: pageData.main_content_summary || null,
-            category: pageData.category || null,
-            description: pageData.description || null,
-            links: pageData.links || [],
-            images: pageData.images || [],
-            price: pageData.price || null,
-            ingredients: pageData.ingredients || [],
-            instructions: pageData.instructions || [],
-            reviews_rating: pageData.reviews_rating || null
-        };
-
-        console.log('[Background] Day 7 basic extraction completed successfully');
-        
-        return {
-            success: true,
-            data: extractedData,
-            metadata: {
-                extractionTime: Date.now() - startTime,
-                method: 'day7-enhanced-basic',
-                realAI: false,
-                day7Version: 'surgical'
-            }
-        };
-    } catch (error) {
-        console.error('[Background] Day 7 basic extraction failed:', error);
-        
-        return {
-            success: false,
-            error: error.message,
-            data: {},
-            metadata: {
-                extractionTime: Date.now() - startTime,
-                method: 'day7-enhanced-basic',
-                realAI: false,
-                failed: true,
-                day7Version: 'surgical'
-            }
-        };
-    }
-}
-
-// Day 7 Enhanced field scoring
-function calculateDay7FieldScore(value, fieldType) {
-    if (!value || value === null || value === '' || (Array.isArray(value) && value.length === 0)) {
-        return 0;
-    }
-
-    // Day 7 field-specific scoring for surgical analysis
-    switch (fieldType) {
-        case 'title':
-            if (typeof value === 'string' && value.length > 15 && !value.toLowerCase().includes('untitled')) return 85;
-            if (typeof value === 'string' && value.length > 8) return 70;
-            if (typeof value === 'string' && value.length > 3) return 50;
-            return 30;
-            
-        case 'price':
-            if (typeof value === 'string' && /[\$\€\£]\d+[\.,]?\d*/.test(value)) return 100;
-            if (typeof value === 'string' && /\d+[\.,]?\d*[\$\€\£]/.test(value)) return 90;
-            if (typeof value === 'string' && /\d+/.test(value)) return 60;
-            return 20;
-            
-        case 'ingredients':
-        case 'instructions':
-            if (Array.isArray(value) && value.length > 5) return 100;
-            if (Array.isArray(value) && value.length > 3) return 85;
-            if (Array.isArray(value) && value.length > 1) return 70;
-            if (Array.isArray(value) && value.length > 0) return 50;
-            return 10;
-            
-        case 'author':
-            if (typeof value === 'string' && value.length > 8 && !value.toLowerCase().includes('unknown')) return 90;
-            if (typeof value === 'string' && value.length > 4) return 70;
-            if (typeof value === 'string' && value.length > 1) return 40;
-            return 20;
-            
-        case 'publication_date':
-            if (typeof value === 'string' && /\d{4}[-\/]\d{1,2}[-\/]\d{1,2}/.test(value)) return 90;
-            if (typeof value === 'string' && /\d{4}/.test(value)) return 80;
-            if (typeof value === 'string' && /\d+/.test(value)) return 60;
-            return 30;
-            
-        case 'main_content_summary':
-            if (typeof value === 'string' && value.length > 200) return 90;
-            if (typeof value === 'string' && value.length > 100) return 80;
-            if (typeof value === 'string' && value.length > 50) return 70;
-            if (typeof value === 'string' && value.length > 20) return 50;
-            return 20;
-            
-        case 'links':
-        case 'images':
-            if (Array.isArray(value) && value.length > 5) return 100;
-            if (Array.isArray(value) && value.length > 2) return 80;
-            if (Array.isArray(value) && value.length > 0) return 60;
-            return 20;
-            
-        case 'category':
-        case 'description':
-            if (typeof value === 'string' && value.length > 30) return 85;
-            if (typeof value === 'string' && value.length > 15) return 70;
-            if (typeof value === 'string' && value.length > 5) return 50;
-            return 30;
-            
-        default:
-            if (typeof value === 'string' && value.length > 30) return 85;
-            if (typeof value === 'string' && value.length > 15) return 70;
-            if (typeof value === 'string' && value.length > 8) return 60;
-            if (typeof value === 'string' && value.length > 3) return 40;
-            return 30;
-    }
-}
-
-// Day 7 quality label for surgical analysis
-function getDay7QualityLabel(score) {
-    if (score >= 90) return 'excellent';
-    if (score >= 75) return 'good';
-    if (score >= 60) return 'fair';
-    if (score >= 40) return 'partial';
-    if (score >= 20) return 'poor';
-    return 'failed';
-}
-
-console.log('[Background] Day 7 OPERATION SURGICAL DATA++ Engine ready with gemini-1.5-flash-8b-001 - Real cross-domain stress testing enabled');
+BackgroundLogger.info(`🏆 Day 8 ULTIMATE FINAL MODULAR system initialized | Version: ${DAY8_VERSION} | Zero Compromise Championship Edition Ready`);
