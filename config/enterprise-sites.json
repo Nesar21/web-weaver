@@ -1,0 +1,151 @@
+{
+  "version": "day8-day9-ultimate-enterprise-v3.0",
+  "name": "Day 8+9 Ultimate Enterprise Champion Configuration - Bloomberg Fixed",
+  "description": "Advanced AI-powered extraction configuration with smart tab management and real-time analytics - Bloomberg field mapping corrected",
+  "lastUpdated": "2025-09-28T17:28:00.000Z",
+  "sites": {
+    "www.amazon.com": {
+      "displayName": "Amazon",
+      "type": "amazon",
+      "businessCritical": true,
+      "extractionTimeout": 15000,
+      "requiredFields": [
+        "title",
+        "price", 
+        "description",
+        "availability",
+        "rating",
+        "category"
+      ],
+      "fieldWeights": {
+        "title": 3,
+        "price": 4,
+        "description": 2,
+        "availability": 3,
+        "rating": 2,
+        "category": 1
+      },
+      "qualityThresholds": {
+        "minimum": 70,
+        "target": 85,
+        "excellent": 95
+      },
+      "aiOptimized": true,
+      "smartSelectors": true
+    },
+    "www.bloomberg.com": {
+      "displayName": "Bloomberg",
+      "type": "bloomberg", 
+      "businessCritical": true,
+      "extractionTimeout": 12000,
+      "requiredFields": [
+        "title",
+        "description",
+        "category",
+        "summary"
+      ],
+      "optionalFields": [
+        "publishdate",
+        "author"
+      ],
+      "fieldWeights": {
+        "title": 4,
+        "description": 3,
+        "category": 2,
+        "summary": 3,
+        "publishdate": 1,
+        "author": 1
+      },
+      "qualityThresholds": {
+        "minimum": 50,
+        "target": 70,
+        "excellent": 85
+      },
+      "aiOptimized": true,
+      "smartSelectors": true,
+      "fieldMappings": {
+        "title": "title",
+        "description": "description", 
+        "summary": "body",
+        "category": "category"
+      }
+    },
+    "www.allrecipes.com": {
+      "displayName": "AllRecipes",
+      "type": "allrecipes",
+      "businessCritical": false,
+      "extractionTimeout": 10000,
+      "requiredFields": [
+        "title",
+        "description",
+        "ingredients",
+        "instructions",
+        "cooktime"
+      ],
+      "fieldWeights": {
+        "title": 2,
+        "description": 2,
+        "ingredients": 4,
+        "instructions": 4,
+        "cooktime": 2
+      },
+      "qualityThresholds": {
+        "minimum": 65,
+        "target": 80,
+        "excellent": 92
+      },
+      "aiOptimized": true,
+      "smartSelectors": false
+    },
+    "en.wikipedia.org": {
+      "displayName": "Wikipedia",
+      "type": "wikipedia",
+      "businessCritical": false,
+      "extractionTimeout": 8000,
+      "requiredFields": [
+        "title",
+        "description",
+        "maincontentsummary",
+        "category"
+      ],
+      "fieldWeights": {
+        "title": 3,
+        "description": 3,
+        "maincontentsummary": 3,
+        "category": 1
+      },
+      "qualityThresholds": {
+        "minimum": 70,
+        "target": 85,
+        "excellent": 95
+      },
+      "aiOptimized": true,
+      "smartSelectors": false
+    }
+  },
+  "globalSettings": {
+    "defaultTimeout": 10000,
+    "maxRetries": 2,
+    "smartTabManagement": true,
+    "autoCleanup": true,
+    "aiEnhancement": true,
+    "realTimeAnalytics": true,
+    "comprehensiveLogging": true,
+    "flexibleFieldMatching": true
+  },
+  "analyticsConfig": {
+    "enableRealTimeTracking": true,
+    "performanceMonitoring": true,
+    "businessImpactAnalysis": true,
+    "predictiveAnalytics": true,
+    "anomalyDetection": true,
+    "executiveReporting": true
+  },
+  "aiConfig": {
+    "preferredModel": "gemini-1.5-flash-8b-001",
+    "fallbackEnabled": true,
+    "enhancedPrompts": true,
+    "contextAwareness": true,
+    "multiLanguageSupport": false
+  }
+}

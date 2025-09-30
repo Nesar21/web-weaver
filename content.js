@@ -1,595 +1,933 @@
-// Day 8: Enhanced Content Script with Guaranteed AI Triggering
-// Ensures AI runs on all domains with penalty impact correlation
+// Day 8+9: ULTIMATE ENTERPRISE CHAMPION CONTENT SCRIPT
+// /src/content.js - BLOOMBERG EXTRACTION CHAMPION EDITION
 
-console.log('[Content] Day 8 Enterprise content extraction loading...');
+console.log('[Content] Day 8+9 BLOOMBERG EXTRACTION CHAMPION content script loading');
 
-// Day 8 Enhanced content extraction with guaranteed AI triggers
-function extractDay8EnhancedContent(domainType, errorLog) {
-    console.log(`[Content] Day 8 enhanced content extraction for ${domainType}...`);
-    
-    const contentSelectors = {
-        ECOMMERCE: [
-            '#feature-bullets ul', // Amazon product features
-            '.product-description', 
-            '[data-testid="product-description"]',
-            '.a-unordered-list.a-nostyle.a-vertical',
-            '.product-details',
-            '#productDescription',
-            '.product-overview',
-            '.product-summary',
-            '.a-section .a-spacing-medium'
-        ],
-        RECIPE: [
-            '.recipe-instructions', // AllRecipes instructions
-            '.recipe-method',
-            '.instructions-section',
-            '[data-testid="instructions"]',
-            '.recipe-directions ol',
-            '.method-list',
-            '.recipe-summary',
-            '.recipe-description',
-            '.recipe-card-summary'
-        ],
-        NEWS: [
-            '.story-body', // Bloomberg selectors
-            '[data-module="ArticleBody"]',
-            '.article-content',
-            '.article-body',
-            '.story-content',
-            '[data-testid="article-body"]',
-            '.paywall-article-body',
-            '.article-wrap .body-copy'
-        ],
-        SOCIAL: [
-            '.post-content', // Reddit selectors
-            '.submission-text',
-            '.comment-text',
-            '[data-testid="post-content"]',
-            '.usertext-body',
-            '.thing .usertext',
-            '[data-click-id="text"]'
-        ],
-        PRODUCT: [
-            '.product-description', // ProductHunt selectors
-            '.product-maker-comment',
-            '.product-review',
-            '[data-testid="product-description"]',
-            '.product-gallery-description',
-            '.product-card-body'
-        ]
-    };
+// ===== CONTENT SCRIPT CONFIGURATION =====
+const CONTENT_CONFIG = {
+  version: 'day8-day9-ultimate-enterprise-champion-bloomberg-fix',
+  enableEnhancedExtraction: true,
+  enableStructuredDataExtraction: true,
+  enablePerformanceMonitoring: true,
+  enableBloombergOptimization: true
+};
 
-    // Try domain-specific selectors first
-    const domainSelectors = contentSelectors[domainType] || [];
-    for (const selector of domainSelectors) {
-        try {
-            const element = document.querySelector(selector);
-            if (element && element.textContent.trim().length > 100) {
-                console.log(`[Content] Day 8 found content with selector: ${selector}`);
-                return element.textContent.trim();
-            }
-        } catch (e) {
-            errorLog.push({
-                type: 'DAY8_SELECTOR_ERROR',
-                selector: selector,
-                error: e.message,
-                timestamp: Date.now()
-            });
-            continue;
-        }
-    }
+// ===== ENHANCED LOGGER =====
+const ContentLogger = {
+  info: (msg, data = {}) => console.log(`[Content] ℹ️ ${msg}`, data),
+  warn: (msg, data = {}) => console.warn(`[Content] ⚠️ ${msg}`, data),
+  error: (msg, data = {}) => console.error(`[Content] ❌ ${msg}`, data),
+  success: (msg, data = {}) => console.log(`[Content] ✅ ${msg}`, data)
+};
 
-    // Enhanced fallback content extraction for AI trigger guarantee
-    const fallbackSelectors = [
-        'article', 'main', '.content', '#content', '.main-content',
-        '.entry-content', '.post-content', '.page-content', '.container',
-        '.wrapper', '#main', '.site-main', '.primary-content'
-    ];
-    
-    for (const selector of fallbackSelectors) {
-        try {
-            const element = document.querySelector(selector);
-            if (element && element.textContent.trim().length > 50) {
-                console.log(`[Content] Day 8 fallback content found: ${selector}`);
-                return element.textContent.trim().substring(0, 1000);
-            }
-        } catch (e) {
-            continue;
-        }
-    }
+// ===== ENHANCED PAGE DATA EXTRACTOR =====
+class EnhancedPageExtractor {
+  constructor() {
+    this.extractionId = `content_extract_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    this.startTime = performance.now();
+  }
 
-    // Final guarantee: always return something for AI trigger
-    const bodyText = document.body ? document.body.textContent.trim() : '';
-    if (bodyText.length > 20) {
-        console.log(`[Content] Day 8 using body text for AI trigger`);
-        return `Day 8 ${domainType} content extracted for AI processing: ${bodyText.substring(0, 500)}`;
-    }
-
-    // Absolute fallback - ensure AI always has content to process
-    return `Day 8 ${domainType} fallback content for AI processing - Domain: ${window.location.hostname} - Title: ${document.title} - URL: ${window.location.href}`;
-}
-
-// Day 8 Enhanced field extraction with penalty correlation
-function extractDay8EnhancedFields(domainType, errorLog) {
-    console.log(`[Content] Day 8 enhanced field extraction for ${domainType}...`);
-    
-    const extractedData = {
-        title: null,
-        author: null,
-        publication_date: null,
-        main_content_summary: null,
-        category: null,
-        description: null,
-        links: [],
-        images: [],
-        price: null,
-        ingredients: [],
-        instructions: [],
-        reviews_rating: null
-    };
-
+  extractComprehensivePageData() {
     try {
-        // Enhanced title extraction
-        extractedData.title = extractDay8Title();
-        
-        // Guaranteed main content for AI trigger
-        extractedData.main_content_summary = extractDay8EnhancedContent(domainType, errorLog);
-        
-        // Domain-specific field extraction with Day 8 enhancements
-        switch (domainType) {
-            case 'ECOMMERCE':
-                extractedData.price = extractDay8Price();
-                extractedData.reviews_rating = extractDay8Rating();
-                extractedData.description = extractDay8Description();
-                extractedData.images = extractDay8Images();
-                break;
-                
-            case 'RECIPE':
-                extractedData.ingredients = extractDay8Ingredients();
-                extractedData.instructions = extractDay8Instructions();
-                extractedData.description = extractDay8Description();
-                break;
-                
-            case 'NEWS':
-                extractedData.author = extractDay8Author();
-                extractedData.publication_date = extractDay8PublicationDate();
-                extractedData.category = extractDay8Category();
-                break;
-                
-            case 'SOCIAL':
-                extractedData.author = extractDay8Author();
-                extractedData.links = extractDay8Links();
-                break;
-                
-            case 'PRODUCT':
-                extractedData.price = extractDay8Price();
-                extractedData.description = extractDay8Description();
-                extractedData.reviews_rating = extractDay8Rating();
-                break;
-        }
+      ContentLogger.info('🔍 Starting comprehensive page extraction', { 
+        extractionId: this.extractionId 
+      });
 
-        // Always extract links and images regardless of domain type
-        if (extractedData.links.length === 0) extractedData.links = extractDay8Links();
-        if (extractedData.images.length === 0) extractedData.images = extractDay8Images();
+      const pageData = {
+        // Basic page info
+        title: document.title || '',
+        url: window.location.href,
+        domain: window.location.hostname,
+        extractedAt: new Date().toISOString(),
+        
+        // Enhanced content extraction
+        content: this.extractContent(),
+        
+        // Enhanced metadata
+        meta: this.extractMetadata(),
+        
+        // Site-specific data
+        siteSpecific: this.extractSiteSpecificData(),
+        
+        // Structured data
+        structuredData: this.extractStructuredData(),
+        
+        // Page statistics
+        stats: this.calculatePageStats(),
+        
+        // Performance data
+        performance: this.getPerformanceData(),
+        
+        // Page context
+        context: this.extractPageContext(),
+
+        // BLOOMBERG-SPECIFIC DIRECT FIELDS - MAJOR ADDITION
+        ...this.extractDirectPageFields()
+      };
+
+      const duration = performance.now() - this.startTime;
+      ContentLogger.success('Comprehensive extraction completed', {
+        extractionId: this.extractionId,
+        duration: Math.round(duration) + 'ms',
+        fieldsExtracted: Object.keys(pageData).length
+      });
+
+      return pageData;
 
     } catch (error) {
-        console.error('[Content] Day 8 field extraction error:', error);
-        errorLog.push({
-            type: 'DAY8_FIELD_EXTRACTION_ERROR',
-            message: error.message,
-            domainType: domainType,
-            timestamp: Date.now()
+      ContentLogger.error('Comprehensive extraction failed', {
+        error: error.message,
+        extractionId: this.extractionId
+      });
+      return { error: error.message };
+    }
+  }
+
+  // ===== NEW: DIRECT PAGE FIELDS EXTRACTION FOR BLOOMBERG =====
+  extractDirectPageFields() {
+    const hostname = window.location.hostname.toLowerCase();
+    const directFields = {};
+
+    try {
+      // Add standard fields that Bloomberg validation expects
+      if (hostname.includes('bloomberg.')) {
+        ContentLogger.info('🔍 Extracting Bloomberg-specific direct fields');
+        
+        // Extract description from meta tags
+        const metaDesc = document.querySelector('meta[name="description"], meta[property="description"]');
+        if (metaDesc) {
+          directFields.description = metaDesc.content || '';
+        }
+
+        // Extract category from various sources
+        directFields.category = this.extractBloombergCategory();
+        
+        // Extract summary from page content
+        directFields.summary = this.extractBloombergSummary();
+        
+        // Extract publishdate from various sources
+        directFields.publishdate = this.extractBloombergPublishDate();
+        
+        // Extract author if available
+        directFields.author = this.extractBloombergAuthor();
+
+        ContentLogger.success('Bloomberg direct fields extracted', {
+          fieldsFound: Object.keys(directFields).filter(k => directFields[k]).length
         });
-    }
-
-    return extractedData;
-}
-
-// Day 8 Enhanced specific field extractors with penalty awareness
-
-function extractDay8Title() {
-    const selectors = [
-        'h1', '.title', '.headline', '.entry-title', '.post-title',
-        '[data-testid="title"]', '.product-title', '.recipe-title',
-        'title', 'meta[property="og:title"]', '.article-title',
-        '.story-headline', '.main-title'
-    ];
-    
-    for (const selector of selectors) {
-        try {
-            let element = document.querySelector(selector);
-            if (element) {
-                let title = element.textContent || element.getAttribute('content');
-                if (title && title.trim().length > 5) {
-                    return title.trim();
-                }
-            }
-        } catch (e) {
-            continue;
+      } else {
+        // For other sites, extract common fields
+        const metaDesc = document.querySelector('meta[name="description"], meta[property="description"]');
+        if (metaDesc) {
+          directFields.description = metaDesc.content || '';
         }
-    }
-    
-    // Fallback to page title
-    return document.title || 'Day 8 Extracted Title';
-}
 
-function extractDay8Price() {
-    const priceSelectors = [
-        '.a-price .a-offscreen', // Amazon primary
-        '.a-price-whole',
-        '.a-price-current',
-        '[data-testid="price"]',
-        '.price-current',
-        '.sale-price',
-        '.product-price .value',
-        '.price .currency + .amount',
-        '.price',
-        '[class*="price"]',
-        '.a-price-range',
-        '.a-price .a-price-whole'
-    ];
-    
-    for (const selector of priceSelectors) {
-        try {
-            const element = document.querySelector(selector);
-            if (element) {
-                const priceText = element.textContent.trim();
-                // Look for price patterns - enhanced for Day 8
-                const priceMatch = priceText.match(/[\$\€\£]?\d+[\.,]?\d*/);
-                if (priceMatch && priceMatch[0].length > 1) {
-                    return priceMatch[0];
-                }
-            }
-        } catch (e) {
-            continue;
+        // Extract category from various sources
+        const categorySelectors = [
+          'meta[property="article:section"]',
+          'meta[name="category"]',
+          '.category',
+          '.section',
+          '.breadcrumb a:last-child'
+        ];
+        
+        for (const selector of categorySelectors) {
+          const element = document.querySelector(selector);
+          if (element) {
+            directFields.category = element.textContent?.trim() || element.content || '';
+            break;
+          }
         }
-    }
-    return null;
-}
 
-function extractDay8Rating() {
-    const ratingSelectors = [
-        '.a-icon-star .a-icon-alt', // Amazon reviews
-        '[data-testid="rating"]',
-        '.stars .rating',
-        '.review-rating .stars',
-        '.product-rating .value',
-        '.rating-stars .filled',
-        '[class*="rating"]',
-        '[class*="stars"]',
-        '.a-icon-star-medium .a-icon-alt',
-        '.review-item-star-rating'
-    ];
-    
-    for (const selector of ratingSelectors) {
-        try {
-            const element = document.querySelector(selector);
-            if (element) {
-                const ratingText = element.textContent.trim();
-                // Enhanced rating patterns for Day 8
-                const ratingMatch = ratingText.match(/(\d+\.?\d*)\s*(?:out of\s*)?(\d+|\/\d+)?/);
-                if (ratingMatch) {
-                    return ratingMatch[0];
-                }
-                
-                // Check for star counts
-                const starMatch = ratingText.match(/(\d+\.?\d*)\s*star/i);
-                if (starMatch) {
-                    return starMatch[1] + '/5';
-                }
-            }
-        } catch (e) {
-            continue;
-        }
-    }
-    return null;
-}
+        // Extract main content summary
+        directFields.maincontentsummary = this.extractMainContentSummary();
+      }
 
-function extractDay8Ingredients() {
-    const ingredientSelectors = [
-        '.recipe-ingredients li', // AllRecipes primary
-        '.ingredients-list li',
-        '[data-testid="ingredient"]',
-        '.ingredient-item',
-        '.recipe-ingredient-list li',
-        '.ingredients ul li',
-        '[class*="ingredient"] li',
-        '.recipe-card-ingredients li'
-    ];
-    
-    const ingredients = [];
-    
-    for (const selector of ingredientSelectors) {
-        try {
-            const elements = document.querySelectorAll(selector);
-            if (elements.length > 0) {
-                elements.forEach(el => {
-                    const text = el.textContent?.trim();
-                    if (text && text.length > 3 && !ingredients.includes(text)) {
-                        ingredients.push(text);
-                    }
-                });
-                if (ingredients.length >= 3) break; // Day 8 penalty threshold
-            }
-        } catch (e) {
-            continue;
-        }
+    } catch (error) {
+      ContentLogger.warn('Direct fields extraction error', { error: error.message });
     }
-    
-    // If we don't have enough ingredients, try to extract from paragraphs
-    if (ingredients.length < 3) {
-        const paragraphs = document.querySelectorAll('p');
-        paragraphs.forEach(p => {
-            const text = p.textContent.toLowerCase();
-            if ((text.includes('cup') || text.includes('tablespoon') || text.includes('teaspoon') || 
-                 text.includes('pound') || text.includes('gram') || text.includes('ounce')) && 
-                 ingredients.length < 5) {
-                ingredients.push(p.textContent.trim());
-            }
-        });
-    }
-    
-    return ingredients;
-}
 
-function extractDay8Instructions() {
-    const instructionSelectors = [
-        '.recipe-instructions li', // AllRecipes primary
-        '.directions ol li',
-        '[data-testid="instruction-step"]',
-        '.method-step',
-        '.recipe-directions li',
-        '.instructions-list li',
-        '.recipe-method li',
-        '[class*="instruction"] li',
-        '.recipe-card-method li'
-    ];
-    
-    const instructions = [];
-    
-    for (const selector of instructionSelectors) {
-        try {
-            const elements = document.querySelectorAll(selector);
-            if (elements.length > 0) {
-                elements.forEach(el => {
-                    const text = el.textContent?.trim();
-                    if (text && text.length > 10 && !instructions.includes(text)) {
-                        instructions.push(text);
-                    }
-                });
-                if (instructions.length >= 2) break; // Day 8 penalty threshold
-            }
-        } catch (e) {
-            continue;
-        }
-    }
-    
-    // If we don't have enough instructions, look for numbered steps in paragraphs
-    if (instructions.length < 2) {
-        const paragraphs = document.querySelectorAll('p');
-        paragraphs.forEach(p => {
-            const text = p.textContent.trim();
-            if ((text.match(/^\d+\./) || text.toLowerCase().includes('step') || 
-                 text.toLowerCase().includes('mix') || text.toLowerCase().includes('bake')) && 
-                 text.length > 20 && instructions.length < 5) {
-                instructions.push(text);
-            }
-        });
-    }
-    
-    return instructions;
-}
+    return directFields;
+  }
 
-function extractDay8Author() {
-    const authorSelectors = [
-        '.author', '.byline', '[rel="author"]', '.post-author',
-        '[data-testid="author"]', '.article-author', '.story-byline',
-        'meta[name="author"]', '[class*="author"]', '.writer',
-        '.journalist', '.reporter', '.by-author'
-    ];
-    
-    for (const selector of authorSelectors) {
-        try {
-            let element = document.querySelector(selector);
-            if (element) {
-                let author = element.textContent || element.getAttribute('content');
-                if (author && author.trim().length > 2) {
-                    // Clean up author names
-                    author = author.replace(/^by\s*/i, '').trim();
-                    return author;
-                }
-            }
-        } catch (e) {
-            continue;
-        }
-    }
-    return null;
-}
-
-function extractDay8PublicationDate() {
-    const dateSelectors = [
-        'time[datetime]', '.date', '.published', '.post-date',
-        '[data-testid="date"]', '.article-date', '.story-date',
-        'meta[property="article:published_time"]', '.publish-date',
-        '.timestamp', '.created-date'
-    ];
-    
-    for (const selector of dateSelectors) {
-        try {
-            let element = document.querySelector(selector);
-            if (element) {
-                let date = element.getAttribute('datetime') || 
-                          element.getAttribute('content') || 
-                          element.textContent;
-                if (date && date.trim().length > 5) {
-                    return date.trim();
-                }
-            }
-        } catch (e) {
-            continue;
-        }
-    }
-    return null;
-}
-
-function extractDay8Category() {
+  // ===== BLOOMBERG-SPECIFIC EXTRACTION METHODS =====
+  extractBloombergCategory() {
     const categorySelectors = [
-        '.category', '.section', '.topic', '[data-testid="category"]',
-        '.article-category', '.post-category', '[class*="category"]',
-        '.breadcrumb li:last-child', '.tag', '.subject'
+      'meta[property="article:section"]',
+      'meta[name="category"]',
+      '.category',
+      '.section-name',
+      '.kicker',
+      '.eyebrow',
+      '.breadcrumb a:last-child',
+      '[data-module="ArticleHeader"] .eyebrow',
+      '.article-header .category'
     ];
-    
+
     for (const selector of categorySelectors) {
-        try {
-            const element = document.querySelector(selector);
-            if (element) {
-                const category = element.textContent.trim();
-                if (category && category.length > 2 && category.length < 50) {
-                    return category;
-                }
-            }
-        } catch (e) {
-            continue;
+      const element = document.querySelector(selector);
+      if (element) {
+        const text = element.textContent?.trim() || element.content || '';
+        if (text && text.length > 0) {
+          return text;
         }
+      }
     }
-    return null;
-}
 
-function extractDay8Description() {
-    const descSelectors = [
-        'meta[name="description"]', 'meta[property="og:description"]',
-        '.description', '.summary', '.excerpt', '.product-description',
-        '[data-testid="description"]', '.lead', '.intro',
-        '.article-summary', '.post-excerpt'
+    // Fallback to URL-based category detection
+    const urlParts = window.location.pathname.split('/').filter(Boolean);
+    if (urlParts.length > 0) {
+      const possibleCategory = urlParts[0];
+      if (['news', 'markets', 'technology', 'politics', 'business', 'asia'].includes(possibleCategory)) {
+        return possibleCategory.charAt(0).toUpperCase() + possibleCategory.slice(1);
+      }
+    }
+
+    return 'News'; // Default fallback for Bloomberg
+  }
+
+  extractBloombergSummary() {
+    const summarySelectors = [
+      'meta[name="description"]',
+      'meta[property="og:description"]',
+      '.summary',
+      '.deck',
+      '.article-summary',
+      '.lead-paragraph',
+      '.story-summary',
+      '.article-intro'
     ];
-    
-    for (const selector of descSelectors) {
-        try {
-            let element = document.querySelector(selector);
-            if (element) {
-                let desc = element.getAttribute('content') || element.textContent;
-                if (desc && desc.trim().length > 20) {
-                    return desc.trim();
-                }
-            }
-        } catch (e) {
-            continue;
+
+    for (const selector of summarySelectors) {
+      const element = document.querySelector(selector);
+      if (element) {
+        const text = element.textContent?.trim() || element.content || '';
+        if (text && text.length > 20) {
+          return text.substring(0, 500); // Limit to 500 chars
         }
+      }
+    }
+
+    // Fallback: extract from first paragraph
+    const firstParagraph = document.querySelector('p, .article-content p, .story-body p');
+    if (firstParagraph) {
+      const text = firstParagraph.textContent?.trim();
+      if (text && text.length > 50) {
+        return text.substring(0, 300);
+      }
+    }
+
+    return '';
+  }
+
+  extractBloombergPublishDate() {
+    const dateSelectors = [
+      'time[datetime]',
+      'meta[property="article:published_time"]',
+      'meta[name="publish-date"]',
+      '.timestamp',
+      '.publish-date',
+      '.article-timestamp',
+      '[data-module="BylineAndTimestamp"] time',
+      '.byline time'
+    ];
+
+    for (const selector of dateSelectors) {
+      const element = document.querySelector(selector);
+      if (element) {
+        const dateTime = element.getAttribute('datetime') || 
+                        element.getAttribute('content') ||
+                        element.textContent?.trim();
+        if (dateTime) {
+          return dateTime;
+        }
+      }
+    }
+
+    // Look for time patterns in text
+    const timePattern = /\d{1,2}:\d{2}/;
+    const bodyText = document.body.textContent || '';
+    const timeMatch = bodyText.match(timePattern);
+    if (timeMatch) {
+      return timeMatch[0];
+    }
+
+    return '';
+  }
+
+  extractBloombergAuthor() {
+    const authorSelectors = [
+      'meta[name="author"]',
+      'meta[property="article:author"]',
+      '.byline',
+      '.author',
+      '.author-name',
+      '[data-module="BylineAndTimestamp"] .author',
+      '.article-byline',
+      '.story-byline'
+    ];
+
+    for (const selector of authorSelectors) {
+      const element = document.querySelector(selector);
+      if (element) {
+        const text = element.textContent?.trim() || element.content || '';
+        if (text && text.length > 0 && text.length < 100) {
+          // Clean up author text (remove "By " prefix)
+          return text.replace(/^By\s+/i, '').trim();
+        }
+      }
+    }
+
+    return '';
+  }
+
+  extractMainContentSummary() {
+    // Extract main content summary for non-Bloomberg sites
+    const summarySelectors = [
+      'meta[name="description"]',
+      'meta[property="og:description"]',
+      '.summary',
+      '.excerpt',
+      '.intro',
+      'p:first-of-type'
+    ];
+
+    for (const selector of summarySelectors) {
+      const element = document.querySelector(selector);
+      if (element) {
+        const text = element.textContent?.trim() || element.content || '';
+        if (text && text.length > 30) {
+          return text.substring(0, 400);
+        }
+      }
+    }
+
+    return '';
+  }
+
+  extractContent() {
+    const content = {
+      headings: [],
+      paragraphs: [],
+      links: [],
+      images: [],
+      lists: [],
+      tables: [],
+      forms: []
+    };
+
+    try {
+      // Enhanced headings extraction
+      const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      content.headings = Array.from(headings)
+        .map(h => ({
+          tag: h.tagName.toLowerCase(),
+          text: h.textContent?.trim(),
+          level: parseInt(h.tagName.charAt(1)),
+          id: h.id || null,
+          className: h.className || null,
+          position: this.getElementPosition(h)
+        }))
+        .filter(h => h.text && h.text.length > 0)
+        .slice(0, 20);
+
+      // Enhanced paragraphs extraction
+      const paragraphs = document.querySelectorAll('p, .content p, .article-content p, .post-content p');
+      content.paragraphs = Array.from(paragraphs)
+        .map(p => ({
+          text: p.textContent?.trim(),
+          wordCount: this.countWords(p.textContent),
+          position: this.getElementPosition(p)
+        }))
+        .filter(p => p.text && p.text.length > 25)
+        .slice(0, 15);
+
+      // Enhanced links extraction
+      const links = document.querySelectorAll('a[href]');
+      content.links = Array.from(links)
+        .map(a => ({
+          text: a.textContent?.trim(),
+          href: a.href,
+          internal: a.href.includes(window.location.hostname),
+          title: a.title || null,
+          target: a.target || null,
+          rel: a.rel || null
+        }))
+        .filter(l => l.text && l.href && l.text.length > 2)
+        .slice(0, 20);
+
+      // Enhanced images extraction
+      const images = document.querySelectorAll('img[src], picture img, figure img');
+      content.images = Array.from(images)
+        .map(img => ({
+          src: img.src,
+          alt: img.alt,
+          width: img.width || img.naturalWidth || 0,
+          height: img.height || img.naturalHeight || 0,
+          title: img.title || null,
+          loading: img.loading || null,
+          className: img.className || null
+        }))
+        .filter(img => img.src && !img.src.includes('data:image') && !img.src.includes('svg'))
+        .slice(0, 12);
+
+      // Enhanced lists extraction
+      const lists = document.querySelectorAll('ul, ol');
+      content.lists = Array.from(lists)
+        .map(list => ({
+          type: list.tagName.toLowerCase(),
+          items: Array.from(list.querySelectorAll('li')).map(li => li.textContent?.trim()).filter(Boolean).slice(0, 15),
+          nested: list.querySelectorAll('ul, ol').length > 0
+        }))
+        .filter(list => list.items.length > 0)
+        .slice(0, 8);
+
+      // Enhanced tables extraction
+      const tables = document.querySelectorAll('table');
+      content.tables = Array.from(tables)
+        .map(table => ({
+          headers: Array.from(table.querySelectorAll('th')).map(th => th.textContent?.trim()).filter(Boolean),
+          rows: Array.from(table.querySelectorAll('tr')).slice(1, 8).map(tr => 
+            Array.from(tr.querySelectorAll('td')).map(td => td.textContent?.trim()).filter(Boolean)
+          ).filter(row => row.length > 0),
+          caption: table.caption?.textContent?.trim() || null
+        }))
+        .filter(table => table.headers.length > 0 || table.rows.length > 0)
+        .slice(0, 5);
+
+      // Forms extraction
+      const forms = document.querySelectorAll('form');
+      content.forms = Array.from(forms)
+        .map(form => ({
+          action: form.action || null,
+          method: form.method || 'get',
+          fieldCount: form.querySelectorAll('input, select, textarea').length,
+          hasFileUpload: form.querySelector('input[type="file"]') !== null
+        }))
+        .slice(0, 3);
+
+    } catch (error) {
+      ContentLogger.warn('Content extraction error', { error: error.message });
+    }
+
+    return content;
+  }
+
+  extractMetadata() {
+    const meta = {};
+
+    try {
+      // Standard meta tags
+      const metaTags = {
+        description: 'meta[name="description"], meta[property="description"]',
+        keywords: 'meta[name="keywords"]',
+        author: 'meta[name="author"], meta[property="author"]',
+        viewport: 'meta[name="viewport"]',
+        robots: 'meta[name="robots"]',
+        generator: 'meta[name="generator"]'
+      };
+
+      Object.entries(metaTags).forEach(([key, selector]) => {
+        const element = document.querySelector(selector);
+        meta[key] = element?.content || null;
+      });
+
+      // Open Graph data
+      meta.openGraph = {};
+      document.querySelectorAll('meta[property^="og:"]').forEach(el => {
+        const property = el.getAttribute('property').replace('og:', '');
+        meta.openGraph[property] = el.getAttribute('content');
+      });
+
+      // Twitter Card data
+      meta.twitterCard = {};
+      document.querySelectorAll('meta[name^="twitter:"]').forEach(el => {
+        const name = el.getAttribute('name').replace('twitter:', '');
+        meta.twitterCard[name] = el.getAttribute('content');
+      });
+
+      // Link tags
+      const canonical = document.querySelector('link[rel="canonical"]');
+      meta.canonical = canonical?.href || null;
+
+      const alternate = document.querySelectorAll('link[rel="alternate"]');
+      meta.alternates = Array.from(alternate).map(link => ({
+        href: link.href,
+        type: link.type,
+        hreflang: link.hreflang
+      }));
+
+    } catch (error) {
+      ContentLogger.warn('Metadata extraction error', { error: error.message });
+    }
+
+    return meta;
+  }
+
+  extractSiteSpecificData() {
+    const hostname = window.location.hostname.toLowerCase();
+    const siteData = {};
+
+    try {
+      if (hostname.includes('amazon.')) {
+        siteData.amazon = this.extractAmazonData();
+      } else if (hostname.includes('bloomberg.')) {
+        siteData.bloomberg = this.extractBloombergDataAdvanced();
+      } else if (hostname.includes('allrecipes.')) {
+        siteData.allrecipes = this.extractRecipeData();
+      } else if (hostname.includes('wikipedia.org')) {
+        siteData.wikipedia = this.extractWikipediaData();
+      }
+    } catch (error) {
+      ContentLogger.warn('Site-specific extraction error', { error: error.message });
+    }
+
+    return siteData;
+  }
+
+  extractAmazonData() {
+    return {
+      price: this.getTextContent([
+        '.a-price-whole', '.a-offscreen', '.a-price .a-offscreen', 
+        '[data-testid="price"]', '.a-price-symbol'
+      ]),
+      rating: this.getTextContent([
+        '.a-icon-alt', '[data-hook="rating-out-of-text"]', 
+        '.a-star-medium .a-star'
+      ]),
+      reviews: this.getTextContent([
+        '#acrCustomerReviewText', '.a-size-base', 
+        '[data-hook="total-review-count"]'
+      ]),
+      availability: this.getTextContent([
+        '#availability span', '.a-size-mini', 
+        '[data-feature-name="availability"] span'
+      ]),
+      brand: this.getTextContent([
+        '#bylineInfo', '.a-brand', 
+        '[data-feature-name="bylineInfo"]'
+      ]),
+      category: this.getTextContent([
+        '#wayfinding-breadcrumbs_feature_div a', 
+        '.a-breadcrumb .a-list-item a'
+      ])
+    };
+  }
+
+  // ===== ENHANCED BLOOMBERG DATA EXTRACTION =====
+  extractBloombergDataAdvanced() {
+    const bloombergData = {
+      author: this.extractBloombergAuthor(),
+      publishDate: this.extractBloombergPublishDate(),
+      category: this.extractBloombergCategory(),
+      summary: this.extractBloombergSummary(),
+      
+      // Additional Bloomberg-specific fields
+      headline: document.title || '',
+      body: this.extractBloombergBody(),
+      tags: this.extractBloombergTags(),
+      region: this.extractBloombergRegion()
+    };
+
+    ContentLogger.success('Advanced Bloomberg data extracted', {
+      fieldsFound: Object.keys(bloombergData).filter(k => bloombergData[k]).length,
+      hasAuthor: !!bloombergData.author,
+      hasCategory: !!bloombergData.category,
+      hasSummary: !!bloombergData.summary
+    });
+
+    return bloombergData;
+  }
+
+  extractBloombergBody() {
+    const bodySelectors = [
+      '.article-body',
+      '.story-body', 
+      '.content-body',
+      '.post-content',
+      'main p',
+      '.article-content'
+    ];
+
+    for (const selector of bodySelectors) {
+      const element = document.querySelector(selector);
+      if (element) {
+        const text = element.textContent?.trim();
+        if (text && text.length > 100) {
+          return text.substring(0, 1000);
+        }
+      }
+    }
+
+    // Fallback: get all paragraphs
+    const paragraphs = document.querySelectorAll('p');
+    if (paragraphs.length > 0) {
+      const allText = Array.from(paragraphs)
+        .map(p => p.textContent?.trim())
+        .filter(text => text && text.length > 20)
+        .join(' ')
+        .substring(0, 800);
+      
+      if (allText.length > 50) {
+        return allText;
+      }
+    }
+
+    return '';
+  }
+
+  extractBloombergTags() {
+    const tagSelectors = [
+      '.tags a',
+      '.article-tags a',
+      '.post-tags a',
+      'meta[name="keywords"]'
+    ];
+
+    const tags = [];
+    
+    for (const selector of tagSelectors) {
+      if (selector.includes('meta')) {
+        const element = document.querySelector(selector);
+        if (element && element.content) {
+          return element.content.split(',').map(tag => tag.trim()).slice(0, 5);
+        }
+      } else {
+        const elements = document.querySelectorAll(selector);
+        if (elements.length > 0) {
+          return Array.from(elements)
+            .map(el => el.textContent?.trim())
+            .filter(tag => tag && tag.length > 0)
+            .slice(0, 5);
+        }
+      }
+    }
+
+    return tags;
+  }
+
+  extractBloombergRegion() {
+    // Extract region from URL or content
+    const urlParts = window.location.pathname.split('/').filter(Boolean);
+    
+    if (urlParts.includes('asia')) return 'Asia';
+    if (urlParts.includes('europe')) return 'Europe';
+    if (urlParts.includes('americas')) return 'Americas';
+    
+    // Check page title or content
+    const title = document.title.toLowerCase();
+    if (title.includes('asia')) return 'Asia';
+    if (title.includes('europe')) return 'Europe';
+    if (title.includes('americas')) return 'Americas';
+    
+    return 'Global';
+  }
+
+  extractRecipeData() {
+    return {
+      cookTime: this.getTextContent([
+        '.recipe-summary__item-data', '.total-time', 
+        '[data-testid="recipe-cook-time"]'
+      ]),
+      servings: this.getTextContent([
+        '.recipe-adjust-servings__size-quantity', 
+        '[data-testid="recipe-servings"]'
+      ]),
+      difficulty: this.getTextContent([
+        '.recipe-summary__difficulty', 
+        '[data-testid="recipe-difficulty"]'
+      ]),
+      rating: this.getTextContent([
+        '.recipe-rating', '.rating-stars', 
+        '[data-testid="recipe-rating"]'
+      ]),
+      ingredients: this.extractListData([
+        '.recipe-ingredient', '.ingredients li', 
+        '[data-testid="recipe-ingredient"]'
+      ]),
+      instructions: this.extractListData([
+        '.recipe-instruction', '.instructions li', 
+        '[data-testid="recipe-instruction"]'
+      ])
+    };
+  }
+
+  extractWikipediaData() {
+    const categories = Array.from(
+      document.querySelectorAll('#mw-normal-catlinks ul li a, .mw-category a')
+    ).map(a => a.textContent?.trim()).slice(0, 10);
+
+    return {
+      lastModified: this.getTextContent([
+        '#footer-info-lastmod', '.lastmod'
+      ]),
+      categories: categories,
+      coordinates: this.getTextContent([
+        '.geo', '.coordinates'
+      ]),
+      infobox: this.extractInfoboxData()
+    };
+  }
+
+  extractInfoboxData() {
+    const infobox = document.querySelector('.infobox, .infobox-data');
+    if (!infobox) return {};
+
+    const data = {};
+    const rows = infobox.querySelectorAll('tr');
+
+    rows.forEach(row => {
+      const header = row.querySelector('th, .infobox-label');
+      const value = row.querySelector('td, .infobox-data');
+
+      if (header && value) {
+        const key = header.textContent?.trim().toLowerCase().replace(/\s+/g, '_');
+        const val = value.textContent?.trim();
+        if (key && val && key.length < 50) {
+          data[key] = val.substring(0, 200);
+        }
+      }
+    });
+
+    return data;
+  }
+
+  extractStructuredData() {
+    const structuredData = {};
+
+    try {
+      // JSON-LD extraction
+      const jsonLdScripts = document.querySelectorAll('script[type="application/ld+json"]');
+      if (jsonLdScripts.length > 0) {
+        const jsonLdData = [];
+        jsonLdScripts.forEach(script => {
+          try {
+            const data = JSON.parse(script.textContent);
+            jsonLdData.push(data);
+          } catch (e) {
+            ContentLogger.warn('JSON-LD parsing error', { error: e.message });
+          }
+        });
+        structuredData.jsonLd = jsonLdData.slice(0, 3);
+      }
+
+      // Microdata extraction
+      const microdataItems = document.querySelectorAll('[itemscope]');
+      if (microdataItems.length > 0) {
+        structuredData.microdata = Array.from(microdataItems).slice(0, 5).map(item => ({
+          itemtype: item.getAttribute('itemtype'),
+          itemprops: Array.from(item.querySelectorAll('[itemprop]')).slice(0, 10).map(prop => ({
+            property: prop.getAttribute('itemprop'),
+            content: prop.textContent?.trim() || prop.getAttribute('content')
+          }))
+        }));
+      }
+
+      // RDFa basic extraction
+      const rdfaElements = document.querySelectorAll('[property], [typeof]');
+      if (rdfaElements.length > 0) {
+        structuredData.rdfa = Array.from(rdfaElements).slice(0, 10).map(el => ({
+          property: el.getAttribute('property'),
+          typeof: el.getAttribute('typeof'),
+          content: el.textContent?.trim() || el.getAttribute('content')
+        }));
+      }
+
+    } catch (error) {
+      ContentLogger.warn('Structured data extraction error', { error: error.message });
+    }
+
+    return structuredData;
+  }
+
+  calculatePageStats() {
+    try {
+      return {
+        textLength: document.body?.textContent?.length || 0,
+        wordCount: this.countWords(document.body?.textContent || ''),
+        linkCount: document.querySelectorAll('a[href]').length,
+        imageCount: document.querySelectorAll('img[src]').length,
+        headingCount: document.querySelectorAll('h1, h2, h3, h4, h5, h6').length,
+        paragraphCount: document.querySelectorAll('p').length,
+        listCount: document.querySelectorAll('ul, ol').length,
+        tableCount: document.querySelectorAll('table').length,
+        formCount: document.querySelectorAll('form').length,
+        videoCount: document.querySelectorAll('video, iframe[src*="youtube"], iframe[src*="vimeo"]').length,
+        scriptCount: document.querySelectorAll('script').length,
+        styleCount: document.querySelectorAll('style, link[rel="stylesheet"]').length
+      };
+    } catch (error) {
+      ContentLogger.warn('Stats calculation error', { error: error.message });
+      return {};
+    }
+  }
+
+  getPerformanceData() {
+    try {
+      const perfData = {
+        loadTime: performance.now() - this.startTime,
+        domContentLoaded: document.readyState === 'complete',
+        extractionTime: performance.now() - this.startTime
+      };
+
+      // Navigation timing if available
+      if (performance.navigation) {
+        perfData.navigationType = performance.navigation.type;
+        perfData.redirectCount = performance.navigation.redirectCount;
+      }
+
+      // Timing data if available
+      if (performance.timing) {
+        const timing = performance.timing;
+        perfData.pageLoadTime = timing.loadEventEnd - timing.navigationStart;
+        perfData.domReadyTime = timing.domContentLoadedEventEnd - timing.navigationStart;
+        perfData.connectTime = timing.connectEnd - timing.connectStart;
+      }
+
+      return perfData;
+    } catch (error) {
+      ContentLogger.warn('Performance data extraction error', { error: error.message });
+      return { loadTime: performance.now() - this.startTime };
+    }
+  }
+
+  extractPageContext() {
+    try {
+      return {
+        language: document.documentElement.lang || null,
+        charset: document.characterSet || null,
+        readyState: document.readyState,
+        referrer: document.referrer || null,
+        lastModified: document.lastModified || null,
+        hasJavaScript: true, // Obviously true since this is running
+        hasCSS: document.querySelectorAll('style, link[rel="stylesheet"]').length > 0,
+        deviceType: this.detectDeviceType(),
+        scrollDepth: this.calculateScrollDepth()
+      };
+    } catch (error) {
+      ContentLogger.warn('Page context extraction error', { error: error.message });
+      return {};
+    }
+  }
+
+  // ===== UTILITY METHODS =====
+
+  getTextContent(selectors) {
+    for (const selector of selectors) {
+      const element = document.querySelector(selector);
+      if (element && element.textContent?.trim()) {
+        return element.textContent.trim();
+      }
     }
     return null;
-}
+  }
 
-function extractDay8Links() {
-    const links = [];
-    const linkElements = document.querySelectorAll('a[href]');
-    
-    linkElements.forEach(el => {
-        const href = el.href;
-        if (href && href.startsWith('http') && !links.includes(href) && links.length < 10) {
-            // Skip common non-content links
-            if (!href.includes('facebook.com') && !href.includes('twitter.com') && 
-                !href.includes('instagram.com') && !href.includes('linkedin.com')) {
-                links.push(href);
-            }
-        }
-    });
-    
-    return links;
-}
+  extractListData(selectors) {
+    for (const selector of selectors) {
+      const elements = document.querySelectorAll(selector);
+      if (elements.length > 0) {
+        return Array.from(elements)
+          .map(el => el.textContent?.trim())
+          .filter(text => text && text.length > 3)
+          .slice(0, 20);
+      }
+    }
+    return [];
+  }
 
-function extractDay8Images() {
-    const images = [];
-    const imgElements = document.querySelectorAll('img[src]');
-    
-    imgElements.forEach(el => {
-        const src = el.src;
-        if (src && src.startsWith('http') && !images.includes(src) && images.length < 5) {
-            // Skip common non-content images
-            if (!src.includes('logo') && !src.includes('icon') && 
-                !src.includes('avatar') && el.width > 100 && el.height > 100) {
-                images.push(src);
-            }
-        }
-    });
-    
-    return images;
-}
-
-// Main Day 8 extraction function
-function performDay8Extraction() {
-    console.log('[Content] Day 8 performing enhanced extraction...');
-    const startTime = Date.now();
-    const errorLog = [];
-    
+  getElementPosition(element) {
     try {
-        const url = window.location.href;
-        const domain = window.location.hostname;
-        
-        // Determine domain type for enhanced extraction
-        let domainType = 'GENERAL';
-        if (domain.includes('amazon.') || domain.includes('ebay.') || domain.includes('etsy.')) {
-            domainType = 'ECOMMERCE';
-        } else if (domain.includes('allrecipes.') || domain.includes('food.') || domain.includes('epicurious.') || domain.includes('tasty.')) {
-            domainType = 'RECIPE';
-        } else if (domain.includes('bloomberg.') || domain.includes('news.') || domain.includes('cnn.') || domain.includes('bbc.') || domain.includes('reuters.')) {
-            domainType = 'NEWS';
-        } else if (domain.includes('reddit.') || domain.includes('twitter.') || domain.includes('facebook.')) {
-            domainType = 'SOCIAL';
-        } else if (domain.includes('producthunt.') || domain.includes('betalist.') || domain.includes('angellist.')) {
-            domainType = 'PRODUCT';
-        }
-        
-        console.log(`[Content] Day 8 detected domain type: ${domainType} for ${domain}`);
-        
-        // Enhanced field extraction with AI trigger guarantee
-        const extractedData = extractDay8EnhancedFields(domainType, errorLog);
-        
-        // Ensure we always have main content for AI trigger
-        if (!extractedData.main_content_summary || extractedData.main_content_summary.length < 50) {
-            extractedData.main_content_summary = extractDay8EnhancedContent(domainType, errorLog);
-        }
-        
-        const extractionTime = Date.now() - startTime;
-        console.log(`[Content] Day 8 extraction completed in ${extractionTime}ms`);
-        
-        return {
-            success: true,
-            data: {
-                ...extractedData,
-                url: url,
-                domain: domain,
-                extractionMetadata: {
-                    strategy: domainType,
-                    extractionTime: extractionTime,
-                    errorLog: errorLog,
-                    day8Version: 'enterprise-enhanced',
-                    aiTriggerGuaranteed: !!(extractedData.main_content_summary && extractedData.main_content_summary.length > 20),
-                    fieldsExtracted: Object.values(extractedData).filter(v => v !== null && v !== '' && !(Array.isArray(v) && v.length === 0)).length
-                }
-            }
-        };
+      const rect = element.getBoundingClientRect();
+      return {
+        top: Math.round(rect.top + window.scrollY),
+        left: Math.round(rect.left + window.scrollX),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height)
+      };
     } catch (error) {
-        console.error('[Content] Day 8 extraction failed:', error);
-        return {
-            success: false,
-            error: error.message,
-            data: {},
-            extractionTime: Date.now() - startTime
-        };
+      return null;
     }
+  }
+
+  countWords(text) {
+    if (!text || typeof text !== 'string') return 0;
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  }
+
+  detectDeviceType() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    if (/mobile|android|iphone|ipod/.test(userAgent)) return 'mobile';
+    if (/tablet|ipad/.test(userAgent)) return 'tablet';
+    return 'desktop';
+  }
+
+  calculateScrollDepth() {
+    try {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      return Math.round((scrollTop + windowHeight) / documentHeight * 100);
+    } catch (error) {
+      return 0;
+    }
+  }
 }
 
-// Message listener for Day 8 enhanced extraction
+// ===== MESSAGE LISTENER =====
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('[Content] Day 8 message received:', request.action);
-    
-    if (request.action === 'extractPageData') {
-        const result = performDay8Extraction();
-        sendResponse(result);
-        return true;
+  ContentLogger.info(`📨 Message received: ${request.action}`);
+  
+  try {
+    switch (request.action) {
+      case 'extractPageData':
+      case 'getPageData':
+        const extractor = new EnhancedPageExtractor();
+        const pageData = extractor.extractComprehensivePageData();
+        
+        sendResponse({
+          success: !pageData.error,
+          data: pageData,
+          version: CONTENT_CONFIG.version,
+          extractedAt: new Date().toISOString()
+        });
+        break;
+
+      case 'ping':
+        sendResponse({
+          success: true,
+          message: 'Day 8+9 BLOOMBERG EXTRACTION CHAMPION content script active',
+          version: CONTENT_CONFIG.version,
+          url: window.location.href,
+          title: document.title
+        });
+        break;
+
+      default:
+        sendResponse({
+          success: false,
+          error: 'Unknown action: ' + request.action,
+          version: CONTENT_CONFIG.version
+        });
     }
-    
-    return false;
+  } catch (error) {
+    ContentLogger.error('Message handling error', { error: error.message });
+    sendResponse({
+      success: false,
+      error: error.message,
+      version: CONTENT_CONFIG.version
+    });
+  }
+  
+  return true; // Keep message channel open for async response
 });
 
-console.log('[Content] Day 8 Enterprise content script ready - AI trigger guaranteed');
+// ===== CONTENT SCRIPT INITIALIZATION =====
+(() => {
+  ContentLogger.success('🏆 Day 8+9 BLOOMBERG EXTRACTION CHAMPION content script initialized', {
+    version: CONTENT_CONFIG.version,
+    url: window.location.href,
+    title: document.title,
+    timestamp: new Date().toISOString(),
+    bloombergOptimized: CONTENT_CONFIG.enableBloombergOptimization
+  });
+})();

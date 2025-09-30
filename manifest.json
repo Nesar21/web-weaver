@@ -1,37 +1,41 @@
 {
-    "manifest_version": 3,
-    "name": "🏆 Web Weaver Lightning - Day 8 REAL",
-    "version": "8.1.0", 
-    "description": "Day 8 REAL Cross-Site Testing - No Simulations, Pure Accuracy Measurement",
-    
-    "permissions": [
-        "activeTab",
-        "tabs", 
-        "storage",
-        "scripting"
-    ],
-    
-    "host_permissions": [
-        "<all_urls>"
-    ],
-    
-    "background": {
-        "service_worker": "background.js"
-    },
-    
-    "action": {
-        "default_popup": "popup.html",
-        "default_title": "Web Weaver Lightning - Day 8 REAL Testing"
-    },
-    
-    "content_scripts": [{
-        "matches": ["<all_urls>"],
-        "js": ["content.js"],
-        "run_at": "document_end"
-    }],
-    
-    "web_accessible_resources": [{
-        "resources": ["validation.js"],
-        "matches": ["<all_urls>"]
-    }]
+  "manifest_version": 3,
+  "name": "Web Weaver Lightning - Day 8+9 Ultimate Enterprise Champion",
+  "version": "8.9.0",
+  "description": "Ultimate AI-Powered Web Data Extraction with Real-Time Analytics and Enterprise Intelligence",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "scripting",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_title": "Web Weaver Lightning - Day 8+9 Enterprise Champion"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "config/*",
+        "testing/ground_truth/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
