@@ -1,18 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "Web Weaver Lightning - Day 8+9 Ultimate Enterprise Champion",
-  "version": "8.9.0",
-  "description": "Ultimate AI-Powered Web Data Extraction with Real-Time Analytics and Enterprise Intelligence",
+  "name": "Web Weaver Lightning - Day 10 AI Engine v1",
+  "version": "10.0.0",
+  "description": "Enterprise-grade web content extraction with Day 10 AI Engine (80% Accuracy Target)",
   "permissions": [
     "activeTab",
-    "tabs",
     "storage",
     "scripting",
-    "unlimitedStorage"
+    "tabs",
+    "alarms",
+    "contextMenus"
   ],
   "host_permissions": [
-    "https://*/*",
-    "http://*/*"
+    "https://generativelanguage.googleapis.com/*",
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "src/background.js",
@@ -22,20 +23,56 @@
     {
       "matches": ["<all_urls>"],
       "js": ["src/content.js"],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": false
     }
   ],
   "action": {
     "default_popup": "src/popup.html",
-    "default_title": "Web Weaver Lightning - Day 8+9 Enterprise Champion"
+    "default_title": "Day 10 AI Engine - Web Weaver Lightning",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; worker-src 'self'"
   },
   "web_accessible_resources": [
     {
       "resources": [
+        "src/*",
         "config/*",
-        "testing/ground_truth/*"
+        "testing/*",
+        "docs/*"
       ],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "commands": {
+    "extract-data": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E"
+      },
+      "description": "Extract data from current page (Day 10 Enhanced)"
+    },
+    "run-analytics": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+A",
+        "mac": "Command+Shift+A"
+      },
+      "description": "Run Day 10 analytics dashboard"
+    }
+  },
+  "options_page": "src/options.html",
+  "minimum_chrome_version": "93"
 }

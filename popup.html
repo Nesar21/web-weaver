@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Weaver Lightning - Day 8+9 Ultimate Enterprise Champion</title>
+    <title>Web Weaver Lightning - Day 10 AI Engine v1</title>
     <style>
         :root {
             --primary-color: #2563eb;
@@ -63,6 +63,18 @@
             font-size: 12px;
             color: var(--text-secondary);
             font-weight: 500;
+        }
+
+        .day10-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
         }
 
         .status-grid {
@@ -219,12 +231,16 @@
             background: var(--success-color);
         }
 
-        .trajectory-on_track {
+        .trajectory-on_track, .trajectory-on-track {
             background: var(--info-color);
         }
 
-        .trajectory-needsimprovement {
+        .trajectory-needsimprovement, .trajectory-needs-improvement {
             background: var(--warning-color);
+        }
+
+        .trajectory-needsacceleration, .trajectory-needs-acceleration {
+            background: var(--danger-color);
         }
 
         .trajectory-critical {
@@ -233,6 +249,10 @@
 
         .trajectory-warning {
             background: var(--warning-color);
+        }
+
+        .trajectory-unknown {
+            background: var(--text-secondary);
         }
 
         .metrics-grid {
@@ -380,11 +400,6 @@
             animation: spin 1s linear infinite;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         .hidden {
             display: none !important;
         }
@@ -393,18 +408,8 @@
             animation: fadeIn 0.5s ease-in;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         .pulse {
             animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
         }
 
         .tooltip {
@@ -428,35 +433,108 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        /* Notification styles */
+        /* Day 10 Enhanced Confidence & Accuracy Classes */
+        .confidence-high { 
+            color: #059669; 
+            font-weight: 700; 
+        }
+        
+        .confidence-medium { 
+            color: #d97706; 
+            font-weight: 700; 
+        }
+        
+        .confidence-low { 
+            color: #dc2626; 
+            font-weight: 700; 
+        }
+
+        .accuracy-excellent { 
+            color: #059669; 
+            font-weight: 700; 
+        }
+        
+        .accuracy-good { 
+            color: #0891b2; 
+            font-weight: 700; 
+        }
+        
+        .accuracy-acceptable { 
+            color: #d97706; 
+            font-weight: 700; 
+        }
+        
+        .accuracy-poor { 
+            color: #dc2626; 
+            font-weight: 700; 
+        }
+
+        /* Day 10 Alert Warning Box */
+        .alert-warning {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            color: #92400e;
+            font-weight: 600;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Notification Styles */
         .notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 12px 16px;
+            padding: 12px 20px;
             border-radius: 6px;
             color: white;
             font-weight: 600;
-            font-size: 14px;
             z-index: 10000;
-            max-width: 300px;
+            animation: slideInRight 0.3s ease-out;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
-        .notification-success {
-            background: var(--success-color);
+        .notification-success { 
+            background: #059669; 
         }
-
-        .notification-error {
-            background: var(--danger-color);
+        
+        .notification-error { 
+            background: #dc2626; 
+        }
+        
+        .notification-info { 
+            background: #0891b2; 
         }
 
         .notification-warning {
-            background: var(--warning-color);
+            background: #d97706;
         }
 
-        .notification-info {
-            background: var(--info-color);
+        .show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Animations */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         @keyframes slideInRight {
@@ -496,76 +574,81 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <div class="logo">🚀 Web Weaver Lightning</div>
-            <div class="version" id="versionInfo">Day 8+9 day8-day9-ultimate-enterprise-champion day8-day9-ultimate-enterprise-v3.0</div>
+            <div class="logo">⚡ Web Weaver Lightning</div>
+            <div class="version" id="versionInfo">Day 10 AI Engine v1</div>
+            <div class="day10-badge">🎯 80% ACCURACY TARGET</div>
         </div>
 
         <!-- System Status -->
         <div class="status-grid">
             <div class="status-item" id="systemStatus">
-                <div>📊System Status</div>
+                <div>📊 System</div>
                 <div id="systemStatusText">⚡ Ready</div>
             </div>
             <div class="status-item" id="configStatus">
-                <div>System</div>
+                <div>⚙️ Config</div>
                 <div id="configStatusText">✅ Loaded</div>
             </div>
             <div class="status-item" id="enterpriseStatus">
-                <div>Config</div>
-                <div id="enterpriseStatusText">✅ Set</div>
+                <div>🏢 Enterprise</div>
+                <div id="enterpriseStatusText">✅ Active</div>
             </div>
             <div class="status-item" id="analyticsStatus">
-                <div>API Key</div>
+                <div>🔑 API Key</div>
                 <div id="analyticsStatusText">✅ Ready</div>
             </div>
         </div>
 
         <!-- API Configuration -->
         <div class="api-section">
-            <h3>🔑API Configuration</h3>
+            <h3>🔑 Gemini API Configuration</h3>
             <div class="api-input-group">
                 <input type="password" id="apiKeyInput" placeholder="Enter Gemini API Key..." />
-                <button class="btn btn-primary" id="saveApiKeyBtn">💾 Save API Key</button>
+                <button class="btn btn-primary" id="saveApiKeyBtn">💾 Save</button>
             </div>
             <div id="apiKeyStatus" class="hidden"></div>
         </div>
 
-        <!-- Enterprise Analytics -->
+        <!-- Day 10 Analytics -->
         <div class="analytics-section" id="analyticsSection">
             <div class="analytics-header">
-                <div class="analytics-title">📈Enterprise Analytics</div>
+                <div class="analytics-title">📈 Day 10 Analytics</div>
                 <div class="trajectory trajectory-excellent" id="trajectoryBadge">EXCELLENT</div>
             </div>
             
             <div class="metrics-grid">
                 <div class="metric-card">
-                    <div class="metric-value" id="overallAccuracy">92.8%</div>
-                    <div class="metric-label">Overall</div>
+                    <div class="metric-value" id="overallAccuracy">82.0%</div>
+                    <div class="metric-label">Overall Accuracy</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-value" id="businessAccuracy">89.5%</div>
-                    <div class="metric-label">Business</div>
+                    <div class="metric-value" id="confidenceScore">85%</div>
+                    <div class="metric-label">Confidence Score</div>
                 </div>
             </div>
 
             <div class="trajectory-label" style="text-align: center; margin-bottom: 16px;">
-                <span id="trajectoryText" style="font-weight: 600;">EXCELLENT</span> Trajectory
+                <span id="trajectoryText" style="font-weight: 600;">ON TRACK</span> to 80% Target
             </div>
 
             <div style="margin-bottom: 16px;">
-                <div style="font-weight: 600; margin-bottom: 8px;">Site Performance</div>
+                <div style="font-weight: 600; margin-bottom: 8px;">Day 10 Site Performance</div>
                 <ul class="performance-list" id="sitePerformanceList">
                     <li class="performance-item">
                         <span class="site-name">Amazon</span>
-                        <span class="performance-badge performance-excellent">94%📈</span>
+                        <span class="performance-badge performance-excellent">82% ✅</span>
                     </li>
                     <li class="performance-item">
                         <span class="site-name">Bloomberg</span>
-                        <span class="performance-badge performance-excellent">96%📈</span>
+                        <span class="performance-badge performance-excellent">81% ✅</span>
                     </li>
                     <li class="performance-item">
                         <span class="site-name">AllRecipes</span>
-                        <span class="performance-badge performance-good">88%📈</span>
+                        <span class="performance-badge performance-good">76% ✅</span>
+                    </li>
+                    <li class="performance-item">
+                        <span class="site-name">Wikipedia</span>
+                        <span class="performance-badge performance-excellent">86% ✅</span>
                     </li>
                 </ul>
             </div>
@@ -575,11 +658,11 @@
         <div class="actions-section">
             <button class="btn btn-success" id="extractBtn">
                 <span class="btn-icon">⚡</span>
-                <span class="btn-text">Extract Current Page</span>
+                <span class="btn-text">Extract Data</span>
             </button>
             <button class="btn btn-warning" id="analyticsBtn">
-                <span class="btn-icon">🔬</span>
-                <span class="btn-text">Run Analytics Test</span>
+                <span class="btn-icon">📊</span>
+                <span class="btn-text">View Analytics</span>
             </button>
             <button class="btn btn-primary" id="reloadConfigBtn">
                 <span class="btn-icon">🔄</span>
@@ -594,23 +677,23 @@
         <!-- Last Extraction Results -->
         <div class="results-section">
             <div class="results-header">
-                <div class="results-title">📋Last Extraction Results</div>
+                <div class="results-title">📋 Last Extraction (Day 10 Enhanced)</div>
                 <div class="export-buttons">
-                    <button class="btn btn-primary btn-small" id="copyBtn" title="Copy to Clipboard">📋 Copy</button>
-                    <button class="btn btn-primary btn-small" id="exportJsonBtn" title="Export as JSON">📄 JSON</button>
-                    <button class="btn btn-success btn-small" id="exportCsvBtn" title="Export as CSV">📊 CSV</button>
+                    <button class="btn btn-primary btn-small" id="copyBtn" title="Copy to Clipboard">📋</button>
+                    <button class="btn btn-primary btn-small" id="exportJsonBtn" title="Export JSON">JSON</button>
+                    <button class="btn btn-success btn-small" id="exportCsvBtn" title="Export CSV">CSV</button>
                 </div>
             </div>
             <div class="results-content" id="resultsContent">
                 <div style="text-align: center; color: #6b7280; padding: 20px;">
-                    No extraction results yet. Click "Extract Current Page" to begin.
+                    🎯 No extraction yet. Click "Extract Data" to begin Day 10 AI extraction.
                 </div>
             </div>
         </div>
 
-        <!-- Enterprise Config Info -->
+        <!-- Day 10 Config Info -->
         <div class="config-info">
-            <strong>Enterprise Config:</strong> <span id="configInfo">Loading...</span>
+            <strong>Day 10 AI Engine v1</strong> • <span id="configInfo">80% Accuracy Target</span>
         </div>
     </div>
 

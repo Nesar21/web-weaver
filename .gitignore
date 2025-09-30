@@ -40,3 +40,40 @@ secrets.json
 # Extension packages
 *.zip
 *.crx
+
+# ============================================================================
+# DAY 10 ADDITIONS - AI ENGINE v1 TESTING
+# ============================================================================
+
+# Day 10 Testing Infrastructure
+testing/logs/
+testing/logs/*.csv
+testing/logs/*.json
+testing/ground_truth/.backup/
+
+# Day 10 Analytics & Reports
+analytics_report.json
+iteration_log.csv
+validation_report_*.json
+
+# Day 10 Simulation Data
+simulation_results/
+test_outputs/
+
+# Day 10 Confidence Scoring Cache
+confidence_cache/
+ai_response_cache/
+
+# Day 10 Ground Truth Backups (keep originals only)
+testing/ground_truth/*_backup.json
+testing/ground_truth/*_old.json
+
+# ============================================================================
+# OPTIONAL: Comment out if you want to track these
+# ============================================================================
+
+# Uncomment to ignore all test logs (not recommended for Day 10)
+# testing/logs/iteration_log.csv
+
+# Uncomment to ignore analytics reports (not recommended for Day 10)
+# testing/logs/analytics_report.json

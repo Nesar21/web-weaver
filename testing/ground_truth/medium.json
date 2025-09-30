@@ -2,9 +2,9 @@
   "title": "Building Scalable Web Extensions in 2024",
   "description": "A comprehensive guide to modern web extension development with Manifest V3 and AI integration best practices.",
   "author": "Alex Rodriguez",
-  "date": "2024-09-15",
+  "publication_date": "2024-09-15",
   "category": "blog",
-  "content": "Modern web extensions require careful architecture planning, especially when integrating AI services like Gemini while maintaining CSP compliance and performance optimization.",
+  "main_content_summary": "Modern web extensions require careful architecture planning, especially when integrating AI services like Gemini while maintaining CSP compliance and performance optimization.",
   "links": ["https://developer.chrome.com/docs/extensions", "https://developer.mozilla.org/docs/Mozilla/Add-ons"],
-  "images": ["Extension architecture diagram", "Chrome Web Store screenshot"]
+  "images": ["https://example.com/extension-architecture.jpg", "https://example.com/chrome-store-screenshot.jpg"]
 }

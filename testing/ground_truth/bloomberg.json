@@ -2,9 +2,10 @@
   "title": "Fed Signals Rate Cuts Ahead as Inflation Cools",
   "description": "Federal Reserve officials indicate potential interest rate reductions following latest inflation data showing cooling price pressures.",
   "author": "Sarah Chen",
-  "date": "2024-09-24",
+  "publishdate": "2024-09-24",
   "category": "news",
-  "content": "Federal Reserve Chair Jerome Powell hinted at potential rate cuts in upcoming meetings as core inflation metrics show sustained cooling trends across major economic sectors.",
+  "summary": "Federal Reserve Chair Jerome Powell hinted at potential rate cuts in upcoming meetings as core inflation metrics show sustained cooling trends across major economic sectors.",
+  "main_content_summary": "Federal Reserve Chair Jerome Powell hinted at potential rate cuts in upcoming meetings as core inflation metrics show sustained cooling trends across major economic sectors.",
   "links": ["https://www.federalreserve.gov", "https://www.bls.gov/cpi"],
-  "images": ["Federal Reserve building exterior", "Interest rate chart"]
+  "images": ["https://example.com/fed-building.jpg", "https://example.com/interest-rate-chart.jpg"]
 }

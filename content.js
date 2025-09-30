@@ -1,26 +1,103 @@
-// Day 8+9: ULTIMATE ENTERPRISE CHAMPION CONTENT SCRIPT
-// /src/content.js - BLOOMBERG EXTRACTION CHAMPION EDITION
+// Day 10: ULTIMATE ENTERPRISE AI ENGINE v1 CONTENT SCRIPT
+// /src/content.js - DAY 10 ENHANCED WITH CONFIDENCE & DATA QUALITY
 
-console.log('[Content] Day 8+9 BLOOMBERG EXTRACTION CHAMPION content script loading');
+console.log('[Content] Day 10 AI ENGINE v1 loading - Enhanced Data Extraction with Quality Scoring');
 
-// ===== CONTENT SCRIPT CONFIGURATION =====
+// ============================================================================
+// DAY 10 CONTENT SCRIPT CONFIGURATION
+// ============================================================================
+
 const CONTENT_CONFIG = {
-  version: 'day8-day9-ultimate-enterprise-champion-bloomberg-fix',
+  version: 'day10-ai-engine-v1-content',
+  day8Version: 'day8-day9-ultimate-enterprise-champion-bloomberg-fix', // Preserve backward compat
   enableEnhancedExtraction: true,
   enableStructuredDataExtraction: true,
   enablePerformanceMonitoring: true,
-  enableBloombergOptimization: true
+  enableBloombergOptimization: true,
+  
+  // Day 10 additions
+  enableQualityScoring: true,
+  enableDataCleaning: true,
+  enablePIIDetection: true,
+  minTextLength: 10,
+  maxFieldLength: 2000
 };
 
-// ===== ENHANCED LOGGER =====
+// ============================================================================
+// ENHANCED LOGGER
+// ============================================================================
+
 const ContentLogger = {
-  info: (msg, data = {}) => console.log(`[Content] ℹ️ ${msg}`, data),
-  warn: (msg, data = {}) => console.warn(`[Content] ⚠️ ${msg}`, data),
-  error: (msg, data = {}) => console.error(`[Content] ❌ ${msg}`, data),
-  success: (msg, data = {}) => console.log(`[Content] ✅ ${msg}`, data)
+  info: (msg, data = {}) => console.log(`[Content-Day10] ℹ️ ${msg}`, data),
+  warn: (msg, data = {}) => console.warn(`[Content-Day10] ⚠️ ${msg}`, data),
+  error: (msg, data = {}) => console.error(`[Content-Day10] ❌ ${msg}`, data),
+  success: (msg, data = {}) => console.log(`[Content-Day10] ✅ ${msg}`, data)
 };
 
-// ===== ENHANCED PAGE DATA EXTRACTOR =====
+// ============================================================================
+// DAY 10: DATA QUALITY UTILITIES
+// ============================================================================
+
+const DataQuality = {
+  // Clean text by removing extra whitespace and normalizing
+  cleanText(text) {
+    if (!text || typeof text !== 'string') return '';
+    return text
+      .trim()
+      .replace(/\s+/g, ' ')
+      .replace(/\n\s*\n/g, '\n')
+      .substring(0, CONTENT_CONFIG.maxFieldLength);
+  },
+  
+  // Check if text contains potential PII
+  hasPII(text) {
+    if (!text || typeof text !== 'string') return false;
+    const piiPatterns = [
+      /\b\d{3}-\d{2}-\d{4}\b/, // SSN
+      /\b\d{16}\b/, // Credit card
+      /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/, // Email
+      /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/ // Phone
+    ];
+    return piiPatterns.some(pattern => pattern.test(text));
+  },
+  
+  // Calculate text quality score (0-100)
+  calculateQualityScore(text) {
+    if (!text || typeof text !== 'string') return 0;
+    
+    let score = 50; // Base score
+    
+    // Length check
+    if (text.length >= CONTENT_CONFIG.minTextLength) score += 10;
+    if (text.length >= 50) score += 10;
+    if (text.length >= 100) score += 10;
+    
+    // No PII detected
+    if (!this.hasPII(text)) score += 10;
+    
+    // Has proper capitalization
+    if (/^[A-Z]/.test(text)) score += 5;
+    
+    // Has proper punctuation
+    if (/[.!?]$/.test(text)) score += 5;
+    
+    return Math.min(100, score);
+  },
+  
+  // Clean array data
+  cleanArray(arr) {
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .filter(item => item && typeof item === 'string' && item.trim().length > 0)
+      .map(item => this.cleanText(item))
+      .slice(0, 50); // Limit array size
+  }
+};
+
+// ============================================================================
+// ENHANCED PAGE DATA EXTRACTOR (DAY 10)
+// ============================================================================
+
 class EnhancedPageExtractor {
   constructor() {
     this.extractionId = `content_extract_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
@@ -29,13 +106,13 @@ class EnhancedPageExtractor {
 
   extractComprehensivePageData() {
     try {
-      ContentLogger.info('🔍 Starting comprehensive page extraction', { 
-        extractionId: this.extractionId 
+      ContentLogger.info('🔍 Starting Day 10 comprehensive page extraction', {
+        extractionId: this.extractionId
       });
 
       const pageData = {
         // Basic page info
-        title: document.title || '',
+        title: DataQuality.cleanText(document.title || ''),
         url: window.location.href,
         domain: window.location.hostname,
         extractedAt: new Date().toISOString(),
@@ -60,16 +137,21 @@ class EnhancedPageExtractor {
         
         // Page context
         context: this.extractPageContext(),
-
-        // BLOOMBERG-SPECIFIC DIRECT FIELDS - MAJOR ADDITION
-        ...this.extractDirectPageFields()
+        
+        // Direct page fields (Bloomberg + others)
+        ...this.extractDirectPageFields(),
+        
+        // Day 10: Data quality metrics
+        dataQuality: this.calculateDataQuality()
       };
 
       const duration = performance.now() - this.startTime;
-      ContentLogger.success('Comprehensive extraction completed', {
+
+      ContentLogger.success('Day 10 extraction completed', {
         extractionId: this.extractionId,
         duration: Math.round(duration) + 'ms',
-        fieldsExtracted: Object.keys(pageData).length
+        fieldsExtracted: Object.keys(pageData).length,
+        qualityScore: pageData.dataQuality?.overallScore || 0
       });
 
       return pageData;
@@ -83,42 +165,93 @@ class EnhancedPageExtractor {
     }
   }
 
-  // ===== NEW: DIRECT PAGE FIELDS EXTRACTION FOR BLOOMBERG =====
+  // ===== DAY 10: DATA QUALITY CALCULATION =====
+  calculateDataQuality() {
+    const quality = {
+      overallScore: 0,
+      titleQuality: 0,
+      contentQuality: 0,
+      metadataQuality: 0,
+      hasPII: false,
+      issues: []
+    };
+
+    try {
+      // Title quality
+      const title = document.title || '';
+      quality.titleQuality = DataQuality.calculateQualityScore(title);
+      if (!title) quality.issues.push('MISSING_TITLE');
+
+      // Content quality (based on paragraphs)
+      const paragraphs = document.querySelectorAll('p');
+      if (paragraphs.length > 0) {
+        const avgParagraphQuality = Array.from(paragraphs)
+          .slice(0, 5)
+          .reduce((sum, p) => sum + DataQuality.calculateQualityScore(p.textContent), 0) / Math.min(5, paragraphs.length);
+        quality.contentQuality = avgParagraphQuality;
+      } else {
+        quality.issues.push('MISSING_CONTENT');
+      }
+
+      // Metadata quality
+      const metaDesc = document.querySelector('meta[name="description"]');
+      quality.metadataQuality = metaDesc ? DataQuality.calculateQualityScore(metaDesc.content) : 0;
+      if (!metaDesc) quality.issues.push('MISSING_DESCRIPTION');
+
+      // PII detection
+      const bodyText = document.body.textContent || '';
+      quality.hasPII = DataQuality.hasPII(bodyText.substring(0, 5000));
+      if (quality.hasPII) quality.issues.push('PII_DETECTED');
+
+      // Calculate overall score
+      quality.overallScore = Math.round(
+        (quality.titleQuality * 0.3 + quality.contentQuality * 0.5 + quality.metadataQuality * 0.2)
+      );
+
+    } catch (error) {
+      ContentLogger.warn('Quality calculation error', { error: error.message });
+    }
+
+    return quality;
+  }
+
+  // ===== DIRECT PAGE FIELDS EXTRACTION (BLOOMBERG + OTHERS) =====
   extractDirectPageFields() {
     const hostname = window.location.hostname.toLowerCase();
     const directFields = {};
 
     try {
-      // Add standard fields that Bloomberg validation expects
+      // Add standard fields that validation expects
       if (hostname.includes('bloomberg.')) {
         ContentLogger.info('🔍 Extracting Bloomberg-specific direct fields');
-        
+
         // Extract description from meta tags
         const metaDesc = document.querySelector('meta[name="description"], meta[property="description"]');
         if (metaDesc) {
-          directFields.description = metaDesc.content || '';
+          directFields.description = DataQuality.cleanText(metaDesc.content || '');
         }
 
         // Extract category from various sources
         directFields.category = this.extractBloombergCategory();
-        
+
         // Extract summary from page content
         directFields.summary = this.extractBloombergSummary();
-        
+
         // Extract publishdate from various sources
         directFields.publishdate = this.extractBloombergPublishDate();
-        
+
         // Extract author if available
         directFields.author = this.extractBloombergAuthor();
 
         ContentLogger.success('Bloomberg direct fields extracted', {
           fieldsFound: Object.keys(directFields).filter(k => directFields[k]).length
         });
+
       } else {
         // For other sites, extract common fields
         const metaDesc = document.querySelector('meta[name="description"], meta[property="description"]');
         if (metaDesc) {
-          directFields.description = metaDesc.content || '';
+          directFields.description = DataQuality.cleanText(metaDesc.content || '');
         }
 
         // Extract category from various sources
@@ -129,17 +262,17 @@ class EnhancedPageExtractor {
           '.section',
           '.breadcrumb a:last-child'
         ];
-        
+
         for (const selector of categorySelectors) {
           const element = document.querySelector(selector);
           if (element) {
-            directFields.category = element.textContent?.trim() || element.content || '';
+            directFields.category = DataQuality.cleanText(element.textContent || element.content || '');
             break;
           }
         }
 
         // Extract main content summary
-        directFields.maincontentsummary = this.extractMainContentSummary();
+        directFields.main_content_summary = this.extractMainContentSummary();
       }
 
     } catch (error) {
@@ -166,7 +299,7 @@ class EnhancedPageExtractor {
     for (const selector of categorySelectors) {
       const element = document.querySelector(selector);
       if (element) {
-        const text = element.textContent?.trim() || element.content || '';
+        const text = DataQuality.cleanText(element.textContent || element.content || '');
         if (text && text.length > 0) {
           return text;
         }
@@ -200,9 +333,9 @@ class EnhancedPageExtractor {
     for (const selector of summarySelectors) {
       const element = document.querySelector(selector);
       if (element) {
-        const text = element.textContent?.trim() || element.content || '';
+        const text = DataQuality.cleanText(element.textContent || element.content || '');
         if (text && text.length > 20) {
-          return text.substring(0, 500); // Limit to 500 chars
+          return text.substring(0, 500);
         }
       }
     }
@@ -210,7 +343,7 @@ class EnhancedPageExtractor {
     // Fallback: extract from first paragraph
     const firstParagraph = document.querySelector('p, .article-content p, .story-body p');
     if (firstParagraph) {
-      const text = firstParagraph.textContent?.trim();
+      const text = DataQuality.cleanText(firstParagraph.textContent || '');
       if (text && text.length > 50) {
         return text.substring(0, 300);
       }
@@ -234,21 +367,13 @@ class EnhancedPageExtractor {
     for (const selector of dateSelectors) {
       const element = document.querySelector(selector);
       if (element) {
-        const dateTime = element.getAttribute('datetime') || 
-                        element.getAttribute('content') ||
-                        element.textContent?.trim();
+        const dateTime = element.getAttribute('datetime') ||
+                         element.getAttribute('content') ||
+                         DataQuality.cleanText(element.textContent || '');
         if (dateTime) {
           return dateTime;
         }
       }
-    }
-
-    // Look for time patterns in text
-    const timePattern = /\d{1,2}:\d{2}/;
-    const bodyText = document.body.textContent || '';
-    const timeMatch = bodyText.match(timePattern);
-    if (timeMatch) {
-      return timeMatch[0];
     }
 
     return '';
@@ -269,7 +394,7 @@ class EnhancedPageExtractor {
     for (const selector of authorSelectors) {
       const element = document.querySelector(selector);
       if (element) {
-        const text = element.textContent?.trim() || element.content || '';
+        const text = DataQuality.cleanText(element.textContent || element.content || '');
         if (text && text.length > 0 && text.length < 100) {
           // Clean up author text (remove "By " prefix)
           return text.replace(/^By\s+/i, '').trim();
@@ -294,7 +419,7 @@ class EnhancedPageExtractor {
     for (const selector of summarySelectors) {
       const element = document.querySelector(selector);
       if (element) {
-        const text = element.textContent?.trim() || element.content || '';
+        const text = DataQuality.cleanText(element.textContent || element.content || '');
         if (text && text.length > 30) {
           return text.substring(0, 400);
         }
@@ -304,6 +429,7 @@ class EnhancedPageExtractor {
     return '';
   }
 
+  // ===== CONTENT EXTRACTION =====
   extractContent() {
     const content = {
       headings: [],
@@ -311,8 +437,7 @@ class EnhancedPageExtractor {
       links: [],
       images: [],
       lists: [],
-      tables: [],
-      forms: []
+      tables: []
     };
 
     try {
@@ -321,11 +446,8 @@ class EnhancedPageExtractor {
       content.headings = Array.from(headings)
         .map(h => ({
           tag: h.tagName.toLowerCase(),
-          text: h.textContent?.trim(),
-          level: parseInt(h.tagName.charAt(1)),
-          id: h.id || null,
-          className: h.className || null,
-          position: this.getElementPosition(h)
+          text: DataQuality.cleanText(h.textContent || ''),
+          level: parseInt(h.tagName.charAt(1))
         }))
         .filter(h => h.text && h.text.length > 0)
         .slice(0, 20);
@@ -334,9 +456,8 @@ class EnhancedPageExtractor {
       const paragraphs = document.querySelectorAll('p, .content p, .article-content p, .post-content p');
       content.paragraphs = Array.from(paragraphs)
         .map(p => ({
-          text: p.textContent?.trim(),
-          wordCount: this.countWords(p.textContent),
-          position: this.getElementPosition(p)
+          text: DataQuality.cleanText(p.textContent || ''),
+          wordCount: this.countWords(p.textContent)
         }))
         .filter(p => p.text && p.text.length > 25)
         .slice(0, 15);
@@ -345,12 +466,9 @@ class EnhancedPageExtractor {
       const links = document.querySelectorAll('a[href]');
       content.links = Array.from(links)
         .map(a => ({
-          text: a.textContent?.trim(),
+          text: DataQuality.cleanText(a.textContent || ''),
           href: a.href,
-          internal: a.href.includes(window.location.hostname),
-          title: a.title || null,
-          target: a.target || null,
-          rel: a.rel || null
+          internal: a.href.includes(window.location.hostname)
         }))
         .filter(l => l.text && l.href && l.text.length > 2)
         .slice(0, 20);
@@ -360,12 +478,9 @@ class EnhancedPageExtractor {
       content.images = Array.from(images)
         .map(img => ({
           src: img.src,
-          alt: img.alt,
+          alt: DataQuality.cleanText(img.alt || ''),
           width: img.width || img.naturalWidth || 0,
-          height: img.height || img.naturalHeight || 0,
-          title: img.title || null,
-          loading: img.loading || null,
-          className: img.className || null
+          height: img.height || img.naturalHeight || 0
         }))
         .filter(img => img.src && !img.src.includes('data:image') && !img.src.includes('svg'))
         .slice(0, 12);
@@ -375,8 +490,9 @@ class EnhancedPageExtractor {
       content.lists = Array.from(lists)
         .map(list => ({
           type: list.tagName.toLowerCase(),
-          items: Array.from(list.querySelectorAll('li')).map(li => li.textContent?.trim()).filter(Boolean).slice(0, 15),
-          nested: list.querySelectorAll('ul, ol').length > 0
+          items: DataQuality.cleanArray(
+            Array.from(list.querySelectorAll('li')).map(li => li.textContent)
+          )
         }))
         .filter(list => list.items.length > 0)
         .slice(0, 8);
@@ -385,25 +501,17 @@ class EnhancedPageExtractor {
       const tables = document.querySelectorAll('table');
       content.tables = Array.from(tables)
         .map(table => ({
-          headers: Array.from(table.querySelectorAll('th')).map(th => th.textContent?.trim()).filter(Boolean),
-          rows: Array.from(table.querySelectorAll('tr')).slice(1, 8).map(tr => 
-            Array.from(tr.querySelectorAll('td')).map(td => td.textContent?.trim()).filter(Boolean)
-          ).filter(row => row.length > 0),
-          caption: table.caption?.textContent?.trim() || null
+          headers: DataQuality.cleanArray(
+            Array.from(table.querySelectorAll('th')).map(th => th.textContent)
+          ),
+          rows: Array.from(table.querySelectorAll('tr')).slice(1, 8).map(tr =>
+            DataQuality.cleanArray(
+              Array.from(tr.querySelectorAll('td')).map(td => td.textContent)
+            )
+          ).filter(row => row.length > 0)
         }))
         .filter(table => table.headers.length > 0 || table.rows.length > 0)
         .slice(0, 5);
-
-      // Forms extraction
-      const forms = document.querySelectorAll('form');
-      content.forms = Array.from(forms)
-        .map(form => ({
-          action: form.action || null,
-          method: form.method || 'get',
-          fieldCount: form.querySelectorAll('input, select, textarea').length,
-          hasFileUpload: form.querySelector('input[type="file"]') !== null
-        }))
-        .slice(0, 3);
 
     } catch (error) {
       ContentLogger.warn('Content extraction error', { error: error.message });
@@ -412,6 +520,7 @@ class EnhancedPageExtractor {
     return content;
   }
 
+  // ===== METADATA EXTRACTION =====
   extractMetadata() {
     const meta = {};
 
@@ -422,39 +531,31 @@ class EnhancedPageExtractor {
         keywords: 'meta[name="keywords"]',
         author: 'meta[name="author"], meta[property="author"]',
         viewport: 'meta[name="viewport"]',
-        robots: 'meta[name="robots"]',
-        generator: 'meta[name="generator"]'
+        robots: 'meta[name="robots"]'
       };
 
       Object.entries(metaTags).forEach(([key, selector]) => {
         const element = document.querySelector(selector);
-        meta[key] = element?.content || null;
+        meta[key] = element ? DataQuality.cleanText(element.content || '') : null;
       });
 
       // Open Graph data
       meta.openGraph = {};
       document.querySelectorAll('meta[property^="og:"]').forEach(el => {
         const property = el.getAttribute('property').replace('og:', '');
-        meta.openGraph[property] = el.getAttribute('content');
+        meta.openGraph[property] = DataQuality.cleanText(el.getAttribute('content') || '');
       });
 
       // Twitter Card data
       meta.twitterCard = {};
       document.querySelectorAll('meta[name^="twitter:"]').forEach(el => {
         const name = el.getAttribute('name').replace('twitter:', '');
-        meta.twitterCard[name] = el.getAttribute('content');
+        meta.twitterCard[name] = DataQuality.cleanText(el.getAttribute('content') || '');
       });
 
       // Link tags
       const canonical = document.querySelector('link[rel="canonical"]');
       meta.canonical = canonical?.href || null;
-
-      const alternate = document.querySelectorAll('link[rel="alternate"]');
-      meta.alternates = Array.from(alternate).map(link => ({
-        href: link.href,
-        type: link.type,
-        hreflang: link.hreflang
-      }));
 
     } catch (error) {
       ContentLogger.warn('Metadata extraction error', { error: error.message });
@@ -463,6 +564,7 @@ class EnhancedPageExtractor {
     return meta;
   }
 
+  // ===== SITE-SPECIFIC DATA EXTRACTION =====
   extractSiteSpecificData() {
     const hostname = window.location.hostname.toLowerCase();
     const siteData = {};
@@ -477,6 +579,7 @@ class EnhancedPageExtractor {
       } else if (hostname.includes('wikipedia.org')) {
         siteData.wikipedia = this.extractWikipediaData();
       }
+
     } catch (error) {
       ContentLogger.warn('Site-specific extraction error', { error: error.message });
     }
@@ -487,210 +590,64 @@ class EnhancedPageExtractor {
   extractAmazonData() {
     return {
       price: this.getTextContent([
-        '.a-price-whole', '.a-offscreen', '.a-price .a-offscreen', 
+        '.a-price-whole', '.a-offscreen', '.a-price .a-offscreen',
         '[data-testid="price"]', '.a-price-symbol'
       ]),
       rating: this.getTextContent([
-        '.a-icon-alt', '[data-hook="rating-out-of-text"]', 
+        '.a-icon-alt', '[data-hook="rating-out-of-text"]',
         '.a-star-medium .a-star'
       ]),
       reviews: this.getTextContent([
-        '#acrCustomerReviewText', '.a-size-base', 
+        '#acrCustomerReviewText', '.a-size-base',
         '[data-hook="total-review-count"]'
-      ]),
-      availability: this.getTextContent([
-        '#availability span', '.a-size-mini', 
-        '[data-feature-name="availability"] span'
-      ]),
-      brand: this.getTextContent([
-        '#bylineInfo', '.a-brand', 
-        '[data-feature-name="bylineInfo"]'
-      ]),
-      category: this.getTextContent([
-        '#wayfinding-breadcrumbs_feature_div a', 
-        '.a-breadcrumb .a-list-item a'
       ])
     };
   }
 
-  // ===== ENHANCED BLOOMBERG DATA EXTRACTION =====
   extractBloombergDataAdvanced() {
-    const bloombergData = {
+    return {
       author: this.extractBloombergAuthor(),
       publishDate: this.extractBloombergPublishDate(),
       category: this.extractBloombergCategory(),
       summary: this.extractBloombergSummary(),
-      
-      // Additional Bloomberg-specific fields
-      headline: document.title || '',
-      body: this.extractBloombergBody(),
-      tags: this.extractBloombergTags(),
-      region: this.extractBloombergRegion()
+      headline: DataQuality.cleanText(document.title || '')
     };
-
-    ContentLogger.success('Advanced Bloomberg data extracted', {
-      fieldsFound: Object.keys(bloombergData).filter(k => bloombergData[k]).length,
-      hasAuthor: !!bloombergData.author,
-      hasCategory: !!bloombergData.category,
-      hasSummary: !!bloombergData.summary
-    });
-
-    return bloombergData;
-  }
-
-  extractBloombergBody() {
-    const bodySelectors = [
-      '.article-body',
-      '.story-body', 
-      '.content-body',
-      '.post-content',
-      'main p',
-      '.article-content'
-    ];
-
-    for (const selector of bodySelectors) {
-      const element = document.querySelector(selector);
-      if (element) {
-        const text = element.textContent?.trim();
-        if (text && text.length > 100) {
-          return text.substring(0, 1000);
-        }
-      }
-    }
-
-    // Fallback: get all paragraphs
-    const paragraphs = document.querySelectorAll('p');
-    if (paragraphs.length > 0) {
-      const allText = Array.from(paragraphs)
-        .map(p => p.textContent?.trim())
-        .filter(text => text && text.length > 20)
-        .join(' ')
-        .substring(0, 800);
-      
-      if (allText.length > 50) {
-        return allText;
-      }
-    }
-
-    return '';
-  }
-
-  extractBloombergTags() {
-    const tagSelectors = [
-      '.tags a',
-      '.article-tags a',
-      '.post-tags a',
-      'meta[name="keywords"]'
-    ];
-
-    const tags = [];
-    
-    for (const selector of tagSelectors) {
-      if (selector.includes('meta')) {
-        const element = document.querySelector(selector);
-        if (element && element.content) {
-          return element.content.split(',').map(tag => tag.trim()).slice(0, 5);
-        }
-      } else {
-        const elements = document.querySelectorAll(selector);
-        if (elements.length > 0) {
-          return Array.from(elements)
-            .map(el => el.textContent?.trim())
-            .filter(tag => tag && tag.length > 0)
-            .slice(0, 5);
-        }
-      }
-    }
-
-    return tags;
-  }
-
-  extractBloombergRegion() {
-    // Extract region from URL or content
-    const urlParts = window.location.pathname.split('/').filter(Boolean);
-    
-    if (urlParts.includes('asia')) return 'Asia';
-    if (urlParts.includes('europe')) return 'Europe';
-    if (urlParts.includes('americas')) return 'Americas';
-    
-    // Check page title or content
-    const title = document.title.toLowerCase();
-    if (title.includes('asia')) return 'Asia';
-    if (title.includes('europe')) return 'Europe';
-    if (title.includes('americas')) return 'Americas';
-    
-    return 'Global';
   }
 
   extractRecipeData() {
     return {
       cookTime: this.getTextContent([
-        '.recipe-summary__item-data', '.total-time', 
+        '.recipe-summary__item-data', '.total-time',
         '[data-testid="recipe-cook-time"]'
       ]),
       servings: this.getTextContent([
-        '.recipe-adjust-servings__size-quantity', 
+        '.recipe-adjust-servings__size-quantity',
         '[data-testid="recipe-servings"]'
       ]),
-      difficulty: this.getTextContent([
-        '.recipe-summary__difficulty', 
-        '[data-testid="recipe-difficulty"]'
-      ]),
-      rating: this.getTextContent([
-        '.recipe-rating', '.rating-stars', 
-        '[data-testid="recipe-rating"]'
-      ]),
       ingredients: this.extractListData([
-        '.recipe-ingredient', '.ingredients li', 
+        '.recipe-ingredient', '.ingredients li',
         '[data-testid="recipe-ingredient"]'
       ]),
       instructions: this.extractListData([
-        '.recipe-instruction', '.instructions li', 
+        '.recipe-instruction', '.instructions li',
         '[data-testid="recipe-instruction"]'
       ])
     };
   }
 
   extractWikipediaData() {
-    const categories = Array.from(
-      document.querySelectorAll('#mw-normal-catlinks ul li a, .mw-category a')
-    ).map(a => a.textContent?.trim()).slice(0, 10);
+    const categories = DataQuality.cleanArray(
+      Array.from(document.querySelectorAll('#mw-normal-catlinks ul li a, .mw-category a'))
+        .map(a => a.textContent)
+    );
 
     return {
-      lastModified: this.getTextContent([
-        '#footer-info-lastmod', '.lastmod'
-      ]),
-      categories: categories,
-      coordinates: this.getTextContent([
-        '.geo', '.coordinates'
-      ]),
-      infobox: this.extractInfoboxData()
+      categories: categories.slice(0, 10),
+      lastModified: this.getTextContent(['#footer-info-lastmod', '.lastmod'])
     };
   }
 
-  extractInfoboxData() {
-    const infobox = document.querySelector('.infobox, .infobox-data');
-    if (!infobox) return {};
-
-    const data = {};
-    const rows = infobox.querySelectorAll('tr');
-
-    rows.forEach(row => {
-      const header = row.querySelector('th, .infobox-label');
-      const value = row.querySelector('td, .infobox-data');
-
-      if (header && value) {
-        const key = header.textContent?.trim().toLowerCase().replace(/\s+/g, '_');
-        const val = value.textContent?.trim();
-        if (key && val && key.length < 50) {
-          data[key] = val.substring(0, 200);
-        }
-      }
-    });
-
-    return data;
-  }
-
+  // ===== STRUCTURED DATA EXTRACTION =====
   extractStructuredData() {
     const structuredData = {};
 
@@ -710,28 +667,6 @@ class EnhancedPageExtractor {
         structuredData.jsonLd = jsonLdData.slice(0, 3);
       }
 
-      // Microdata extraction
-      const microdataItems = document.querySelectorAll('[itemscope]');
-      if (microdataItems.length > 0) {
-        structuredData.microdata = Array.from(microdataItems).slice(0, 5).map(item => ({
-          itemtype: item.getAttribute('itemtype'),
-          itemprops: Array.from(item.querySelectorAll('[itemprop]')).slice(0, 10).map(prop => ({
-            property: prop.getAttribute('itemprop'),
-            content: prop.textContent?.trim() || prop.getAttribute('content')
-          }))
-        }));
-      }
-
-      // RDFa basic extraction
-      const rdfaElements = document.querySelectorAll('[property], [typeof]');
-      if (rdfaElements.length > 0) {
-        structuredData.rdfa = Array.from(rdfaElements).slice(0, 10).map(el => ({
-          property: el.getAttribute('property'),
-          typeof: el.getAttribute('typeof'),
-          content: el.textContent?.trim() || el.getAttribute('content')
-        }));
-      }
-
     } catch (error) {
       ContentLogger.warn('Structured data extraction error', { error: error.message });
     }
@@ -739,6 +674,7 @@ class EnhancedPageExtractor {
     return structuredData;
   }
 
+  // ===== PAGE STATISTICS =====
   calculatePageStats() {
     try {
       return {
@@ -747,13 +683,7 @@ class EnhancedPageExtractor {
         linkCount: document.querySelectorAll('a[href]').length,
         imageCount: document.querySelectorAll('img[src]').length,
         headingCount: document.querySelectorAll('h1, h2, h3, h4, h5, h6').length,
-        paragraphCount: document.querySelectorAll('p').length,
-        listCount: document.querySelectorAll('ul, ol').length,
-        tableCount: document.querySelectorAll('table').length,
-        formCount: document.querySelectorAll('form').length,
-        videoCount: document.querySelectorAll('video, iframe[src*="youtube"], iframe[src*="vimeo"]').length,
-        scriptCount: document.querySelectorAll('script').length,
-        styleCount: document.querySelectorAll('style, link[rel="stylesheet"]').length
+        paragraphCount: document.querySelectorAll('p').length
       };
     } catch (error) {
       ContentLogger.warn('Stats calculation error', { error: error.message });
@@ -761,35 +691,20 @@ class EnhancedPageExtractor {
     }
   }
 
+  // ===== PERFORMANCE DATA =====
   getPerformanceData() {
     try {
-      const perfData = {
+      return {
         loadTime: performance.now() - this.startTime,
         domContentLoaded: document.readyState === 'complete',
         extractionTime: performance.now() - this.startTime
       };
-
-      // Navigation timing if available
-      if (performance.navigation) {
-        perfData.navigationType = performance.navigation.type;
-        perfData.redirectCount = performance.navigation.redirectCount;
-      }
-
-      // Timing data if available
-      if (performance.timing) {
-        const timing = performance.timing;
-        perfData.pageLoadTime = timing.loadEventEnd - timing.navigationStart;
-        perfData.domReadyTime = timing.domContentLoadedEventEnd - timing.navigationStart;
-        perfData.connectTime = timing.connectEnd - timing.connectStart;
-      }
-
-      return perfData;
     } catch (error) {
-      ContentLogger.warn('Performance data extraction error', { error: error.message });
       return { loadTime: performance.now() - this.startTime };
     }
   }
 
+  // ===== PAGE CONTEXT =====
   extractPageContext() {
     try {
       return {
@@ -797,25 +712,20 @@ class EnhancedPageExtractor {
         charset: document.characterSet || null,
         readyState: document.readyState,
         referrer: document.referrer || null,
-        lastModified: document.lastModified || null,
-        hasJavaScript: true, // Obviously true since this is running
-        hasCSS: document.querySelectorAll('style, link[rel="stylesheet"]').length > 0,
-        deviceType: this.detectDeviceType(),
-        scrollDepth: this.calculateScrollDepth()
+        hasJavaScript: true,
+        hasCSS: document.querySelectorAll('style, link[rel="stylesheet"]').length > 0
       };
     } catch (error) {
-      ContentLogger.warn('Page context extraction error', { error: error.message });
       return {};
     }
   }
 
   // ===== UTILITY METHODS =====
-
   getTextContent(selectors) {
     for (const selector of selectors) {
       const element = document.querySelector(selector);
       if (element && element.textContent?.trim()) {
-        return element.textContent.trim();
+        return DataQuality.cleanText(element.textContent);
       }
     }
     return null;
@@ -825,80 +735,51 @@ class EnhancedPageExtractor {
     for (const selector of selectors) {
       const elements = document.querySelectorAll(selector);
       if (elements.length > 0) {
-        return Array.from(elements)
-          .map(el => el.textContent?.trim())
-          .filter(text => text && text.length > 3)
-          .slice(0, 20);
+        return DataQuality.cleanArray(
+          Array.from(elements).map(el => el.textContent)
+        );
       }
     }
     return [];
-  }
-
-  getElementPosition(element) {
-    try {
-      const rect = element.getBoundingClientRect();
-      return {
-        top: Math.round(rect.top + window.scrollY),
-        left: Math.round(rect.left + window.scrollX),
-        width: Math.round(rect.width),
-        height: Math.round(rect.height)
-      };
-    } catch (error) {
-      return null;
-    }
   }
 
   countWords(text) {
     if (!text || typeof text !== 'string') return 0;
     return text.trim().split(/\s+/).filter(word => word.length > 0).length;
   }
-
-  detectDeviceType() {
-    const userAgent = navigator.userAgent.toLowerCase();
-    if (/mobile|android|iphone|ipod/.test(userAgent)) return 'mobile';
-    if (/tablet|ipad/.test(userAgent)) return 'tablet';
-    return 'desktop';
-  }
-
-  calculateScrollDepth() {
-    try {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      
-      return Math.round((scrollTop + windowHeight) / documentHeight * 100);
-    } catch (error) {
-      return 0;
-    }
-  }
 }
 
-// ===== MESSAGE LISTENER =====
+// ============================================================================
+// MESSAGE LISTENER (DAY 10 ENHANCED)
+// ============================================================================
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   ContentLogger.info(`📨 Message received: ${request.action}`);
-  
+
   try {
     switch (request.action) {
       case 'extractPageData':
       case 'getPageData':
         const extractor = new EnhancedPageExtractor();
         const pageData = extractor.extractComprehensivePageData();
-        
+
         sendResponse({
           success: !pageData.error,
           data: pageData,
           version: CONTENT_CONFIG.version,
-          extractedAt: new Date().toISOString()
+          extractedAt: new Date().toISOString(),
+          day10Enhanced: true
         });
         break;
 
       case 'ping':
         sendResponse({
           success: true,
-          message: 'Day 8+9 BLOOMBERG EXTRACTION CHAMPION content script active',
+          message: 'Day 10 AI ENGINE v1 content script active',
           version: CONTENT_CONFIG.version,
           url: window.location.href,
-          title: document.title
+          title: document.title,
+          day10Enhanced: true
         });
         break;
 
@@ -909,6 +790,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           version: CONTENT_CONFIG.version
         });
     }
+
   } catch (error) {
     ContentLogger.error('Message handling error', { error: error.message });
     sendResponse({
@@ -917,17 +799,46 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       version: CONTENT_CONFIG.version
     });
   }
-  
+
   return true; // Keep message channel open for async response
 });
 
-// ===== CONTENT SCRIPT INITIALIZATION =====
+// ============================================================================
+// CONTENT SCRIPT INITIALIZATION
+// ============================================================================
+
 (() => {
-  ContentLogger.success('🏆 Day 8+9 BLOOMBERG EXTRACTION CHAMPION content script initialized', {
+  ContentLogger.success('🏆 Day 10 AI ENGINE v1 content script initialized', {
     version: CONTENT_CONFIG.version,
     url: window.location.href,
     title: document.title,
     timestamp: new Date().toISOString(),
-    bloombergOptimized: CONTENT_CONFIG.enableBloombergOptimization
+    day10Features: {
+      qualityScoring: CONTENT_CONFIG.enableQualityScoring,
+      dataCleaning: CONTENT_CONFIG.enableDataCleaning,
+      piiDetection: CONTENT_CONFIG.enablePIIDetection
+    }
   });
+
+  console.log(`
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║       🎯 DAY 10 AI ENGINE v1 - CONTENT SCRIPT LOADED                 ║
+║                                                                      ║
+║  Version: ${CONTENT_CONFIG.version.padEnd(55)}║
+║  Target:  High-Quality Data Extraction                               ║
+║                                                                      ║
+║  Day 10 Features:                                                    ║
+║  ✅ Data Quality Scoring                                             ║
+║  ✅ PII Detection                                                    ║
+║  ✅ Text Cleaning & Normalization                                    ║
+║  ✅ Bloomberg Optimization                                           ║
+║  ✅ Enhanced Field Extraction                                        ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+  `);
 })();
+
+// ============================================================================
+// END OF content.js - DAY 10 AI ENGINE v1
+// ============================================================================

@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+vendor/
+lib/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+testing/logs/
+
+# Minified files
+*.min.js
+*.min.css
+
+# Generated files
+docs/generated/
+testing/results/
+
+# Config files (already formatted)
+*.lock
+package-lock.json
+yarn.lock
+
+# Binary files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.svg
+*.woff
+*.woff2
+*.ttf
+*.eot

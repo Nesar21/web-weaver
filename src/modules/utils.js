@@ -1,5 +1,30 @@
-// Day 8: Background Utilities Module - Championship Performance Edition
+// Day 10: Background Utilities Module - AI Engine v1 Enhanced (80% Accuracy Milestone)
 // /src/modules/utils.js
+
+// ============================================================================
+// DAY 10 CONSTANTS - 80% ACCURACY MILESTONE
+// ============================================================================
+
+const DAY10_ACCURACY_TARGET = 80;
+const DAY10_CONFIDENCE_TARGET = 75;
+const DAY10_MIN_CONFIDENCE = 50;
+
+// Day 10: PII Detection Patterns
+const PII_PATTERNS = {
+  EMAIL: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+  PHONE: /(\+\d{1,3}[-.]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g,
+  SSN: /\b\d{3}-\d{2}-\d{4}\b/g,
+  CREDIT_CARD: /\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/g,
+  ADDRESS: /\d+\s+[a-zA-Z0-9\s,]+(?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|parkway|pkwy|circle|cir|boulevard|blvd)\b/gi
+};
+
+// Day 10: Date Format Patterns
+const DATE_FORMAT_PATTERNS = [
+  { regex: /^(\d{4})-(\d{2})-(\d{2})$/, name: 'ISO8601' },
+  { regex: /^(\d{2})\/(\d{2})\/(\d{4})$/, name: 'US' },
+  { regex: /^(\d{2})-(\d{2})-(\d{4})$/, name: 'EU' },
+  { regex: /^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})$/, name: 'LONG' }
+];
 
 // ===== PERFORMANCE OPTIMIZATIONS - CACHED CONSTANTS =====
 const STANDARD_FIELDS = [
@@ -44,9 +69,172 @@ const API_KEY_CACHE = new Map();
 
 // ===== MAIN MODULE =====
 const BackgroundUtils = {
-  VERSION: 'day8-utils-v2.1', // Updated version for performance optimizations
+  VERSION: 'day10-utils-v3.0', // Day 10 version
   
-  // ===== ENHANCED VALIDATION HELPERS =====
+  // ============================================================================
+  // DAY 10 CONFIDENCE SCORE UTILITIES
+  // ============================================================================
+  
+  validateConfidenceScore(confidence) {
+    return typeof confidence === 'number' && confidence >= 0 && confidence <= 100;
+  },
+  
+  isConfidenceAcceptable(confidence, threshold = DAY10_MIN_CONFIDENCE) {
+    if (!this.validateConfidenceScore(confidence)) return false;
+    return confidence >= threshold;
+  },
+  
+  getConfidenceTier(confidence) {
+    if (!this.validateConfidenceScore(confidence)) return 'INVALID';
+    if (confidence >= 86) return 'VERY_HIGH';
+    if (confidence >= 71) return 'HIGH';
+    if (confidence >= 50) return 'MEDIUM';
+    return 'LOW';
+  },
+  
+  calculateConfidenceFromFields(data, requiredFields = []) {
+    if (!data || typeof data !== 'object') return 0;
+    
+    let score = 50; // Base score
+    
+    // Required fields bonus
+    const hasAllRequired = requiredFields.every(field => {
+      const value = data[field];
+      return value !== null && value !== undefined && value !== '';
+    });
+    if (hasAllRequired) score += 20;
+    
+    // Field count bonus
+    const filledFields = STANDARD_FIELDS.filter(field => {
+      const value = data[field];
+      if (value === null || value === undefined || value === '') return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      return true;
+    }).length;
+    score += Math.min(30, filledFields * 2);
+    
+    return Math.min(100, Math.max(0, Math.round(score)));
+  },
+  
+  // ============================================================================
+  // DAY 10 PII DETECTION & STRIPPING
+  // ============================================================================
+  
+  detectPII(text) {
+    if (!text || typeof text !== 'string') return [];
+    
+    const detected = [];
+    Object.entries(PII_PATTERNS).forEach(([type, pattern]) => {
+      const matches = text.match(pattern);
+      if (matches) {
+        detected.push({ 
+          type, 
+          count: matches.length,
+          samples: matches.slice(0, 2) // First 2 samples only
+        });
+      }
+    });
+    return detected;
+  },
+  
+  stripPII(text) {
+    if (!text || typeof text !== 'string') return text;
+    
+    let cleaned = text;
+    cleaned = cleaned.replace(PII_PATTERNS.EMAIL, '[EMAIL_REDACTED]');
+    cleaned = cleaned.replace(PII_PATTERNS.PHONE, '[PHONE_REDACTED]');
+    cleaned = cleaned.replace(PII_PATTERNS.SSN, '[SSN_REDACTED]');
+    cleaned = cleaned.replace(PII_PATTERNS.CREDIT_CARD, '[CARD_REDACTED]');
+    cleaned = cleaned.replace(PII_PATTERNS.ADDRESS, '[ADDRESS_REDACTED]');
+    return cleaned;
+  },
+  
+  hasPII(text) {
+    return this.detectPII(text).length > 0;
+  },
+  
+  stripPIIFromObject(obj) {
+    if (!obj || typeof obj !== 'object') return obj;
+    
+    const cleaned = {};
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      if (typeof value === 'string') {
+        cleaned[key] = this.stripPII(value);
+      } else if (Array.isArray(value)) {
+        cleaned[key] = value.map(item => 
+          typeof item === 'string' ? this.stripPII(item) : item
+        );
+      } else {
+        cleaned[key] = value;
+      }
+    });
+    return cleaned;
+  },
+  
+  // ============================================================================
+  // DAY 10 DATE STANDARDIZATION (ISO 8601)
+  // ============================================================================
+  
+  standardizeDate(dateString) {
+    if (!dateString || typeof dateString !== 'string') return null;
+    
+    // Already ISO 8601?
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+    
+    // Try parsing
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return null;
+      
+      // Return YYYY-MM-DD format
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.warn(`[Day10-Utils] Date standardization failed: ${dateString}`);
+      return null;
+    }
+  },
+  
+  validateDateFormat(dateString) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+  },
+  
+  detectDateFormat(dateString) {
+    if (!dateString) return 'UNKNOWN';
+    
+    for (const pattern of DATE_FORMAT_PATTERNS) {
+      if (pattern.regex.test(dateString)) {
+        return pattern.name;
+      }
+    }
+    return 'UNKNOWN';
+  },
+  
+  standardizeDatesInObject(obj) {
+    if (!obj || typeof obj !== 'object') return obj;
+    
+    const standardized = { ...obj };
+    const dateFields = ['publication_date', 'date', 'publishDate', 'createdAt'];
+    
+    dateFields.forEach(field => {
+      if (standardized[field] && typeof standardized[field] === 'string') {
+        const standardDate = this.standardizeDate(standardized[field]);
+        if (standardDate) {
+          standardized[field] = standardDate;
+        }
+      }
+    });
+    
+    return standardized;
+  },
+  
+  // ============================================================================
+  // DAY 10 ENHANCED VALIDATION HELPERS
+  // ============================================================================
+  
   validatePrice(price) {
     if (!price) return false;
     return PRICE_REGEX.test(price.toString().replace(/,/g, ''));
@@ -149,20 +337,28 @@ const BackgroundUtils = {
     return this.normalizePercentage((weightedScore / STANDARD_FIELDS.length) * 100);
   },
 
-  // ===== ENHANCED TRAJECTORY ANALYSIS =====
-  calculateTrajectoryTo80(day7Baseline, day8Validated) {
-    const progressMade = day8Validated - day7Baseline;
-    const progressNeeded = 80 - day8Validated;
+  // ============================================================================
+  // DAY 10 ENHANCED TRAJECTORY ANALYSIS
+  // ============================================================================
+  
+  calculateTrajectory(currentAccuracy, confidenceScore) {
+    const accuracyMeetsTarget = currentAccuracy >= DAY10_ACCURACY_TARGET;
+    const confidenceMeetsTarget = confidenceScore >= DAY10_CONFIDENCE_TARGET;
     
-    if (day8Validated >= 80) return 'TARGET_ACHIEVED';
-    if (progressNeeded <= 0) return 'TARGET_EXCEEDED';
-    
-    const daysRemaining = 2;
-    const requiredDailyProgress = progressNeeded / daysRemaining;
-    
-    if (progressMade >= requiredDailyProgress) return 'ON_TRACK';
-    if (progressMade >= requiredDailyProgress * 0.7) return 'CLOSE_TO_TRACK';
-    return 'NEEDS_ACCELERATION';
+    if (accuracyMeetsTarget && confidenceMeetsTarget) {
+      return 'EXCELLENT';
+    } else if (currentAccuracy >= 70 && confidenceScore >= 65) {
+      return 'ON_TRACK';
+    } else if (currentAccuracy >= 60 && confidenceScore >= 55) {
+      return 'NEEDS_IMPROVEMENT';
+    } else {
+      return 'CRITICAL';
+    }
+  },
+  
+  calculateTrajectoryTo80(currentAccuracy, confidenceScore = 50) {
+    // Day 10 version: considers both accuracy and confidence
+    return this.calculateTrajectory(currentAccuracy, confidenceScore);
   },
 
   getQualityLabel(score) {
@@ -174,7 +370,7 @@ const BackgroundUtils = {
     return 'failed';
   },
 
-  getProgressIndicator(current, target) {
+  getProgressIndicator(current, target = DAY10_ACCURACY_TARGET) {
     const percentage = (current / target) * 100;
     if (percentage >= 100) return '🎯 COMPLETE';
     if (percentage >= 80) return '🔥 EXCELLENT';
@@ -262,7 +458,7 @@ const BackgroundUtils = {
     
     // Return cached result if valid and within 5 minutes
     if (cached && now - cached.timestamp < 5 * 60 * 1000) {
-      console.log(`[${new Date().toISOString()}] [Day8Utils-v${this.VERSION}] Using cached API validation`);
+      console.log(`[${new Date().toISOString()}] [Day10Utils-v${this.VERSION}] Using cached API validation`);
       return cached.result;
     }
     
@@ -300,14 +496,15 @@ const BackgroundUtils = {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(`[${timestamp}] [Day8Utils-v${this.VERSION}] API key validated successfully in ${responseTime}ms`);
+        console.log(`[${timestamp}] [Day10Utils-v${this.VERSION}] API key validated successfully in ${responseTime}ms`);
         return { 
           ...result, 
           valid: true, 
-          model: 'gemini-1.5-flash'
+          model: 'gemini-1.5-flash',
+          day10Enhanced: true
         };
       } else {
-        console.warn(`[${timestamp}] [Day8Utils-v${this.VERSION}] API key validation failed`, { 
+        console.warn(`[${timestamp}] [Day10Utils-v${this.VERSION}] API key validation failed`, { 
           status: response.status,
           statusText: response.statusText
         });
@@ -320,7 +517,7 @@ const BackgroundUtils = {
       }
     } catch (error) {
       const timestamp = new Date().toISOString();
-      console.warn(`[${timestamp}] [Day8Utils-v${this.VERSION}] API key validation error`, { error: error.message });
+      console.warn(`[${timestamp}] [Day10Utils-v${this.VERSION}] API key validation error`, { error: error.message });
       return { 
         valid: false, 
         error: error.message, 
@@ -331,7 +528,7 @@ const BackgroundUtils = {
     }
   },
 
-  handleApiKeySet(request, sendResponse, AI_CONFIG, DAY8_VERSION) {
+  handleApiKeySet(request, sendResponse, AI_CONFIG, DAY10_VERSION) {
     (async () => {
       try {
         if (!request.apiKey || request.apiKey.trim().length === 0) {
@@ -372,7 +569,7 @@ const BackgroundUtils = {
         
         const timestamp = new Date().toISOString();
         const maskedKey = apiKey.slice(0, 4) + '****' + apiKey.slice(-4);
-        console.log(`[${timestamp}] [Day8Utils-v${this.VERSION}] API key configured successfully with enhanced validation`);
+        console.log(`[${timestamp}] [Day10Utils-v${this.VERSION}] API key configured successfully with enhanced validation`);
         
         // Use cached validation to avoid repeated API calls
         const validation = await this.validateApiKeyCached(apiKey);
@@ -382,24 +579,28 @@ const BackgroundUtils = {
         
         sendResponse({
           success: true,
-          message: 'Day 8 ULTIMATE API key configured with cached validation and security',
-          day8Version: DAY8_VERSION,
+          message: 'Day 10 AI Engine v1 API key configured with confidence validation',
+          day10Version: DAY10_VERSION,
           validation: validation,
           keyPreview: maskedKey,
           enterpriseReady: true,
-          realTestingReady: true,
-          enhancedSecurity: true,
-          cachingEnabled: true
+          day10Enhanced: true,
+          features: {
+            confidenceScoring: true,
+            piiStripping: true,
+            dateStandardization: true,
+            accuracyTarget: DAY10_ACCURACY_TARGET
+          }
         });
         
       } catch (error) {
         const timestamp = new Date().toISOString();
-        console.error(`[${timestamp}] [Day8Utils-v${this.VERSION}] API key configuration failed`, { error: error.message });
+        console.error(`[${timestamp}] [Day10Utils-v${this.VERSION}] API key configuration failed`, { error: error.message });
         sendResponse({ 
           success: false, 
           error: error.message,
           timestamp,
-          enhancedValidation: true
+          day10Enhanced: true
         });
       }
     })();
@@ -436,11 +637,11 @@ const BackgroundUtils = {
 
   // ===== ENHANCED DATA GENERATION HELPERS WITH VERSIONING =====
   generateCSVHeader() {
-    return 'Site,Field,PromptVersion,BasicAccuracy,AIAccuracy,ValidatedAccuracy,PenaltyApplied,NullReturned,Timestamp,FieldScore,Quality,ErrorType,Day8Target,UsingRealAI,SimulationMode,PenaltyReason,Weight,ModulesUsed,OptimizedVersion,Duration\n';
+    return 'Site,Field,PromptVersion,BasicAccuracy,AIAccuracy,ValidatedAccuracy,PenaltyApplied,NullReturned,Timestamp,FieldScore,Quality,ErrorType,Day10Target,UsingRealAI,SimulationMode,PenaltyReason,Weight,ModulesUsed,ConfidenceScore,PIIDetected,DateStandardized,OptimizedVersion,Duration\n';
   },
 
   generateRealCSVHeader() {
-    return 'Site,URL,Field,RawValue,ValidatedValue,PenaltyApplied,PenaltyReason,RawAccuracy,ValidatedAccuracy,PenaltyImpact,Timestamp,UsingRealAI,RealTesting,ModulesUsed,OptimizedVersion,ExtractionTime\n';
+    return 'Site,URL,Field,RawValue,ValidatedValue,PenaltyApplied,PenaltyReason,RawAccuracy,ValidatedAccuracy,PenaltyImpact,Timestamp,UsingRealAI,RealTesting,ModulesUsed,ConfidenceScore,PIIStripped,DateFormat,OptimizedVersion,ExtractionTime\n';
   },
 
   createModulesUsedString(utilityStatus) {
@@ -535,7 +736,7 @@ const BackgroundUtils = {
   // ===== CACHE MANAGEMENT =====
   clearApiKeyCache() {
     API_KEY_CACHE.clear();
-    console.log(`[${new Date().toISOString()}] [Day8Utils-v${this.VERSION}] API key cache cleared`);
+    console.log(`[${new Date().toISOString()}] [Day10Utils-v${this.VERSION}] API key cache cleared`);
   },
 
   getApiKeyCacheStats() {
@@ -545,10 +746,34 @@ const BackgroundUtils = {
         key.slice(0, 4) + '****' + key.slice(-4)
       )
     };
+  },
+  
+  // ============================================================================
+  // DAY 10 SYSTEM STATUS
+  // ============================================================================
+  
+  getDay10Status() {
+    return {
+      version: this.VERSION,
+      day10Enhanced: true,
+      accuracyTarget: DAY10_ACCURACY_TARGET,
+      confidenceTarget: DAY10_CONFIDENCE_TARGET,
+      minConfidence: DAY10_MIN_CONFIDENCE,
+      features: {
+        confidenceScoring: true,
+        piiDetection: true,
+        piiStripping: true,
+        dateStandardization: true,
+        trajectoryAnalysis: true,
+        apiKeyValidation: true,
+        performanceMonitoring: true
+      },
+      cacheStats: this.getApiKeyCacheStats()
+    };
   }
 };
 
-console.log(`[Day8Utils-v${BackgroundUtils.VERSION}] Championship performance utilities module loaded with optimizations`);
+console.log(`[Day10Utils-v${BackgroundUtils.VERSION}] AI Engine v1 utilities loaded with confidence scoring, PII stripping, and date standardization`);
 
 // Export for global access
 if (typeof window !== 'undefined') {

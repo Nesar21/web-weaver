@@ -1,9 +1,162 @@
 {
-    "env": { "browser": true, "es2021": true, "webextensions": true },
-    "extends": ["eslint:recommended", "prettier"],
-    "rules": {
-      "semi": ["error", "always"],
-      "quotes": ["error", "double"],
-      "no-unused-vars": "warn"
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "webextensions": true,
+    "node": true,
+    "commonjs": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2021,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "impliedStrict": true
     }
-  }
+  },
+  "extends": [
+    "eslint:recommended",
+    "prettier"
+  ],
+  "globals": {
+    "chrome": "readonly",
+    "AI_CONFIG": "writable",
+    "BackgroundLogger": "readonly",
+    "BackgroundUtils": "readonly",
+    "PopupLogger": "readonly",
+    "ContentLogger": "readonly",
+    "DataQuality": "readonly",
+    "analyticsEngine": "readonly",
+    "tabManager": "readonly",
+    "validateConfidenceDay10": "readonly",
+    "stripPIIDay10": "readonly",
+    "standardizeDateDay10": "readonly",
+    "postProcessDay10": "readonly",
+    "Day10Debug": "writable",
+    "PopupDebug": "writable",
+    "ExtractionManager": "readonly",
+    "ValidationManager": "readonly",
+    "AIExtractor": "readonly",
+    "AIExtractorManager": "readonly",
+    "EnhancedPageExtractor": "readonly",
+    "SmartTabManager": "readonly",
+    "EnhancedRealAnalyticsEngine": "readonly"
+  },
+  "rules": {
+    "semi": ["error", "always"],
+    "quotes": ["error", "single"],
+    "no-unused-vars": ["warn", { 
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_",
+      "caughtErrorsIgnorePattern": "^_"
+    }],
+    "no-console": "off",
+    "no-debugger": "warn",
+    "no-alert": "warn",
+    "prefer-const": "warn",
+    "no-var": "error",
+    "eqeqeq": ["error", "always"],
+    "curly": ["error", "all"],
+    "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
+    "comma-dangle": ["error", "never"],
+    "indent": ["error", 2, { "SwitchCase": 1 }],
+    "linebreak-style": ["error", "unix"],
+    "max-len": ["warn", { 
+      "code": 120, 
+      "ignoreComments": true,
+      "ignoreStrings": true,
+      "ignoreTemplateLiterals": true
+    }],
+    "no-trailing-spaces": "error",
+    "no-multiple-empty-lines": ["error", { "max": 2, "maxEOF": 1 }],
+    "space-before-function-paren": ["error", {
+      "anonymous": "always",
+      "named": "never",
+      "asyncArrow": "always"
+    }],
+    "arrow-spacing": ["error", { "before": true, "after": true }],
+    "object-curly-spacing": ["error", "always"],
+    "array-bracket-spacing": ["error", "never"],
+    "computed-property-spacing": ["error", "never"],
+    "key-spacing": ["error", { "beforeColon": false, "afterColon": true }],
+    "keyword-spacing": ["error", { "before": true, "after": true }],
+    "space-infix-ops": "error",
+    "no-multi-spaces": "error",
+    "camelcase": ["warn", { "properties": "never" }],
+    "no-magic-numbers": "off",
+    "consistent-return": "warn",
+    "no-throw-literal": "error",
+    "prefer-promise-reject-errors": "error",
+    "require-await": "warn",
+    "no-return-await": "error",
+    "no-async-promise-executor": "error",
+    "prefer-template": "warn",
+    "template-curly-spacing": ["error", "never"],
+    "no-useless-concat": "error",
+    "no-implied-eval": "error",
+    "no-new-func": "error",
+    "no-proto": "error",
+    "no-script-url": "error",
+    "radix": "error",
+    "yoda": "error"
+  },
+  "overrides": [
+    {
+      "files": ["src/background.js"],
+      "rules": {
+        "no-unused-vars": "off",
+        "max-len": "off"
+      }
+    },
+    {
+      "files": ["src/content.js"],
+      "rules": {
+        "no-unused-vars": "off"
+      }
+    },
+    {
+      "files": ["src/popup.js"],
+      "env": {
+        "browser": true
+      },
+      "rules": {
+        "no-unused-vars": "warn"
+      }
+    },
+    {
+      "files": ["testing/**/*.js"],
+      "env": {
+        "node": true,
+        "mocha": true,
+        "jest": true
+      },
+      "rules": {
+        "no-console": "off",
+        "max-len": "off"
+      }
+    },
+    {
+      "files": ["src/modules/**/*.js"],
+      "rules": {
+        "no-unused-vars": "warn"
+      }
+    },
+    {
+      "files": ["src/utils/**/*.js"],
+      "rules": {
+        "no-magic-numbers": "off",
+        "max-len": ["warn", { "code": 150 }]
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "node_modules/",
+    "dist/",
+    "build/",
+    "coverage/",
+    "*.min.js",
+    "vendor/",
+    "lib/",
+    "testing/logs/",
+    "docs/generated/"
+  ]
+}

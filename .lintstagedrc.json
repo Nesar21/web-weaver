@@ -1,0 +1,22 @@
+{
+  "src/**/*.js": [
+    "eslint --fix",
+    "prettier --write"
+  ],
+  "testing/**/*.js": [
+    "eslint --fix",
+    "prettier --write"
+  ],
+  "config/**/*.json": [
+    "prettier --write"
+  ],
+  "testing/ground_truth/**/*.json": [
+    "prettier --write"
+  ],
+  "*.json": [
+    "prettier --write"
+  ],
+  "*.md": [
+    "prettier --write"
+  ]
+}
