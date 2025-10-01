@@ -16,19 +16,19 @@
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "src/background.js",
+    "service_worker": "background.js",
     "type": "module"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["src/content.js"],
+      "js": ["content.js"],
       "run_at": "document_idle",
       "all_frames": false
     }
   ],
   "action": {
-    "default_popup": "src/popup.html",
+    "default_popup": "popup.html",
     "default_title": "Day 10 AI Engine - Web Weaver Lightning",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -73,6 +73,5 @@
       "description": "Run Day 10 analytics dashboard"
     }
   },
-  "options_page": "src/options.html",
   "minimum_chrome_version": "93"
 }

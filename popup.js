@@ -45,13 +45,13 @@ const PopupLogger = {
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     PopupLogger.info('🚀 Initializing Day 10 AI ENGINE v1 popup');
-    
+
     cacheElements();
     await initializeUI();
     setupEventListeners();
     await loadSystemStatus();
     updateUI();
-    
+
     PopupLogger.success('🏆 Day 10 popup initialized successfully');
   } catch (error) {
     PopupLogger.error('Popup initialization failed', { error: error.message });
@@ -127,12 +127,12 @@ function initializeDynamicAnalyticsDisplay() {
   safeSetText(elements.businessAccuracy, '--');
   safeSetText(elements.trajectoryText, 'READY');
   safeSetText(elements.trajectoryBadge, 'READY');
-  
+
   if (elements.trajectoryBadge) {
     elements.trajectoryBadge.className = 'trajectory trajectory-warning';
   }
-  
-  safeSetHTML(elements.sitePerformanceList, 
+
+  safeSetHTML(elements.sitePerformanceList,
     '<li class="site-performance-placeholder">🎯 Run analytics to view Day 10 site performance...</li>'
   );
 }
@@ -145,35 +145,35 @@ function setupEventListeners() {
   if (elements.saveApiKeyBtn) {
     elements.saveApiKeyBtn.addEventListener('click', handleSaveApiKey);
   }
-  
+
   if (elements.extractBtn) {
     elements.extractBtn.addEventListener('click', handleExtractData);
   }
-  
+
   if (elements.analyticsBtn) {
     elements.analyticsBtn.addEventListener('click', handleRunAnalytics);
   }
-  
+
   if (elements.reloadConfigBtn) {
     elements.reloadConfigBtn.addEventListener('click', handleReloadConfig);
   }
-  
+
   if (elements.cleanupTabsBtn) {
     elements.cleanupTabsBtn.addEventListener('click', handleCleanupTabs);
   }
-  
+
   if (elements.copyBtn) {
     elements.copyBtn.addEventListener('click', handleCopyResults);
   }
-  
+
   if (elements.exportJsonBtn) {
     elements.exportJsonBtn.addEventListener('click', () => handleExport('json'));
   }
-  
+
   if (elements.exportCsvBtn) {
     elements.exportCsvBtn.addEventListener('click', () => handleExport('csv'));
   }
-  
+
   PopupLogger.info('✅ Day 10 event listeners attached');
 }
 
@@ -184,11 +184,11 @@ function setupEventListeners() {
 async function loadSystemStatus() {
   try {
     PopupLogger.info('📊 Loading Day 10 system status');
-    
-    const response = await chrome.runtime.sendMessage({ 
-      action: 'getSystemStatus' 
+
+    const response = await chrome.runtime.sendMessage({
+      action: 'getSystemStatus'
     });
-    
+
     if (response && response.success) {
       systemStatus = {
         apiKeyConfigured: response.status.apiKeyConfigured,
@@ -199,28 +199,28 @@ async function loadSystemStatus() {
         confidenceThreshold: response.status.day10Features?.confidenceThreshold || 50,
         version: response.status.version
       };
-      
+
       PopupLogger.success('Day 10 system status loaded', systemStatus);
-      
+
       // Display Day 10 version
       if (elements.versionInfo) {
         elements.versionInfo.textContent = `v${systemStatus.version || DAY10_VERSION}`;
       }
-      
+
       // Display Day 10 status badge
       if (elements.day10StatusBadge) {
-        elements.day10StatusBadge.textContent = systemStatus.day10Enhanced ? 
+        elements.day10StatusBadge.textContent = systemStatus.day10Enhanced ?
           '✅ Day 10 Enhanced' : '⚠️ Day 10 Not Active';
-        elements.day10StatusBadge.className = systemStatus.day10Enhanced ? 
+        elements.day10StatusBadge.className = systemStatus.day10Enhanced ?
           'badge badge-success' : 'badge badge-warning';
       }
-      
+
       // Display confidence threshold
       if (elements.confidenceDisplay) {
-        elements.confidenceDisplay.textContent = 
+        elements.confidenceDisplay.textContent =
           `Confidence Threshold: ${systemStatus.confidenceThreshold}%`;
       }
-      
+
     } else {
       throw new Error(response?.error || 'Failed to get system status');
     }
@@ -296,7 +296,7 @@ function updateActionButtons() {
 
 function updateConfigDisplay() {
   if (!elements.configInfo) return;
-  
+
   const configLines = [
     `🎯 Day 10 AI Engine v1 - 80% Accuracy Target`,
     `📊 Confidence Threshold: ${systemStatus.confidenceThreshold}%`,
@@ -305,7 +305,7 @@ function updateConfigDisplay() {
     `🤖 AI Status: ${systemStatus.aiEnabled ? 'Active ✓' : 'Inactive ✗'}`,
     `⚡ Day 10 Features: ${systemStatus.day10Enhanced ? 'Enabled ✓' : 'Disabled ✗'}`
   ];
-  
+
   safeSetText(elements.configInfo, configLines.join('\n'));
 }
 
@@ -316,28 +316,28 @@ function updateConfigDisplay() {
 async function handleSaveApiKey() {
   try {
     const apiKey = elements.apiKeyInput?.value?.trim();
-    
+
     if (!apiKey) {
       showApiKeyStatus('Please enter an API key', 'error');
       return;
     }
-    
+
     PopupLogger.info('💾 Saving API key');
     showApiKeyStatus('Saving...', 'info');
-    
+
     if (elements.saveApiKeyBtn) elements.saveApiKeyBtn.disabled = true;
-    
+
     const response = await chrome.runtime.sendMessage({
       action: 'saveApiKey',
       apiKey: apiKey
     });
-    
+
     if (response && response.success) {
       PopupLogger.success('API key saved successfully');
       showApiKeyStatus('✅ API key saved! Day 10 AI Engine ready.', 'success');
-      
+
       if (elements.apiKeyInput) elements.apiKeyInput.value = '';
-      
+
       setTimeout(async () => {
         await loadSystemStatus();
         updateUI();
@@ -355,11 +355,11 @@ async function handleSaveApiKey() {
 
 function showApiKeyStatus(message, type) {
   if (!elements.apiKeyStatus) return;
-  
+
   elements.apiKeyStatus.textContent = message;
   elements.apiKeyStatus.className = `status status-${type}`;
   elements.apiKeyStatus.style.display = 'block';
-  
+
   if (type === 'success') {
     setTimeout(() => {
       elements.apiKeyStatus.style.display = 'none';
@@ -380,25 +380,25 @@ async function handleExtractData() {
       showError('System not ready. Please configure API key first.');
       return;
     }
-    
+
     PopupLogger.info('🔍 Starting Day 10 enhanced extraction');
-    
+
     setButtonLoading(elements.extractBtn, true, 'Extracting...');
     clearResults();
-    
+
     const response = await chrome.runtime.sendMessage({
       action: 'enhancedExtraction'
     });
-    
+
     if (response && response.success) {
       currentExtractedData = response;
-      
+
       PopupLogger.success('Day 10 extraction completed', {
         accuracy: response.metadata?.validatedAccuracy,
         confidence: response.metadata?.confidenceScore,
         day10Enhanced: response.metadata?.day10Enhanced
       });
-      
+
       displayExtractionResults(response);
     } else {
       throw new Error(response?.error || 'Extraction failed');
@@ -413,9 +413,9 @@ async function handleExtractData() {
 
 function displayExtractionResults(response) {
   if (!elements.resultsContent) return;
-  
+
   const { data, metadata } = response;
-  
+
   // Day 10: Enhanced metadata display
   const metadataHtml = `
     <div class="metadata-section">
@@ -460,7 +460,7 @@ function displayExtractionResults(response) {
       </div>
     </div>
   `;
-  
+
   // Data display
   const dataHtml = `
     <div class="data-section">
@@ -468,7 +468,7 @@ function displayExtractionResults(response) {
       <pre class="data-display">${JSON.stringify(data, null, 2)}</pre>
     </div>
   `;
-  
+
   // Day 10: Confidence warning
   let confidenceWarning = '';
   if (metadata?.confidenceScore < systemStatus.confidenceThreshold) {
@@ -479,10 +479,10 @@ function displayExtractionResults(response) {
       </div>
     `;
   }
-  
+
   elements.resultsContent.innerHTML = confidenceWarning + metadataHtml + dataHtml;
   elements.resultsContent.style.display = 'block';
-  
+
   // Enable export buttons
   if (elements.copyBtn) elements.copyBtn.disabled = false;
   if (elements.exportJsonBtn) elements.exportJsonBtn.disabled = false;
@@ -506,27 +506,27 @@ async function handleRunAnalytics() {
       showError('Day 10 AI Engine not active. Please configure API key.');
       return;
     }
-    
+
     if (analyticsInProgress) {
       PopupLogger.warn('Analytics already in progress');
       return;
     }
-    
+
     PopupLogger.info('📊 Starting Day 10 analytics');
-    
+
     analyticsInProgress = true;
     setButtonLoading(elements.analyticsBtn, true, 'Running Analytics...');
-    
+
     // Get analytics from background
     const analyticsResponse = await chrome.runtime.sendMessage({
       action: 'getAnalytics'
     });
-    
+
     if (analyticsResponse && analyticsResponse.success) {
       lastAnalyticsResults = analyticsResponse.analytics;
-      
+
       PopupLogger.success('Day 10 analytics completed', lastAnalyticsResults);
-      
+
       displayAnalyticsResults(lastAnalyticsResults);
       updateAnalyticsSection(lastAnalyticsResults);
     } else {
@@ -543,9 +543,9 @@ async function handleRunAnalytics() {
 
 function displayAnalyticsResults(analytics) {
   if (!elements.resultsContent) return;
-  
+
   const { businessMetrics, realTimeStats, day10Status } = analytics;
-  
+
   // Day 10 status section
   const day10Html = `
     <div class="analytics-section day10-section">
@@ -574,7 +574,7 @@ function displayAnalyticsResults(analytics) {
       </div>
     </div>
   `;
-  
+
   // Business metrics section
   const businessHtml = `
     <div class="analytics-section">
@@ -599,7 +599,7 @@ function displayAnalyticsResults(analytics) {
       </div>
     </div>
   `;
-  
+
   // Real-time stats section
   const realtimeHtml = `
     <div class="analytics-section">
@@ -622,31 +622,31 @@ function displayAnalyticsResults(analytics) {
       </div>
     </div>
   `;
-  
+
   // Performance by site type
   const performanceHtml = generatePerformanceTable(analytics.performanceByType);
-  
+
   elements.resultsContent.innerHTML = day10Html + businessHtml + realtimeHtml + performanceHtml;
   elements.resultsContent.style.display = 'block';
 }
 
 function updateAnalyticsSection(analytics) {
   const { businessMetrics, realTimeStats } = analytics;
-  
+
   // Update overall accuracy
   if (elements.overallAccuracy) {
     const accuracy = businessMetrics.averageAccuracy?.toFixed(1) || 0;
     elements.overallAccuracy.textContent = `${accuracy}%`;
     elements.overallAccuracy.className = getAccuracyClass(accuracy);
   }
-  
+
   // Update business accuracy (success rate)
   if (elements.businessAccuracy) {
     const successRate = businessMetrics.totalExtractions > 0 ?
       (businessMetrics.successfulExtractions / businessMetrics.totalExtractions * 100) : 0;
     elements.businessAccuracy.textContent = `${successRate.toFixed(1)}%`;
   }
-  
+
   // Update trajectory
   if (elements.trajectoryText && elements.trajectoryBadge) {
     const trajectory = realTimeStats.currentTrajectory || 'UNKNOWN';
@@ -654,7 +654,7 @@ function updateAnalyticsSection(analytics) {
     elements.trajectoryBadge.textContent = trajectory;
     elements.trajectoryBadge.className = `trajectory ${getTrajectoryClass(trajectory)}`;
   }
-  
+
   // Update site performance list
   if (elements.sitePerformanceList) {
     updateSitePerformanceList(analytics.performanceByType);
@@ -668,11 +668,11 @@ function updateSitePerformanceList(performanceByType) {
     );
     return;
   }
-  
+
   const performanceItems = Object.entries(performanceByType).map(([siteType, metrics]) => {
     const accuracy = metrics.averageAccuracy?.toFixed(1) || 0;
     const successRate = metrics.successRate?.toFixed(1) || 0;
-    
+
     return `
       <li class="site-performance-item">
         <span class="site-name">${siteType}</span>
@@ -684,7 +684,7 @@ function updateSitePerformanceList(performanceByType) {
       </li>
     `;
   }).join('');
-  
+
   safeSetHTML(elements.sitePerformanceList, performanceItems);
 }
 
@@ -692,7 +692,7 @@ function generatePerformanceTable(performanceByType) {
   if (!performanceByType || Object.keys(performanceByType).length === 0) {
     return '<p class="no-data">No site performance data available yet.</p>';
   }
-  
+
   const rows = Object.entries(performanceByType).map(([siteType, metrics]) => {
     return `
       <tr>
@@ -704,7 +704,7 @@ function generatePerformanceTable(performanceByType) {
       </tr>
     `;
   }).join('');
-  
+
   return `
     <div class="analytics-section">
       <h3>🌐 Performance by Site Type</h3>
@@ -733,12 +733,12 @@ function generatePerformanceTable(performanceByType) {
 async function handleReloadConfig() {
   try {
     PopupLogger.info('🔄 Reloading Day 10 configuration');
-    
+
     setButtonLoading(elements.reloadConfigBtn, true, 'Reloading...');
-    
+
     await loadSystemStatus();
     updateUI();
-    
+
     PopupLogger.success('Configuration reloaded');
     showSuccess('✅ Day 10 configuration reloaded successfully!');
   } catch (error) {
@@ -752,14 +752,14 @@ async function handleReloadConfig() {
 async function handleCleanupTabs() {
   try {
     PopupLogger.info('🧹 Cleaning up managed tabs');
-    
+
     setButtonLoading(elements.cleanupTabsBtn, true, 'Cleaning...');
-    
+
     // Note: Actual cleanup happens in background script
     // This just provides UI feedback
-    
+
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     PopupLogger.success('Tab cleanup initiated');
     showSuccess('✅ Tab cleanup completed!');
   } catch (error) {
@@ -780,10 +780,10 @@ async function handleCopyResults() {
       showError('No data to copy');
       return;
     }
-    
+
     const textToCopy = JSON.stringify(currentExtractedData, null, 2);
     await navigator.clipboard.writeText(textToCopy);
-    
+
     PopupLogger.success('Results copied to clipboard');
     showSuccess('✅ Results copied to clipboard!');
   } catch (error) {
@@ -798,9 +798,9 @@ async function handleExport(format) {
       showError('No data to export');
       return;
     }
-    
+
     let content, filename, mimeType;
-    
+
     if (format === 'json') {
       content = JSON.stringify(currentExtractedData, null, 2);
       filename = `extraction-day10-${Date.now()}.json`;
@@ -810,17 +810,17 @@ async function handleExport(format) {
       filename = `extraction-day10-${Date.now()}.csv`;
       mimeType = 'text/csv';
     }
-    
+
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
-    
+
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     a.click();
-    
+
     URL.revokeObjectURL(url);
-    
+
     PopupLogger.success(`Exported as ${format.toUpperCase()}`);
     showSuccess(`✅ Exported as ${filename}!`);
   } catch (error) {
@@ -831,14 +831,14 @@ async function handleExport(format) {
 
 function convertToCSV(data) {
   if (!data || typeof data !== 'object') return '';
-  
+
   const headers = Object.keys(data);
   const values = Object.values(data).map(val => {
     if (Array.isArray(val)) return JSON.stringify(val);
     if (typeof val === 'object' && val !== null) return JSON.stringify(val);
     return String(val);
   });
-  
+
   return headers.join(',') + '\n' + values.join(',');
 }
 // ============================================================================
@@ -891,15 +891,15 @@ function showNotification(message, type = 'info') {
   const notification = document.createElement('div');
   notification.className = `notification notification-${type}`;
   notification.textContent = message;
-  
+
   // Add to body
   document.body.appendChild(notification);
-  
+
   // Animate in
   setTimeout(() => {
     notification.classList.add('show');
   }, 10);
-  
+
   // Remove after delay
   setTimeout(() => {
     notification.classList.remove('show');
@@ -915,7 +915,7 @@ function showNotification(message, type = 'info') {
 
 function setButtonLoading(button, isLoading, text) {
   if (!button) return;
-  
+
   if (isLoading) {
     button.disabled = true;
     button.dataset.originalText = button.textContent;
@@ -951,12 +951,12 @@ function clearResults() {
     elements.resultsContent.innerHTML = '';
     elements.resultsContent.style.display = 'none';
   }
-  
+
   // Disable export buttons
   if (elements.copyBtn) elements.copyBtn.disabled = true;
   if (elements.exportJsonBtn) elements.exportJsonBtn.disabled = true;
   if (elements.exportCsvBtn) elements.exportCsvBtn.disabled = true;
-  
+
   currentExtractedData = null;
 }
 
@@ -972,7 +972,7 @@ document.addEventListener('keydown', (event) => {
       handleExtractData();
     }
   }
-  
+
   // Ctrl/Cmd + A: Analytics
   if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
     event.preventDefault();
@@ -980,7 +980,7 @@ document.addEventListener('keydown', (event) => {
       handleRunAnalytics();
     }
   }
-  
+
   // Ctrl/Cmd + R: Reload Config
   if ((event.ctrlKey || event.metaKey) && event.key === 'r') {
     event.preventDefault();
@@ -988,7 +988,7 @@ document.addEventListener('keydown', (event) => {
       handleReloadConfig();
     }
   }
-  
+
   // Ctrl/Cmd + C: Copy (when results are visible)
   if ((event.ctrlKey || event.metaKey) && event.key === 'c' && currentExtractedData) {
     if (!event.target.matches('input, textarea')) {
@@ -1006,16 +1006,16 @@ let autoRefreshInterval = null;
 
 function startAutoRefresh(intervalMs = 30000) {
   if (autoRefreshInterval) return;
-  
+
   PopupLogger.info('🔄 Starting auto-refresh analytics', { intervalMs });
-  
+
   autoRefreshInterval = setInterval(async () => {
     if (systemStatus.aiEnabled && systemStatus.day10Enhanced && !analyticsInProgress) {
       try {
         const analyticsResponse = await chrome.runtime.sendMessage({
           action: 'getAnalytics'
         });
-        
+
         if (analyticsResponse && analyticsResponse.success) {
           updateAnalyticsSection(analyticsResponse.analytics);
           PopupLogger.debug('Auto-refreshed analytics');
@@ -1054,7 +1054,7 @@ window.addEventListener('unload', () => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'contextMenuExtraction') {
     PopupLogger.info('🖱️ Context menu extraction triggered');
-    
+
     // Auto-trigger extraction
     if (systemStatus.systemReady) {
       handleExtractData();
@@ -1062,7 +1062,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       showError('System not ready. Please configure API key first.');
     }
   }
-  
+
   sendResponse({ received: true });
   return true;
 });
@@ -1073,45 +1073,45 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 window.PopupDebug = {
   version: DAY10_VERSION,
-  
+
   getSystemStatus: () => systemStatus,
-  
+
   getCurrentData: () => currentExtractedData,
-  
+
   getAnalytics: () => lastAnalyticsResults,
-  
+
   testExtraction: async () => {
     await handleExtractData();
   },
-  
+
   testAnalytics: async () => {
     await handleRunAnalytics();
   },
-  
+
   clearCache: () => {
     clearResults();
     lastAnalyticsResults = null;
     PopupLogger.info('Cache cleared');
   },
-  
+
   enableAutoRefresh: (interval = 30000) => {
     startAutoRefresh(interval);
     console.log(`✅ Auto-refresh enabled (${interval}ms)`);
   },
-  
+
   disableAutoRefresh: () => {
     stopAutoRefresh();
     console.log('✅ Auto-refresh disabled');
   },
-  
+
   help: () => {
     console.log(`
     ╔══════════════════════════════════════════════════════╗
     ║         DAY 10 POPUP DEBUG UTILITIES                 ║
     ╚══════════════════════════════════════════════════════╝
-    
+
     Available Commands:
-    
+
     PopupDebug.getSystemStatus()         - View system status
     PopupDebug.getCurrentData()          - View current extraction data
     PopupDebug.getAnalytics()            - View last analytics results
@@ -1121,7 +1121,7 @@ window.PopupDebug = {
     PopupDebug.enableAutoRefresh(ms)     - Enable auto-refresh
     PopupDebug.disableAutoRefresh()      - Disable auto-refresh
     PopupDebug.help()                    - Show this help message
-    
+
     Keyboard Shortcuts:
     Ctrl/Cmd + E    - Extract Data
     Ctrl/Cmd + A    - Run Analytics

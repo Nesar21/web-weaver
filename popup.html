@@ -1,702 +1,594 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Weaver Lightning - Day 10 AI Engine v1</title>
-    <style>
-        :root {
-            --primary-color: #2563eb;
-            --success-color: #059669;
-            --warning-color: #d97706;
-            --danger-color: #dc2626;
-            --info-color: #0891b2;
-            --dark-bg: #1f2937;
-            --light-bg: #f8fafc;
-            --border-color: #e5e7eb;
-            --text-primary: #111827;
-            --text-secondary: #6b7280;
-            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --gradient-success: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            width: 420px;
-            min-height: 600px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--gradient-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-
-        .container {
-            padding: 20px;
-            background: white;
-            min-height: 100vh;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            color: transparent;
-            margin-bottom: 5px;
-        }
-
-        .version {
-            font-size: 12px;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .day10-badge {
-            display: inline-block;
-            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 700;
-            margin-top: 8px;
-            letter-spacing: 0.5px;
-        }
-
-        .status-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .status-item {
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            font-size: 12px;
-            font-weight: 600;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-        }
-
-        .status-ready {
-            background: var(--gradient-success);
-            color: white;
-            border-color: var(--success-color);
-        }
-
-        .status-warning {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: white;
-            border-color: var(--warning-color);
-        }
-
-        .api-section {
-            background: var(--light-bg);
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 20px;
-        }
-
-        .api-section h3 {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .api-input-group {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        input[type="password"] {
-            flex: 1;
-            padding: 10px 12px;
-            border: 2px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.3s ease;
-        }
-
-        input[type="password"]:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        .btn {
-            padding: 10px 16px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            min-height: 42px;
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: #1d4ed8;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-        }
-
-        .btn-success {
-            background: var(--success-color);
-            color: white;
-        }
-
-        .btn-success:hover:not(:disabled) {
-            background: #047857;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
-        }
-
-        .btn-warning {
-            background: var(--warning-color);
-            color: white;
-        }
-
-        .btn-warning:hover:not(:disabled) {
-            background: #b45309;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .analytics-section {
-            background: var(--dark-bg);
-            color: white;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 20px;
-        }
-
-        .analytics-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .analytics-title {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .trajectory {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .trajectory-excellent {
-            background: var(--success-color);
-        }
-
-        .trajectory-on_track, .trajectory-on-track {
-            background: var(--info-color);
-        }
-
-        .trajectory-needsimprovement, .trajectory-needs-improvement {
-            background: var(--warning-color);
-        }
-
-        .trajectory-needsacceleration, .trajectory-needs-acceleration {
-            background: var(--danger-color);
-        }
-
-        .trajectory-critical {
-            background: var(--danger-color);
-        }
-
-        .trajectory-warning {
-            background: var(--warning-color);
-        }
-
-        .trajectory-unknown {
-            background: var(--text-secondary);
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .metric-card {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .metric-value {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .metric-label {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-
-        .performance-list {
-            list-style: none;
-        }
-
-        .performance-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .performance-item:last-child {
-            border-bottom: none;
-        }
-
-        .site-name {
-            font-weight: 500;
-        }
-
-        .performance-badge {
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .performance-excellent {
-            background: var(--success-color);
-        }
-
-        .performance-good {
-            background: var(--info-color);
-        }
-
-        .performance-acceptable {
-            background: var(--warning-color);
-        }
-
-        .performance-poor {
-            background: var(--danger-color);
-        }
-
-        .performance-failed {
-            background: var(--danger-color);
-        }
-
-        .actions-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .results-section {
-            background: var(--light-bg);
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 20px;
-        }
-
-        .results-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .results-title {
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .export-buttons {
-            display: flex;
-            gap: 6px;
-        }
-
-        .btn-small {
-            padding: 6px 10px;
-            font-size: 12px;
-            min-height: auto;
-        }
-
-        .results-content {
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 12px;
-            max-height: 200px;
-            overflow-y: auto;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 12px;
-            line-height: 1.4;
-        }
-
-        .config-info {
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-align: center;
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .config-info strong {
-            color: var(--text-primary);
-        }
-
-        .loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        .tooltip {
-            position: relative;
-            cursor: help;
-        }
-
-        .tooltip:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--dark-bg);
-            color: white;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            white-space: nowrap;
-            z-index: 1000;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Day 10 Enhanced Confidence & Accuracy Classes */
-        .confidence-high { 
-            color: #059669; 
-            font-weight: 700; 
-        }
-        
-        .confidence-medium { 
-            color: #d97706; 
-            font-weight: 700; 
-        }
-        
-        .confidence-low { 
-            color: #dc2626; 
-            font-weight: 700; 
-        }
-
-        .accuracy-excellent { 
-            color: #059669; 
-            font-weight: 700; 
-        }
-        
-        .accuracy-good { 
-            color: #0891b2; 
-            font-weight: 700; 
-        }
-        
-        .accuracy-acceptable { 
-            color: #d97706; 
-            font-weight: 700; 
-        }
-        
-        .accuracy-poor { 
-            color: #dc2626; 
-            font-weight: 700; 
-        }
-
-        /* Day 10 Alert Warning Box */
-        .alert-warning {
-            background: #fef3c7;
-            border: 2px solid #f59e0b;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            color: #92400e;
-            font-weight: 600;
-        }
-
-        /* Loading Spinner */
-        .loading-spinner {
-            display: inline-block;
-            animation: spin 1s linear infinite;
-        }
-
-        /* Notification Styles */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            border-radius: 6px;
-            color: white;
-            font-weight: 600;
-            z-index: 10000;
-            animation: slideInRight 0.3s ease-out;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .notification-success { 
-            background: #059669; 
-        }
-        
-        .notification-error { 
-            background: #dc2626; 
-        }
-        
-        .notification-info { 
-            background: #0891b2; 
-        }
-
-        .notification-warning {
-            background: #d97706;
-        }
-
-        .show {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        /* Animations */
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        @keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 400px) {
-            body {
-                width: 100%;
-                min-width: 320px;
-            }
-            
-            .container {
-                padding: 16px;
-            }
-            
-            .status-grid {
-                grid-template-columns: 1fr;
-                gap: 8px;
-            }
-            
-            .actions-section {
-                grid-template-columns: 1fr;
-                gap: 8px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Weaver Lightning - Day 10 AI Engine v1</title>
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --success-color: #059669;
+      --warning-color: #d97706;
+      --danger-color: #dc2626;
+      --info-color: #0891b2;
+      --dark-bg: #1f2937;
+      --light-bg: #f8fafc;
+      --border-color: #e5e7eb;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --gradient-success: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 420px;
+      min-height: 600px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--gradient-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    .container {
+      padding: 20px;
+      background: white;
+      min-height: 100vh;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .version {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .day10-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+      color: white;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 600;
+      margin: 4px 0;
+    }
+
+    .badge-success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .config-detail {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .status-item {
+      background: var(--light-bg);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .status-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .status-value {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .status-success {
+      color: var(--success-color);
+    }
+
+    .status-error {
+      color: var(--danger-color);
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .api-config {
+      background: var(--light-bg);
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .input-group {
+      margin-bottom: 12px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      transition: border-color 0.2s;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-success {
+      background: var(--success-color);
+      color: white;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: #047857;
+    }
+
+    .btn-secondary {
+      background: var(--text-secondary);
+      color: white;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #4b5563;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 8px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      display: none;
+    }
+
+    .status-info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .analytics {
+      background: var(--gradient-success);
+      padding: 20px;
+      border-radius: 12px;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    .trajectory-display {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .trajectory {
+      display: inline-block;
+      padding: 8px 20px;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .trajectory-excellent {
+      background: #10b981;
+    }
+
+    .trajectory-on-track {
+      background: #3b82f6;
+    }
+
+    .trajectory-needs-improvement {
+      background: #f59e0b;
+    }
+
+    .trajectory-warning {
+      background: #6b7280;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .metric-card {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      padding: 16px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    .site-performance {
+      background: var(--light-bg);
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .site-performance-list {
+      list-style: none;
+    }
+
+    .site-performance-item {
+      padding: 12px;
+      background: white;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .site-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .site-metrics {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .results {
+      background: var(--light-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .export-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 11px;
+      width: auto;
+    }
+
+    .results-content {
+      max-height: 400px;
+      overflow-y: auto;
+      font-size: 12px;
+    }
+
+    .config-info {
+      background: var(--light-bg);
+      padding: 12px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+    }
+
+    .footer {
+      text-align: center;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      opacity: 0;
+      transform: translateX(100px);
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+
+    .notification.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .notification-success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .notification-error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <div class="logo">⚡ Web Weaver Lightning</div>
-            <div class="version" id="versionInfo">Day 10 AI Engine v1</div>
-            <div class="day10-badge">🎯 80% ACCURACY TARGET</div>
-        </div>
-
-        <!-- System Status -->
-        <div class="status-grid">
-            <div class="status-item" id="systemStatus">
-                <div>📊 System</div>
-                <div id="systemStatusText">⚡ Ready</div>
-            </div>
-            <div class="status-item" id="configStatus">
-                <div>⚙️ Config</div>
-                <div id="configStatusText">✅ Loaded</div>
-            </div>
-            <div class="status-item" id="enterpriseStatus">
-                <div>🏢 Enterprise</div>
-                <div id="enterpriseStatusText">✅ Active</div>
-            </div>
-            <div class="status-item" id="analyticsStatus">
-                <div>🔑 API Key</div>
-                <div id="analyticsStatusText">✅ Ready</div>
-            </div>
-        </div>
-
-        <!-- API Configuration -->
-        <div class="api-section">
-            <h3>🔑 Gemini API Configuration</h3>
-            <div class="api-input-group">
-                <input type="password" id="apiKeyInput" placeholder="Enter Gemini API Key..." />
-                <button class="btn btn-primary" id="saveApiKeyBtn">💾 Save</button>
-            </div>
-            <div id="apiKeyStatus" class="hidden"></div>
-        </div>
-
-        <!-- Day 10 Analytics -->
-        <div class="analytics-section" id="analyticsSection">
-            <div class="analytics-header">
-                <div class="analytics-title">📈 Day 10 Analytics</div>
-                <div class="trajectory trajectory-excellent" id="trajectoryBadge">EXCELLENT</div>
-            </div>
-            
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-value" id="overallAccuracy">82.0%</div>
-                    <div class="metric-label">Overall Accuracy</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value" id="confidenceScore">85%</div>
-                    <div class="metric-label">Confidence Score</div>
-                </div>
-            </div>
-
-            <div class="trajectory-label" style="text-align: center; margin-bottom: 16px;">
-                <span id="trajectoryText" style="font-weight: 600;">ON TRACK</span> to 80% Target
-            </div>
-
-            <div style="margin-bottom: 16px;">
-                <div style="font-weight: 600; margin-bottom: 8px;">Day 10 Site Performance</div>
-                <ul class="performance-list" id="sitePerformanceList">
-                    <li class="performance-item">
-                        <span class="site-name">Amazon</span>
-                        <span class="performance-badge performance-excellent">82% ✅</span>
-                    </li>
-                    <li class="performance-item">
-                        <span class="site-name">Bloomberg</span>
-                        <span class="performance-badge performance-excellent">81% ✅</span>
-                    </li>
-                    <li class="performance-item">
-                        <span class="site-name">AllRecipes</span>
-                        <span class="performance-badge performance-good">76% ✅</span>
-                    </li>
-                    <li class="performance-item">
-                        <span class="site-name">Wikipedia</span>
-                        <span class="performance-badge performance-excellent">86% ✅</span>
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="actions-section">
-            <button class="btn btn-success" id="extractBtn">
-                <span class="btn-icon">⚡</span>
-                <span class="btn-text">Extract Data</span>
-            </button>
-            <button class="btn btn-warning" id="analyticsBtn">
-                <span class="btn-icon">📊</span>
-                <span class="btn-text">View Analytics</span>
-            </button>
-            <button class="btn btn-primary" id="reloadConfigBtn">
-                <span class="btn-icon">🔄</span>
-                <span class="btn-text">Reload Config</span>
-            </button>
-            <button class="btn btn-primary" id="cleanupTabsBtn">
-                <span class="btn-icon">🧹</span>
-                <span class="btn-text">Cleanup Tabs</span>
-            </button>
-        </div>
-
-        <!-- Last Extraction Results -->
-        <div class="results-section">
-            <div class="results-header">
-                <div class="results-title">📋 Last Extraction (Day 10 Enhanced)</div>
-                <div class="export-buttons">
-                    <button class="btn btn-primary btn-small" id="copyBtn" title="Copy to Clipboard">📋</button>
-                    <button class="btn btn-primary btn-small" id="exportJsonBtn" title="Export JSON">JSON</button>
-                    <button class="btn btn-success btn-small" id="exportCsvBtn" title="Export CSV">CSV</button>
-                </div>
-            </div>
-            <div class="results-content" id="resultsContent">
-                <div style="text-align: center; color: #6b7280; padding: 20px;">
-                    🎯 No extraction yet. Click "Extract Data" to begin Day 10 AI extraction.
-                </div>
-            </div>
-        </div>
-
-        <!-- Day 10 Config Info -->
-        <div class="config-info">
-            <strong>Day 10 AI Engine v1</strong> • <span id="configInfo">80% Accuracy Target</span>
-        </div>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">⚡ Web Weaver Lightning</div>
+      <div class="version" id="versionInfo">Day 10 AI Engine v1</div>
+      <div class="day10-badge">🎯 80% ACCURACY TARGET</div>
+      <div class="badge badge-success" id="day10StatusBadge">✅ Day 10 Enhanced</div>
+      <div class="config-detail" id="confidenceDisplay">Confidence Threshold: 50%</div>
     </div>
 
-    <script src="popup.js"></script>
+    <!-- System Status -->
+    <div class="section">
+      <div class="section-title">📊 System Status</div>
+      <div class="status-grid">
+        <div class="status-item" id="systemStatus">
+          <div class="status-label">⚡ System</div>
+          <div class="status-value status-success" id="systemStatusText">⚡ Ready</div>
+        </div>
+        <div class="status-item" id="configStatus">
+          <div class="status-label">⚙️ Config</div>
+          <div class="status-value status-success" id="configStatusText">✅ Loaded</div>
+        </div>
+        <div class="status-item" id="enterpriseStatus">
+          <div class="status-label">🏢 Enterprise</div>
+          <div class="status-value status-success" id="enterpriseStatusText">✅ Active</div>
+        </div>
+        <div class="status-item" id="analyticsStatus">
+          <div class="status-label">📊 Analytics</div>
+          <div class="status-value status-success" id="analyticsStatusText">✅ Ready</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- API Configuration -->
+    <div class="section">
+      <div class="section-title">🔑 Gemini API Configuration</div>
+      <div class="api-config">
+        <div class="input-group">
+          <input
+            type="password"
+            id="apiKeyInput"
+            placeholder="Enter your Gemini API key..."
+            autocomplete="off"
+          />
+        </div>
+        <button class="btn btn-primary" id="saveApiKeyBtn">
+          💾 Save API Key
+        </button>
+        <div class="status" id="apiKeyStatus"></div>
+      </div>
+    </div>
+
+    <!-- Analytics Section -->
+    <div class="section" id="analyticsSection">
+      <div class="analytics">
+        <div class="trajectory-display">
+          <div class="trajectory trajectory-excellent" id="trajectoryBadge">EXCELLENT</div>
+          <div style="font-size: 13px; opacity: 0.9;" id="trajectoryText">ON TRACK to 80% Target</div>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-value" id="overallAccuracy">82.0%</div>
+            <div class="metric-label">Overall Accuracy</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value" id="businessAccuracy">85%</div>
+            <div class="metric-label">Success Rate</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Site Performance -->
+      <div class="site-performance">
+        <div class="section-title">🌐 Day 10 Site Performance</div>
+        <ul class="site-performance-list" id="sitePerformanceList">
+          <li class="site-performance-item">
+            <span class="site-name">Amazon</span>
+            <div class="site-metrics">
+              <span>Accuracy: <strong>82% ✅</strong></span>
+              <span>Tests: <strong>5</strong></span>
+            </div>
+          </li>
+          <li class="site-performance-item">
+            <span class="site-name">Bloomberg</span>
+            <div class="site-metrics">
+              <span>Accuracy: <strong>81% ✅</strong></span>
+              <span>Tests: <strong>4</strong></span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="section">
+      <div class="actions-grid">
+        <button class="btn btn-success" id="extractBtn">
+          🔍 Extract Data
+        </button>
+        <button class="btn btn-primary" id="analyticsBtn">
+          📊 View Analytics
+        </button>
+        <button class="btn btn-secondary" id="reloadConfigBtn">
+          🔄 Reload Config
+        </button>
+        <button class="btn btn-secondary" id="cleanupTabsBtn">
+          🧹 Cleanup Tabs
+        </button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="section">
+      <div class="results">
+        <div class="results-header">
+          <div class="section-title" style="margin-bottom: 0;">📋 Last Extraction (Day 10 Enhanced)</div>
+          <div class="export-buttons">
+            <button class="btn btn-small btn-secondary" id="copyBtn" disabled>📋</button>
+            <button class="btn btn-small btn-secondary" id="exportJsonBtn" disabled>JSON</button>
+            <button class="btn btn-small btn-secondary" id="exportCsvBtn" disabled>CSV</button>
+          </div>
+        </div>
+        <div class="results-content" id="resultsContent">
+          <div class="config-info">🎯 No extraction yet. Click "Extract Data" to begin Day 10 AI extraction.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Configuration Display -->
+    <div class="section">
+      <div class="section-title">⚙️ Day 10 Configuration</div>
+      <div class="config-info" id="configInfo">Loading Day 10 system configuration...</div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div><strong>Day 10 AI Engine v1</strong></div>
+      <div>🎯 80% Accuracy Target</div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
 </body>
 </html>
