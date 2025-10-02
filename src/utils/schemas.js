@@ -165,19 +165,19 @@ function schemaLogger(level, message, data = {}) {
 
 const SchemaManager = {
   VERSION: DAY10_VERSION,
-  
+
   getStandardSchema() {
     return { ...STANDARD_SCHEMA };
   },
-  
+
   getSiteSchema(siteType) {
     return SITE_SPECIFIC_SCHEMAS[siteType] || SITE_SPECIFIC_SCHEMAS.generic;
   },
-  
+
   validateSchema(data, siteType = 'generic') {
     const schema = this.getSiteSchema(siteType);
     const violations = [];
-    
+
     schema.required.forEach(field => {
       if (!data[field] || (typeof data[field] === 'string' && data[field].trim() === '')) {
         violations.push({
@@ -188,7 +188,7 @@ const SchemaManager = {
         });
       }
     });
-    
+
     if (schema.arrayFields) {
       schema.arrayFields.forEach(field => {
         if (data[field] && !Array.isArray(data[field])) {
@@ -201,7 +201,7 @@ const SchemaManager = {
         }
       });
     }
-    
+
     if (schema.formatValidation) {
       Object.keys(schema.formatValidation).forEach(field => {
         if (data[field] && !schema.formatValidation[field].test(data[field])) {
@@ -214,21 +214,21 @@ const SchemaManager = {
         }
       });
     }
-    
+
     return {
       valid: violations.length === 0,
       violations,
       schemaCompliance: Math.max(0, 100 - (violations.length * 10))
     };
   },
-  
+
   normalizeFieldNames(data, siteType = 'generic') {
     if (siteType === 'bloomberg') {
       return this.applyBloombergMapping(data);
     }
     return data;
   },
-  
+
   applyBloombergMapping(data) {
     const normalized = { ...data };
     Object.keys(BLOOMBERG_FIELD_MAPPINGS).forEach(oldField => {
@@ -239,11 +239,11 @@ const SchemaManager = {
     });
     return normalized;
   },
-  
+
   fillDefaultValues(data, siteType = 'generic') {
     const filled = { ...data };
     const schema = this.getSiteSchema(siteType);
-    
+
     Object.keys(STANDARD_SCHEMA).forEach(field => {
       if (filled[field] === undefined || filled[field] === null) {
         if (STANDARD_SCHEMA[field] === 'array') {
@@ -255,10 +255,10 @@ const SchemaManager = {
         }
       }
     });
-    
+
     return filled;
   },
-  
+
   calculateFieldCompleteness(data, siteType = 'generic') {
     const schema = this.getSiteSchema(siteType);
     const totalRequired = schema.required.length;
@@ -266,22 +266,21 @@ const SchemaManager = {
       const val = data[f];
       return val !== null && val !== undefined && val !== '' && (!Array.isArray(val) || val.length > 0);
     }).length;
-    
+
     const totalOptional = schema.optional?.length || 0;
     const filledOptional = (schema.optional || []).filter(f => {
       const val = data[f];
       return val !== null && val !== undefined && val !== '' && (!Array.isArray(val) || val.length > 0);
     }).length;
-    
+
     return {
       requiredCompleteness: totalRequired > 0 ? (filledRequired / totalRequired) * 100 : 100,
       optionalCompleteness: totalOptional > 0 ? (filledOptional / totalOptional) * 100 : 0,
       overallCompleteness: Math.round(((filledRequired + filledOptional) / (totalRequired + totalOptional)) * 100)
     };
   },
-  
-  // ===== DAY 10 METHODS ADDED HERE =====
-  
+
+  // ===== DAY 10 METHODS =====
   getFieldTypeDefinition(fieldName, siteType = 'generic') {
     const siteTypes = DAY10_FIELD_TYPES[siteType];
     if (siteTypes && siteTypes[fieldName]) {
@@ -289,11 +288,11 @@ const SchemaManager = {
     }
     return { type: 'string', nullable: true };
   },
-  
+
   validateFieldType(fieldName, value, siteType = 'generic') {
     const typeDef = this.getFieldTypeDefinition(fieldName, siteType);
     const violations = [];
-    
+
     if (!typeDef.nullable && (value === null || value === undefined)) {
       violations.push({
         field: fieldName,
@@ -302,7 +301,7 @@ const SchemaManager = {
         message: `Field '${fieldName}' cannot be null`
       });
     }
-    
+
     if (value !== null && value !== undefined) {
       if (typeDef.type === 'string' && typeof value !== 'string') {
         violations.push({
@@ -312,6 +311,7 @@ const SchemaManager = {
           message: `Field '${fieldName}' must be string, got ${typeof value}`
         });
       }
+
       if (typeDef.type === 'number' && typeof value !== 'number') {
         violations.push({
           field: fieldName,
@@ -320,6 +320,7 @@ const SchemaManager = {
           message: `Field '${fieldName}' must be number, got ${typeof value}`
         });
       }
+
       if (typeDef.type === 'array' && !Array.isArray(value)) {
         violations.push({
           field: fieldName,
@@ -328,7 +329,7 @@ const SchemaManager = {
           message: `Field '${fieldName}' must be array, got ${typeof value}`
         });
       }
-      
+
       if (typeDef.type === 'string' && typeof value === 'string') {
         if (typeDef.minLength && value.length < typeDef.minLength) {
           violations.push({ field: fieldName, type: 'MIN_LENGTH', severity: 'MEDIUM', message: `Too short` });
@@ -340,7 +341,7 @@ const SchemaManager = {
           violations.push({ field: fieldName, type: 'PATTERN_MISMATCH', severity: 'HIGH', message: `Pattern mismatch` });
         }
       }
-      
+
       if (typeDef.type === 'array' && Array.isArray(value)) {
         if (typeDef.minItems && value.length < typeDef.minItems) {
           violations.push({ field: fieldName, type: 'MIN_ITEMS', severity: 'HIGH', message: `Too few items` });
@@ -349,7 +350,7 @@ const SchemaManager = {
           violations.push({ field: fieldName, type: 'MAX_ITEMS', severity: 'MEDIUM', message: `Too many items` });
         }
       }
-      
+
       if (typeDef.type === 'number' && typeof value === 'number') {
         if (typeDef.min !== undefined && value < typeDef.min) {
           violations.push({ field: fieldName, type: 'MIN_VALUE', severity: 'HIGH', message: `Too low` });
@@ -359,14 +360,14 @@ const SchemaManager = {
         }
       }
     }
-    
+
     return violations;
   },
-  
+
   standardizeDatesInData(data, siteType = 'generic') {
     const dateFields = ['publication_date', 'publishdate', 'publish_date', 'date', 'created'];
-    const standardized = {...data};
-    
+    const standardized = { ...data };
+
     dateFields.forEach(field => {
       if (standardized[field]) {
         const std = convertToStandardDateDay10(standardized[field]);
@@ -376,10 +377,10 @@ const SchemaManager = {
         }
       }
     });
-    
+
     return standardized;
   },
-  
+
   getDay10Status() {
     return {
       version: this.VERSION,
@@ -403,4 +404,3 @@ if (typeof module !== 'undefined' && module.exports) {
 } else if (typeof window !== 'undefined') {
   window.SchemaManager = SchemaManager;
 }
-

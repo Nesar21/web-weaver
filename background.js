@@ -1,30 +1,27 @@
-// Day 10: ULTIMATE ENTERPRISE AI ENGINE v1 - Smart Tab Management & 80% Accuracy
-// /background.js - DAY 10 ENHANCED (Service Worker Compatible) - GEMINI 2.0 FIX
+// Day 10: ULTIMATE ENTERPRISE AI ENGINE v1 - Proxy Architecture with Smart Tab Management
+// /background.js - DAY 10 ENHANCED (Service Worker Compatible) - Gemini 2.0 Proxy Fix
 
-console.log('[Background] Day 10 AI ENGINE v1 loading - 80% Accuracy Target with Confidence Validation');
+console.log('[Background] Day 10 AI ENGINE v1 loading - Secure Proxy Architecture with 80% Accuracy Target');
 
-// ============================================================================
-// DAY 10 VERSION & CONFIGURATION - GEMINI 2.0 MODEL FIX
-// ============================================================================
-
-const DAY10_VERSION = 'day10-ai-engine-v1-gemini-2.0-fix';
+const DAY10_VERSION = 'day10-ai-engine-v1-proxy-secure';
 const DAY8_VERSION = 'day8-day9-ultimate-enterprise-champion';
 
+let isInitialized = false;
+
 let AI_CONFIG = {
-  model: 'gemini-2.0-flash-lite', // ✅ CRITICAL FIX: Use Gemini 2.0 stable model
+  model: 'gemini-2.0-flash-lite',
   maxTokens: 3000,
   temperature: 0.1,
   aiTimeout: 30000,
   tabTimeout: 6000,
   maxConcurrentTabs: 8,
-  apiKey: null,
   day10Version: DAY10_VERSION,
   day8Version: DAY8_VERSION,
   confidenceThreshold: 50,
   enableAutoCorrect: true,
   enablePIIStripping: true,
   dateStandardization: 'YYYY-MM-DD',
-  modulesLoaded: true,
+  modulesLoaded: false,
   enterpriseConfig: null,
   configVersion: null,
   useAIExtraction: true,
@@ -38,6 +35,7 @@ let AI_CONFIG = {
   autoCloseTestTabs: true,
   tabCleanupDelay: 2000,
   maxTabLifetime: 30000,
+  proxyEndpoint: 'https://web-weaver-proxy.vercel.app/api/gemini-proxy',
   logging: {
     throttleModuleLoads: false,
     maxLogsPerSecond: 15,
@@ -48,7 +46,6 @@ let AI_CONFIG = {
   cache: {
     schemaMappings: new Map(),
     siteConfigs: new Map(),
-    apiValidation: null,
     configTimestamp: null,
     configExpiry: 3600000,
     persistenceQueue: new Set(),
@@ -57,74 +54,84 @@ let AI_CONFIG = {
   }
 };
 
-// ============================================================================
-// DAY 10: CONFIDENCE VALIDATION UTILITIES
-// ============================================================================
+const BackgroundLogger = (() => {
+  let lastLogTime = 0;
+  let timestampCache = null;
+  const timestampCacheExpiry = AI_CONFIG.logging.timestampCacheExpiry;
 
-function validateConfidenceDay10(extractedData) {
-  const confidence = extractedData?.confidence_score;
-  if (!confidence || typeof confidence !== 'number') {
-    return {
-      valid: true,
-      confidence: 50,
-      warning: 'NO_CONFIDENCE_SCORE'
-    };
+  function getTimestamp() {
+    const now = Date.now();
+    if (timestampCache && now - lastLogTime < timestampCacheExpiry) return timestampCache;
+    timestampCache = new Date().toISOString();
+    lastLogTime = now;
+    return timestampCache;
   }
-  if (confidence < AI_CONFIG.confidenceThreshold) {
-    return {
-      valid: false,
-      confidence: confidence,
-      reason: 'CONFIDENCE_TOO_LOW',
-      autoDiscard: true
-    };
+
+  function shouldLog(level) {
+    if (AI_CONFIG.logging.throttleModuleLoads && level === 'MODULE_LOAD') return false;
+    return Date.now() - lastLogTime > 1000 / AI_CONFIG.logging.maxLogsPerSecond;
   }
+
+  function log(type, msg, data) {
+    if (!shouldLog(type)) return;
+    const ts = getTimestamp();
+    const fmt = `[${ts}] [Background-Day10] [${type}] ${msg}`;
+    if (data) {
+      if (type === 'ERROR') console.error(fmt, data);
+      else if (type === 'WARN') console.warn(fmt, data);
+      else console.log(fmt, data);
+    } else {
+      console.log(fmt);
+    }
+  }
+
   return {
-    valid: true,
-    confidence: confidence
+    info: (msg, data) => log('INFO', msg, data),
+    success: (msg, data) => log('SUCCESS', msg, data),
+    warn: (msg, data) => log('WARN', msg, data),
+    error: (msg, data) => log('ERROR', msg, data),
+    debug: (msg, data) => log('DEBUG', msg, data)
   };
-}
-
-function stripPIIDay10(text) {
-  if (!text || typeof text !== 'string') return text;
-  return text
-    .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL_REDACTED]')
-    .replace(/(\+?1[-.]?)?\(?([0-9]{3})\)?[-.]?([0-9]{3})[-.]?([0-9]{4})/g, '[PHONE_REDACTED]')
-    .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '[SSN_REDACTED]')
-    .replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[CARD_REDACTED]');
-}
+})();
 
 function standardizeDateDay10(dateString) {
   if (!dateString || typeof dateString !== 'string') return null;
   try {
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return null;
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  } catch { return null; }
+    if (isNaN(date.getTime())) return dateString;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch {
+    return dateString;
+  }
 }
 
-function postProcessDay10(extractedData) {
-  if (!extractedData || typeof extractedData !== 'object') return extractedData;
-  const processed = {...extractedData};
+function stripPIIDay10(text) {
+  if (!text || typeof text !== 'string') return text;
+  text = text.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[EMAIL_REDACTED]');
+  text = text.replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, '[PHONE_REDACTED]');
+  text = text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, '[SSN_REDACTED]');
+  text = text.replace(/\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/g, '[CARD_REDACTED]');
+  return text;
+}
 
-  ['publication_date', 'publishdate', 'publish_date', 'date'].forEach(field => {
-    if (processed[field]) {
-      const std = standardizeDateDay10(processed[field]);
-      if (std) processed[field] = std;
-    }
-  });
+function postProcessDay10(data) {
+  if (!data || typeof data !== 'object') return data;
+  BackgroundLogger.debug('[AI] Day 10 post-processing...');
+  let processed = Object.assign({}, data);
+
+  if (processed.publication_date) {
+    processed.publication_date = standardizeDateDay10(processed.publication_date);
+  }
 
   if (AI_CONFIG.enablePIIStripping) {
-    Object.keys(processed).forEach(key => {
-      const value = processed[key];
-      if (typeof value === 'string') {
-        processed[key] = stripPIIDay10(value);
-      } else if (Array.isArray(value)) {
-        processed[key] = value.map(v => typeof v === 'string' ? stripPIIDay10(v) : v);
+    for (const key in processed) {
+      if (typeof processed[key] === 'string') {
+        processed[key] = stripPIIDay10(processed[key]);
       }
-    });
+    }
   }
 
   if (processed.title) processed.title = processed.title.substring(0, 200);
@@ -136,9 +143,128 @@ function postProcessDay10(extractedData) {
   return processed;
 }
 
-// ============================================================================
-// SMART TAB MANAGER
-// ============================================================================
+function validateConfidenceDay10(extractedData) {
+  const confidence = extractedData && extractedData.confidence_score;
+  if (!confidence || typeof confidence !== 'number') {
+    return { valid: true, confidence: 50, warning: 'NO_CONFIDENCE_SCORE' };
+  }
+  if (confidence < AI_CONFIG.confidenceThreshold) {
+    return { valid: false, confidence: confidence, reason: 'CONFIDENCE_TOO_LOW', autoDiscard: true };
+  }
+  return { valid: true, confidence: confidence };
+}
+
+async function callGeminiAPIDay10(prompt, options) {
+  if (!options) options = {};
+  const PROXY_ENDPOINT = AI_CONFIG.proxyEndpoint;
+  const extensionId = chrome.runtime.id || 'temp-dev-mode-bypass';
+
+  BackgroundLogger.info('Day 10 Proxy Architecture Enabled');
+  BackgroundLogger.info(`Endpoint: ${PROXY_ENDPOINT}`);
+  BackgroundLogger.info(`Extension ID: ${extensionId}`);
+
+  const startTime = Date.now();
+
+  try {
+    const response = await fetch(PROXY_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-chrome-extension-id': extensionId
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        temperature: options.temperature || AI_CONFIG.temperature || 0.1,
+        maxTokens: options.maxTokens || AI_CONFIG.maxTokens || 3000
+      }),
+      signal: AbortSignal.timeout(AI_CONFIG.aiTimeout || 30000)
+    });
+
+    const responseTime = Date.now() - startTime;
+    BackgroundLogger.info(`[AI] Proxy response time: ${responseTime}ms`);
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      BackgroundLogger.error('[AI] Proxy error response', data);
+      throw new Error(data.message || data.error || `HTTP ${response.status}`);
+    }
+
+    if (!data.success) {
+      BackgroundLogger.error('[AI] Invalid proxy response', data);
+      throw new Error('Unexpected proxy response format');
+    }
+
+    const candidates = data.data && data.data.candidates;
+    if (!candidates || candidates.length === 0) {
+      throw new Error('No response from AI model');
+    }
+
+    const content = candidates[0].content.parts[0].text;
+    if (!content) {
+      throw new Error('Invalid AI response structure');
+    }
+
+    BackgroundLogger.success('[AI] Extraction successful via proxy');
+    BackgroundLogger.info(`[AI] Response length: ${content.length} characters`);
+
+    let parsedData;
+    try {
+      let cleanContent = content;
+      const codeBlockMarker = '```' + 'json';
+      const codeBlockEnd = '```';
+      if (cleanContent.indexOf(codeBlockMarker) !== -1) {
+        cleanContent = cleanContent.split(codeBlockMarker).join('');
+      }
+      if (cleanContent.indexOf(codeBlockEnd) !== -1) {
+        cleanContent = cleanContent.split(codeBlockEnd).join('');
+      }
+      cleanContent = cleanContent.trim();
+      parsedData = JSON.parse(cleanContent);
+    } catch (parseError) {
+      BackgroundLogger.error('[AI] JSON parse error', parseError);
+      throw new Error('AI returned non-JSON response');
+    }
+
+    const confidence = parsedData.confidence_score;
+    if (typeof confidence === 'number') {
+      BackgroundLogger.info(`[AI] Confidence score: ${confidence}%`);
+      if (confidence < 50) {
+        BackgroundLogger.warn('[AI] Low confidence extraction');
+        throw new Error('AI confidence too low - extraction unreliable');
+      }
+    } else {
+      BackgroundLogger.warn('[AI] No confidence score in response');
+    }
+
+    const processedData = postProcessDay10(parsedData);
+    BackgroundLogger.success('[AI] Post-processing complete');
+
+    return {
+      success: true,
+      data: processedData,
+      metadata: {
+        responseTime: responseTime,
+        model: (data.metadata && data.metadata.model) || 'gemini-2.0-flash-lite',
+        timestamp: (data.metadata && data.metadata.timestamp) || new Date().toISOString(),
+        confidence: confidence || 50,
+        proxyVersion: (data.metadata && data.metadata.version) || 'unknown',
+        day10Enhanced: true
+      }
+    };
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    BackgroundLogger.error(`[AI] Proxy call failed: ${error.message}`);
+    BackgroundLogger.error(`[AI] Time elapsed: ${responseTime}ms`);
+    if (error.name === 'AbortError') {
+      throw new Error('AI request timeout - try again');
+    }
+    if (error.message.indexOf('Failed to fetch') !== -1) {
+      throw new Error('Network error - check proxy endpoint');
+    }
+    throw new Error(`AI extraction failed: ${error.message}`);
+  }
+}
 
 class SmartTabManager {
   constructor() {
@@ -148,92 +274,64 @@ class SmartTabManager {
     this.maxTabAge = AI_CONFIG.maxTabLifetime;
   }
 
-  async createTab(url, options = {}) {
+  async createTab(url, options) {
+    if (!options) options = {};
     try {
-      BackgroundLogger.info('📄 Creating smart-managed tab', { url });
-      const tab = await chrome.tabs.create({
-        url: url,
-        active: false,
-        ...options
-      });
+      BackgroundLogger.info('Creating smart-managed tab', { url });
+      const tab = await chrome.tabs.create(Object.assign({ url, active: false }, options));
       this.openTabs.add(tab.id);
       this.tabCreationTimes.set(tab.id, Date.now());
-
       if (AI_CONFIG.autoCloseTestTabs) {
-        const timeoutId = setTimeout(() => {
-          this.closeTab(tab.id, 'timeout');
-        }, this.maxTabAge);
+        const timeoutId = setTimeout(() => this.closeTab(tab.id, 'timeout'), this.maxTabAge);
         this.tabCleanupTimeouts.set(tab.id, timeoutId);
       }
-
-      BackgroundLogger.info('✅ Tab created and registered', {
-        tabId: tab.id,
-        totalOpenTabs: this.openTabs.size
-      });
+      BackgroundLogger.info('Tab created and registered', { tabId: tab.id, totalOpenTabs: this.openTabs.size });
       return tab;
     } catch (error) {
-      BackgroundLogger.error('Failed to create smart-managed tab', {
-        error: error.message,
-        url
-      });
+      BackgroundLogger.error('Failed to create smart-managed tab', { error: error.message, url });
       throw error;
     }
   }
 
-  async closeTab(tabId, reason = 'manual') {
+  async closeTab(tabId, reason) {
+    if (!reason) reason = 'manual';
     try {
       if (!this.openTabs.has(tabId)) {
         BackgroundLogger.warn('Attempted to close unregistered tab', { tabId });
         return;
       }
-
-      BackgroundLogger.info('🗑️ Closing smart-managed tab', {
+      BackgroundLogger.info('Closing smart-managed tab', {
         tabId,
         reason,
         ageMs: Date.now() - (this.tabCreationTimes.get(tabId) || Date.now())
       });
-
       const timeoutId = this.tabCleanupTimeouts.get(tabId);
       if (timeoutId) {
         clearTimeout(timeoutId);
         this.tabCleanupTimeouts.delete(tabId);
       }
-
       try {
         await chrome.tabs.remove(tabId);
       } catch (tabError) {
-        BackgroundLogger.warn('Tab already closed or inaccessible', {
-          tabId,
-          error: tabError.message
-        });
+        BackgroundLogger.warn('Tab already closed or inaccessible', { tabId, error: tabError.message });
       }
-
       this.openTabs.delete(tabId);
       this.tabCreationTimes.delete(tabId);
-
-      BackgroundLogger.info('✅ Tab closed and unregistered', {
-        tabId,
-        remainingTabs: this.openTabs.size
-      });
+      BackgroundLogger.info('Tab closed and unregistered', { tabId, remainingTabs: this.openTabs.size });
     } catch (error) {
-      BackgroundLogger.error('Failed to close smart-managed tab', {
-        error: error.message,
-        tabId
-      });
+      BackgroundLogger.error('Failed to close smart-managed tab', { error: error.message, tabId });
     }
   }
 
-  async closeAllTabs(reason = 'cleanup') {
-    BackgroundLogger.info('🧹 Closing all smart-managed tabs', {
-      count: this.openTabs.size,
-      reason
-    });
+  async closeAllTabs(reason) {
+    if (!reason) reason = 'cleanup';
+    BackgroundLogger.info('Closing all smart-managed tabs', { count: this.openTabs.size, reason });
     const tabIds = Array.from(this.openTabs);
     for (const tabId of tabIds) {
       await this.closeTab(tabId, reason);
-      await this.delay(100);
+      await new Promise(r => setTimeout(r, 100));
     }
-    BackgroundLogger.info('✅ All smart-managed tabs closed');
+    BackgroundLogger.info('All smart-managed tabs closed');
   }
 
   getOpenTabsInfo() {
@@ -246,84 +344,14 @@ class SmartTabManager {
       }))
     };
   }
-
-  async delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
 }
 
 const tabManager = new SmartTabManager();
 
-// ============================================================================
-// ENHANCED LOGGER
-// ============================================================================
-
-const BackgroundLogger = {
-  _getTimestamp() {
-    const now = Date.now();
-    if (AI_CONFIG.logging.timestampCache && (now - AI_CONFIG.logging.lastLogTime < AI_CONFIG.logging.timestampCacheExpiry)) {
-      return AI_CONFIG.logging.timestampCache;
-    }
-    AI_CONFIG.logging.timestampCache = new Date().toISOString();
-    AI_CONFIG.logging.lastLogTime = now;
-    return AI_CONFIG.logging.timestampCache;
-  },
-
-  _shouldLog(level) {
-    if (AI_CONFIG.logging.throttleModuleLoads && level === 'MODULE_LOAD') return false;
-    const now = Date.now();
-    const timeSinceLastLog = now - (AI_CONFIG.logging.lastLogTime || 0);
-    if (timeSinceLastLog < (1000 / AI_CONFIG.logging.maxLogsPerSecond)) return false;
-    return true;
-  },
-
-  info(message, data = null) {
-    if (!this._shouldLog('INFO')) return;
-    const timestamp = this._getTimestamp();
-    const logMessage = `[${timestamp}] [Background-Day10] [INFO] ℹ️ ${message}`;
-    if (data) console.log(logMessage, data);
-    else console.log(logMessage);
-  },
-
-  success(message, data = null) {
-    if (!this._shouldLog('SUCCESS')) return;
-    const timestamp = this._getTimestamp();
-    const logMessage = `[${timestamp}] [Background-Day10] [SUCCESS] ✅ ${message}`;
-    if (data) console.log(logMessage, data);
-    else console.log(logMessage);
-  },
-
-  warn(message, data = null) {
-    const timestamp = this._getTimestamp();
-    const logMessage = `[${timestamp}] [Background-Day10] [WARN] ⚠️ ${message}`;
-    if (data) console.warn(logMessage, data);
-    else console.warn(logMessage);
-  },
-
-  error(message, data = null) {
-    const timestamp = this._getTimestamp();
-    const logMessage = `[${timestamp}] [Background-Day10] [ERROR] ❌ ${message}`;
-    if (data) console.error(logMessage, data);
-    else console.error(logMessage);
-  },
-
-  debug(message, data = null) {
-    if (!this._shouldLog('DEBUG')) return;
-    const timestamp = this._getTimestamp();
-    const logMessage = `[${timestamp}] [Background-Day10] [DEBUG] 🔍 ${message}`;
-    if (data) console.log(logMessage, data);
-    else console.log(logMessage);
-  }
-};
-
-// ============================================================================
-// BACKGROUND UTILITIES
-// ============================================================================
-
 const BackgroundUtils = {
   async loadConfig() {
     try {
-      BackgroundLogger.info('📥 Loading enterprise configuration');
+      BackgroundLogger.info('Loading enterprise configuration');
       const response = await fetch(chrome.runtime.getURL('config/enterprise-sites.json'));
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const config = await response.json();
@@ -332,7 +360,7 @@ const BackgroundUtils = {
       AI_CONFIG.cache.configTimestamp = Date.now();
       BackgroundLogger.success('Enterprise config loaded', {
         version: AI_CONFIG.configVersion,
-        sitesCount: config.sites?.length || 0
+        sitesCount: (config.sites && config.sites.length) || 0
       });
       return config;
     } catch (error) {
@@ -341,186 +369,23 @@ const BackgroundUtils = {
     }
   },
 
-  async saveApiKey(apiKey) {
-    try {
-      await chrome.storage.local.set({ geminiApiKey: apiKey });
-      AI_CONFIG.apiKey = apiKey;
-      AI_CONFIG.cache.apiValidation = { valid: true, timestamp: Date.now() };
-      BackgroundLogger.success('✅ Day 10 API key saved successfully');
-      return { success: true };
-    } catch (error) {
-      BackgroundLogger.error('Failed to save API key', { error: error.message });
-      return { success: false, error: error.message };
-    }
-  },
-
-  async getApiKey() {
-    try {
-      if (AI_CONFIG.apiKey) return AI_CONFIG.apiKey;
-      const result = await chrome.storage.local.get(['geminiApiKey']);
-      if (result.geminiApiKey) {
-        AI_CONFIG.apiKey = result.geminiApiKey;
-        return result.geminiApiKey;
-      }
-      return null;
-    } catch (error) {
-      BackgroundLogger.error('Failed to retrieve API key', { error: error.message });
-      return null;
-    }
-  },
-
-  async validateApiKey(apiKey) {
-    try {
-      // ✅ CRITICAL FIX: Updated to Gemini 2.0 model + v1 API
-      const testUrl = `https://generativelanguage.googleapis.com/v1/models/${AI_CONFIG.model}:generateContent?key=${apiKey}`;
-      const response = await fetch(testUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: 'test' }] }] })
-      });
-      return response.ok;
-    } catch {
-      return false;
-    }
+  async getSystemStatus() {
+    return {
+      version: DAY10_VERSION,
+      modulesLoaded: AI_CONFIG.modulesLoaded,
+      enterpriseConfig: {
+        loaded: !!AI_CONFIG.enterpriseConfig,
+        version: AI_CONFIG.configVersion
+      },
+      day10Features: {
+        confidenceThreshold: AI_CONFIG.confidenceThreshold,
+        proxyEnabled: true,
+        proxyEndpoint: AI_CONFIG.proxyEndpoint
+      },
+      initialized: isInitialized
+    };
   }
 };
-// ============================================================================
-// DAY 10: GEMINI 2.0 API CALL WITH CONFIDENCE VALIDATION
-// ============================================================================
-
-async function callGeminiAPIDay10(prompt, contextData = {}) {
-  const apiKey = await BackgroundUtils.getApiKey();
-  if (!apiKey) {
-    throw new Error('API key not configured');
-  }
-
-  // ✅ CRITICAL FIX: Use v1 API endpoint with Gemini 2.0 model
-  const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${AI_CONFIG.model}:generateContent?key=${apiKey}`;
-
-  const requestBody = {
-    contents: [
-      {
-        parts: [
-          {
-            text: prompt
-          }
-        ]
-      }
-    ],
-    generationConfig: {
-      temperature: AI_CONFIG.temperature,
-      maxOutputTokens: AI_CONFIG.maxTokens,
-      topP: 0.95,
-      topK: 40
-    },
-    safetySettings: [
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
-    ]
-  };
-
-  BackgroundLogger.info('🤖 Calling Gemini 2.0 API', {
-    model: AI_CONFIG.model,
-    promptLength: prompt.length,
-    maxTokens: AI_CONFIG.maxTokens,
-    temperature: AI_CONFIG.temperature
-  });
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), AI_CONFIG.aiTimeout);
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      BackgroundLogger.error('❌ Gemini API HTTP error', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText
-      });
-      throw new Error(`Gemini API HTTP ${response.status}: ${errorText}`);
-    }
-
-    const data = await response.json();
-
-    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-      BackgroundLogger.error('❌ Invalid Gemini API response structure', { data });
-      throw new Error('Invalid API response structure');
-    }
-
-    const textContent = data.candidates[0].content.parts[0].text;
-    BackgroundLogger.success('✅ Gemini 2.0 API call successful', {
-      responseLength: textContent.length,
-      model: AI_CONFIG.model
-    });
-
-    // Parse JSON response
-    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      BackgroundLogger.error('❌ No JSON found in API response', { textContent });
-      throw new Error('No JSON in API response');
-    }
-
-    const extractedData = JSON.parse(jsonMatch[0]);
-
-    // Day 10: Confidence validation
-    const confidenceCheck = validateConfidenceDay10(extractedData);
-    if (!confidenceCheck.valid) {
-      BackgroundLogger.warn('⚠️ Low confidence extraction discarded', {
-        confidence: confidenceCheck.confidence,
-        reason: confidenceCheck.reason
-      });
-      throw new Error(`Low confidence: ${confidenceCheck.confidence}`);
-    }
-
-    // Day 10: Post-processing (PII stripping, date standardization, token limits)
-    const processedData = postProcessDay10(extractedData);
-
-    BackgroundLogger.success('✅ Day 10 extraction validated', {
-      confidence: confidenceCheck.confidence,
-      fieldsCount: Object.keys(processedData).length
-    });
-
-    return {
-      success: true,
-      data: processedData,
-      metadata: {
-        day10Version: DAY10_VERSION,
-        confidence: confidenceCheck.confidence,
-        model: AI_CONFIG.model,
-        timestamp: new Date().toISOString()
-      }
-    };
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      BackgroundLogger.error('❌ Gemini API timeout', {
-        timeout: AI_CONFIG.aiTimeout
-      });
-      throw new Error('API timeout');
-    }
-    BackgroundLogger.error('❌ Gemini API call failed', {
-      error: error.message,
-      model: AI_CONFIG.model
-    });
-    throw error;
-  }
-}
-
-// ============================================================================
-// ANALYTICS ENGINE
-// ============================================================================
 
 class AnalyticsEngine {
   constructor() {
@@ -528,43 +393,52 @@ class AnalyticsEngine {
       totalExtractions: 0,
       successfulExtractions: 0,
       failedExtractions: 0,
+      autoDiscards: 0,
       averageConfidence: 0,
-      extractionsByCategory: {},
-      extractionsBySite: {},
-      lastUpdated: null
+      averageAccuracy: 0,
+      performanceByType: {},
+      day10Extractions: 0
     };
   }
 
-  recordExtraction(site, category, success, confidence = null) {
+  recordExtraction(result) {
     this.metrics.totalExtractions++;
-    if (success) {
+    this.metrics.day10Extractions++;
+    if (result.success) {
       this.metrics.successfulExtractions++;
-      if (confidence !== null) {
-        const currentAvg = this.metrics.averageConfidence;
-        const count = this.metrics.successfulExtractions;
-        this.metrics.averageConfidence = ((currentAvg * (count - 1)) + confidence) / count;
-      }
+      const confidence = (result.metadata && result.metadata.confidence) || 50;
+      this.metrics.averageConfidence =
+        (this.metrics.averageConfidence * (this.metrics.successfulExtractions - 1) + confidence) /
+        this.metrics.successfulExtractions;
     } else {
       this.metrics.failedExtractions++;
+      if (result.reason === 'LOW_CONFIDENCE') {
+        this.metrics.autoDiscards++;
+      }
     }
-
-    if (category) {
-      this.metrics.extractionsByCategory[category] = (this.metrics.extractionsByCategory[category] || 0) + 1;
-    }
-
-    if (site) {
-      this.metrics.extractionsBySite[site] = (this.metrics.extractionsBySite[site] || 0) + 1;
-    }
-
-    this.metrics.lastUpdated = new Date().toISOString();
+    BackgroundLogger.debug('Day 10 analytics updated', {
+      totalExtractions: this.metrics.totalExtractions,
+      successRate: `${(this.metrics.successfulExtractions / this.metrics.totalExtractions * 100).toFixed(1)}%`,
+      avgConfidence: `${this.metrics.averageConfidence.toFixed(1)}%`
+    });
   }
 
-  getMetrics() {
+  getAnalytics() {
     return {
-      ...this.metrics,
-      successRate: this.metrics.totalExtractions > 0
-        ? (this.metrics.successfulExtractions / this.metrics.totalExtractions * 100).toFixed(2)
-        : 0
+      businessMetrics: {
+        totalExtractions: this.metrics.totalExtractions,
+        successfulExtractions: this.metrics.successfulExtractions,
+        failedExtractions: this.metrics.failedExtractions,
+        successRate: this.metrics.totalExtractions > 0
+          ? (this.metrics.successfulExtractions / this.metrics.totalExtractions * 100)
+          : 0,
+        averageConfidence: this.metrics.averageConfidence
+      },
+      day10Status: {
+        confidenceAverage: this.metrics.averageConfidence,
+        autoDiscards: this.metrics.autoDiscards,
+        totalExtractions: this.metrics.day10Extractions
+      }
     };
   }
 
@@ -573,176 +447,110 @@ class AnalyticsEngine {
       totalExtractions: 0,
       successfulExtractions: 0,
       failedExtractions: 0,
+      autoDiscards: 0,
       averageConfidence: 0,
-      extractionsByCategory: {},
-      extractionsBySite: {},
-      lastUpdated: null
+      averageAccuracy: 0,
+      performanceByType: {},
+      day10Extractions: 0
     };
+    BackgroundLogger.info('Day 10 analytics reset');
   }
 }
 
 const analyticsEngine = new AnalyticsEngine();
 
-// ============================================================================
-// MESSAGE HANDLERS
-// ============================================================================
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   (async () => {
     try {
-      BackgroundLogger.info('📨 Message received', {
-        action: request.action,
-        tabId: sender.tab?.id
-      });
+      BackgroundLogger.info('Message received', { action: request.action, tabId: sender.tab && sender.tab.id });
 
       switch (request.action) {
-        case 'saveApiKey':
-          const saveResult = await BackgroundUtils.saveApiKey(request.apiKey);
-          sendResponse(saveResult);
-          break;
-
-        case 'getApiKey':
-          const apiKey = await BackgroundUtils.getApiKey();
-          sendResponse({ apiKey });
-          break;
-
-        case 'validateApiKey':
-          const isValid = await BackgroundUtils.validateApiKey(request.apiKey);
-          sendResponse({ valid: isValid });
-          break;
-
         case 'getSystemStatus':
-          const apiKeyExists = !!(await BackgroundUtils.getApiKey());
-          const configLoaded = !!AI_CONFIG.enterpriseConfig;
-          sendResponse({
-            apiKeyConfigured: apiKeyExists,
-            enterpriseConfigLoaded: configLoaded,
-            systemReady: apiKeyExists && configLoaded,
-            aiEnabled: AI_CONFIG.useAIExtraction,
-            day10Enhanced: true,
-            confidenceThreshold: AI_CONFIG.confidenceThreshold,
-            model: AI_CONFIG.model,
-            version: DAY10_VERSION
-          });
-          break;
-
-        case 'extractData':
           try {
-            BackgroundLogger.info('🔍 Starting Day 10 extraction', {
-              url: request.url,
-              category: request.category
-            });
-
-            const extractedData = await callGeminiAPIDay10(request.prompt, {
-              url: request.url,
-              category: request.category
-            });
-
-            analyticsEngine.recordExtraction(
-              request.url,
-              request.category,
-              true,
-              extractedData.data.confidence_score
-            );
-
+            if (!isInitialized) {
+              sendResponse({
+                success: true,
+                status: {
+                  systemReady: false,
+                  apiKeyConfigured: false,
+                  enterpriseConfigLoaded: false,
+                  day10Enhanced: false,
+                  proxyEnabled: true,
+                  initializing: true
+                }
+              });
+              return;
+            }
+            const status = await BackgroundUtils.getSystemStatus();
             sendResponse({
               success: true,
-              data: extractedData.data,
-              metadata: extractedData.metadata
+              status: {
+                systemReady: true,
+                apiKeyConfigured: true,
+                enterpriseConfigLoaded: status.enterpriseConfig.loaded,
+                day10Enhanced: true,
+                proxyEnabled: true,
+                version: status.version,
+                enterpriseConfig: status.enterpriseConfig,
+                day10Features: status.day10Features
+              }
             });
           } catch (error) {
-            BackgroundLogger.error('❌ ❌ Extraction failed', {
-              error: error.message,
-              url: request.url
-            });
-
-            analyticsEngine.recordExtraction(
-              request.url,
-              request.category,
-              false
-            );
-
+            BackgroundLogger.error('Error in getSystemStatus handler', { error: error.message });
             sendResponse({
               success: false,
-              error: error.message
+              error: error.message || 'Failed to get system status'
             });
           }
           break;
 
         case 'getAnalytics':
-          sendResponse({
-            success: true,
-            analytics: analyticsEngine.getMetrics()
-          });
+          sendResponse({ success: true, analytics: analyticsEngine.getAnalytics() });
           break;
 
-        case 'resetAnalytics':
-          analyticsEngine.reset();
-          sendResponse({ success: true });
-          break;
-
-        case 'getTabsInfo':
-          sendResponse({
-            success: true,
-            tabs: tabManager.getOpenTabsInfo()
-          });
-          break;
-
-        case 'closeAllTabs':
+        case 'cleanupTabs':
           await tabManager.closeAllTabs('user_request');
-          sendResponse({ success: true });
+          sendResponse({ success: true, message: 'All managed tabs closed' });
           break;
 
         default:
-          BackgroundLogger.warn('⚠️ Unknown action', { action: request.action });
+          BackgroundLogger.warn('Unknown action', { action: request.action });
           sendResponse({ success: false, error: 'Unknown action' });
+          break;
       }
     } catch (error) {
-      BackgroundLogger.error('❌ Message handler error', {
+      BackgroundLogger.error('Message handler error', {
         action: request.action,
         error: error.message
       });
-      sendResponse({ success: false, error: error.message });
+      sendResponse({
+        success: false,
+        error: error.message || 'Unknown error'
+      });
     }
   })();
-  return true; // Keep channel open for async response
+  return true;
 });
-
-// ============================================================================
-// INITIALIZATION
-// ============================================================================
 
 (async () => {
   try {
-    BackgroundLogger.info('🚀 Initializing Day 10 AI ENGINE v1', {
-      version: DAY10_VERSION,
-      model: AI_CONFIG.model
-    });
-
-    await BackgroundUtils.loadConfig();
-    const apiKey = await BackgroundUtils.getApiKey();
-
-    if (apiKey) {
-      BackgroundLogger.success('✅ API key loaded from storage');
-    } else {
-      BackgroundLogger.warn('⚠️ No API key found - user must configure');
-    }
-
-    BackgroundLogger.success('🎯 Day 10 AI ENGINE v1 ready', {
+    BackgroundLogger.info('Initializing Day 10 AI ENGINE v1', {
       version: DAY10_VERSION,
       model: AI_CONFIG.model,
-      confidenceThreshold: AI_CONFIG.confidenceThreshold,
-      apiKeyConfigured: !!apiKey,
-      configLoaded: !!AI_CONFIG.enterpriseConfig
+      proxyEndpoint: AI_CONFIG.proxyEndpoint
     });
+    await BackgroundUtils.loadConfig();
+    AI_CONFIG.modulesLoaded = true;
+    isInitialized = true;
+    BackgroundLogger.success('Day 10 AI Engine v1 initialization complete');
+    BackgroundLogger.info('Proxy-based security enabled - API key secured in backend');
   } catch (error) {
-    BackgroundLogger.error('❌ Initialization failed', {
-      error: error.message
-    });
+    BackgroundLogger.error('Initialization failed', { error: error.message });
   }
 })();
 
-BackgroundLogger.info('📦 Day 10 background.js module loaded', {
+BackgroundLogger.info('Day 10 background.js module loaded', {
   version: DAY10_VERSION,
-  model: AI_CONFIG.model
+  model: AI_CONFIG.model,
+  securityMode: 'PROXY_ENABLED'
 });

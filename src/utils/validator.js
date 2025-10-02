@@ -28,35 +28,35 @@ function autoCorrectFieldDay10(fieldName, value, fieldConfig) {
     const std = standardizeDateDay10(value);
     if (std) return { corrected: true, value: std, reason: 'DATE_STANDARDIZED' };
   }
-  
+
   if (fieldName === 'price' && typeof value === 'string') {
     const cleaned = value.replace(/,/g, '').trim();
     if (/^\$?\d+(\.\d{1,2})?$/.test(cleaned)) {
       return { corrected: true, value: cleaned, reason: 'PRICE_CLEANED' };
     }
   }
-  
+
   if ((fieldName === 'rating' || fieldName === 'reviews_rating') && typeof value === 'string') {
     const normalized = value.replace(/\s+/g, ' ').trim();
     if (/^(\d+(\.\d+)?\s*\/\s*5|\d+(\.\d+)?)$/.test(normalized)) {
       return { corrected: true, value: normalized, reason: 'RATING_NORMALIZED' };
     }
   }
-  
+
   if (typeof value === 'string') {
     const trimmed = value.trim();
     if (trimmed !== value && trimmed.length > 0) {
       return { corrected: true, value: trimmed, reason: 'STRING_TRIMMED' };
     }
   }
-  
+
   if (Array.isArray(value)) {
     const cleaned = value.filter(item => item && typeof item === 'string' && item.trim().length > 0);
     if (cleaned.length !== value.length && cleaned.length > 0) {
       return { corrected: true, value: cleaned, reason: 'ARRAY_CLEANED' };
     }
   }
-  
+
   return { corrected: false, value };
 }
 
@@ -68,7 +68,7 @@ function validateWithConfidenceDay10(extractedData, validationResult, config) {
     validationResult.metadata.confidenceWarning = 'NO_CONFIDENCE_SCORE';
     return validationResult;
   }
-  
+
   if (confidence < (config.confidenceThreshold || 50)) {
     validationResult.success = false;
     validationResult.metadata.confidenceDiscard = true;
@@ -87,7 +87,7 @@ function validateWithConfidenceDay10(extractedData, validationResult, config) {
     validationResult.metadata.confidenceScore = confidence;
     validationResult.metadata.confidenceValidated = true;
   }
-  
+
   return validationResult;
 }
 
@@ -165,7 +165,7 @@ const ValidatorManager = {
     const startTime = Date.now();
     const config = deepMerge(DEFAULT_VALIDATION_CONFIG, customConfig);
     enterpriseLogger('info', `Starting Day 10 validation for ${siteType}`, null, config);
-    
+
     const validationResult = {
       success: false,
       validatedData: { ...extractedData },
@@ -200,7 +200,7 @@ const ValidatorManager = {
         autoCorrected: 0
       }
     };
-    
+
     if (config.enableAutoCorrect) {
       Object.entries(extractedData).forEach(([field, value]) => {
         const fieldConfig = config.penaltyThresholds[field];
@@ -215,29 +215,29 @@ const ValidatorManager = {
         }
       });
     }
-    
+
     validationResult.metadata.maxPossiblePenalty = Object.values(config.penaltyThresholds).reduce((sum, fc) => sum + (fc.penaltyWeight || 0), 0);
     validationResult.metadata.rawAccuracy = this.calculateAccuracy(validationResult.validatedData);
     validationResult.metadata.weightedRawAccuracy = this.calculateWeightedAccuracy(validationResult.validatedData, config.penaltyThresholds);
-    
+
     const sanityResult = this.applySanityGuardrails(validationResult.validatedData, config.sanityGuardrails);
     validationResult.sanityGuardrails = sanityResult.failures;
     validationResult.metadata.sanityFailures = sanityResult.failures.length;
     validationResult.metadata.sanityRawAccuracy = sanityResult.accuracy;
-    
+
     sanityResult.failures.forEach(failure => {
       validationResult.validatedData[failure.field] = Array.isArray(validationResult.validatedData[failure.field]) ? [] : null;
     });
-    
+
     validationResult.metadata.requiredFieldsTotal = Object.values(config.penaltyThresholds).filter(fc => fc.required).length;
-    
+
     Object.entries(config.penaltyThresholds).forEach(([field, fieldConfig]) => {
       if (!validationResult.validatedData.hasOwnProperty(field)) return;
-      
+
       try {
         const value = validationResult.validatedData[field];
         const penalty = this.validateField(field, value, fieldConfig, siteType);
-        
+
         if (penalty) {
           validationResult.penalties.push(penalty);
           validationResult.penaltyScore += fieldConfig.penaltyWeight;
@@ -259,43 +259,43 @@ const ValidatorManager = {
         validationResult.weakFields.push(field);
       }
     });
-    
+
     validationResult.metadata.validatedAccuracy = this.calculateAccuracy(validationResult.validatedData);
     validationResult.metadata.weightedValidatedAccuracy = this.calculateWeightedAccuracy(validationResult.validatedData, config.penaltyThresholds);
     validationResult.metadata.sanityValidatedAccuracy = this.applySanityGuardrails(validationResult.validatedData, config.sanityGuardrails).accuracy;
     validationResult.normalizedPenaltyScore = validationResult.metadata.maxPossiblePenalty > 0 ? validationResult.penaltyScore / validationResult.metadata.maxPossiblePenalty : 0;
     validationResult.metadata.penaltyImpact = validationResult.metadata.weightedRawAccuracy > 0 ? ((validationResult.metadata.weightedRawAccuracy - validationResult.metadata.weightedValidatedAccuracy) / validationResult.metadata.weightedRawAccuracy) * 100 : 0;
     validationResult.businessRealismProof = validationResult.metadata.penaltyImpact > 0;
-    
+
     const confidenceValidated = validateWithConfidenceDay10(extractedData, validationResult, config);
     Object.assign(validationResult, confidenceValidated);
-    
+
     validationResult.success = validationResult.metadata.requiredFieldsPassed === validationResult.metadata.requiredFieldsTotal && validationResult.metadata.validFields > 0 && !validationResult.metadata.confidenceDiscard;
     validationResult.metadata.validationTime = Date.now() - startTime;
+
     this.logValidationResult(validationResult, config);
-    
     return validationResult;
   },
 
-    applySanityGuardrails(data, guardrailConfig) {
+  applySanityGuardrails(data, guardrailConfig) {
     if (!guardrailConfig.enabled) return { failures: [], accuracy: this.calculateAccuracy(data) };
-    
+
     const failures = [];
     let validFields = 0;
     let totalFields = 0;
-    
+
     Object.entries(guardrailConfig.rules).forEach(([field, rule]) => {
       if (!data.hasOwnProperty(field)) return;
       totalFields++;
       const value = data[field];
       let fieldValid = true;
-      
+
       try {
         if (rule.pattern && typeof value === 'string' && !rule.pattern.test(value)) {
           failures.push({ type: 'SANITY_PATTERN_FAILURE', field, value, rule: rule.description, pattern: rule.pattern.toString() });
           fieldValid = false;
         }
-        
+
         if (typeof value === 'string') {
           if (rule.minLength && value.length < rule.minLength) {
             failures.push({ type: 'SANITY_MIN_LENGTH_FAILURE', field, value, rule: rule.description, actual: value.length, minimum: rule.minLength });
@@ -306,7 +306,7 @@ const ValidatorManager = {
             fieldValid = false;
           }
         }
-        
+
         if (Array.isArray(value)) {
           if (rule.minItems && value.length < rule.minItems) {
             failures.push({ type: 'SANITY_MIN_ITEMS_FAILURE', field, value, rule: rule.description, actual: value.length, minimum: rule.minItems });
@@ -320,14 +320,14 @@ const ValidatorManager = {
             }
           }
         }
-        
+
         if (fieldValid) validFields++;
       } catch (guardrailError) {
         enterpriseLogger('warn', `Sanity guardrail error for field ${field}:`, guardrailError.message);
         failures.push({ type: 'SANITY_RULE_ERROR', field, value, rule: rule.description, error: guardrailError.message });
       }
     });
-    
+
     return { failures, accuracy: totalFields > 0 ? Math.round((validFields / totalFields) * 100) : 100 };
   },
 
@@ -336,17 +336,17 @@ const ValidatorManager = {
       const aliasConfig = DEFAULT_VALIDATION_CONFIG.penaltyThresholds[config.aliasOf];
       if (aliasConfig) return this.validateField(fieldName, value, aliasConfig, siteType);
     }
-    
+
     if (config.required && (!value || (typeof value === 'string' && value.trim().length === 0))) {
       return { field: fieldName, reason: 'REQUIRED_FIELD_MISSING', original: value, expected: config.description, penaltyWeight: config.penaltyWeight, severity: config.severity || 'HIGH', siteType, timestamp: new Date().toISOString() };
     }
-    
+
     if (!value || (typeof value === 'string' && value.trim().length === 0)) return null;
-    
+
     if (config.minLength && typeof value === 'string' && value.trim().length < config.minLength) {
       return { field: fieldName, reason: 'INSUFFICIENT_LENGTH', original: value, expected: config.description, actual: value.trim().length, minimum: config.minLength, penaltyWeight: config.penaltyWeight, severity: config.severity || 'MEDIUM', siteType, timestamp: new Date().toISOString() };
     }
-    
+
     if (config.regex && typeof value === 'string') {
       try {
         if (!config.regex.test(value.trim())) {
@@ -357,14 +357,14 @@ const ValidatorManager = {
         return { field: fieldName, reason: 'REGEX_VALIDATION_ERROR', original: value, expected: config.description, error: regexError.message, penaltyWeight: config.penaltyWeight, severity: 'HIGH', siteType, timestamp: new Date().toISOString() };
       }
     }
-    
+
     if (config.minItems && Array.isArray(value)) {
       const validItems = value.filter(item => item && typeof item === 'string' && item.trim().length > 0);
       if (validItems.length < config.minItems) {
         return { field: fieldName, reason: 'INSUFFICIENT_ITEMS', original: value, expected: config.description, actual: validItems.length, minimum: config.minItems, penaltyWeight: config.penaltyWeight, severity: config.severity || 'MEDIUM', siteType, timestamp: new Date().toISOString() };
       }
     }
-    
+
     return null;
   },
 
@@ -411,7 +411,7 @@ const ValidatorManager = {
   calculateBusinessWeightedAccuracy(siteResults, customWeights = {}) {
     const weights = { ...DEFAULT_VALIDATION_CONFIG.businessWeights, ...customWeights };
     let weightedRawScore = 0, weightedValidatedScore = 0, totalWeight = 0, totalPenalties = 0;
-    
+
     siteResults.forEach(site => {
       const weight = weights[site.siteType] || weights.generic || 0.03;
       if (weight > 0 && site.rawAccuracy !== undefined && site.validatedAccuracy !== undefined) {
@@ -423,11 +423,11 @@ const ValidatorManager = {
         totalPenalties += site.penaltyCount || 0;
       }
     });
-    
+
     const rawBusinessAccuracy = totalWeight > 0 ? (weightedRawScore / totalWeight) : 0;
     const validatedBusinessAccuracy = totalWeight > 0 ? (weightedValidatedScore / totalWeight) : 0;
     const overallPenaltyImpact = rawBusinessAccuracy > 0 ? ((rawBusinessAccuracy - validatedBusinessAccuracy) / rawBusinessAccuracy) * 100 : 0;
-    
+
     return { rawBusinessAccuracy, validatedBusinessAccuracy, overallPenaltyImpact, totalWeight, totalPenalties, coreAccuracy: this.calculateCoreAccuracy(siteResults), wildcardAccuracy: this.calculateWildcardAccuracy(siteResults), businessRealismProof: overallPenaltyImpact > 0 ? 'TEMPERING_RESULTS' : 'NO_INFLATION', day10Enhanced: true };
   },
 
@@ -446,14 +446,14 @@ const ValidatorManager = {
   analyzePenaltyImpact(rawAccuracy, validatedAccuracy) {
     const penaltyImpact = rawAccuracy > 0 ? ((rawAccuracy - validatedAccuracy) / rawAccuracy) * 100 : 0;
     let interpretation = 'NO_PENALTY', businessValue = 'UNKNOWN', recommendation = 'MAINTAIN_CURRENT';
-    
+
     if (penaltyImpact > 20) { interpretation = 'EXCESSIVE_TEMPERING'; businessValue = 'TOO_STRICT_STANDARDS'; recommendation = 'RELAX_VALIDATION_SLIGHTLY'; }
     else if (penaltyImpact > 15) { interpretation = 'HIGH_TEMPERING'; businessValue = 'EXCELLENT_STANDARDS'; recommendation = 'MAINTAIN_CURRENT_VALIDATION'; }
     else if (penaltyImpact > 8) { interpretation = 'OPTIMAL_TEMPERING'; businessValue = 'GOOD_STANDARDS'; recommendation = 'CONTINUE_CURRENT_APPROACH'; }
     else if (penaltyImpact > 3) { interpretation = 'LIGHT_TEMPERING'; businessValue = 'BASIC_STANDARDS'; recommendation = 'CONSIDER_STRICTER_VALIDATION'; }
     else if (penaltyImpact > 0) { interpretation = 'MINIMAL_TEMPERING'; businessValue = 'WEAK_STANDARDS'; recommendation = 'STRENGTHEN_VALIDATION'; }
     else { interpretation = 'NO_PENALTY'; businessValue = 'POSSIBLE_INFLATION'; recommendation = 'REVIEW_VALIDATION_LOGIC'; }
-    
+
     return { penaltyImpactPercent: penaltyImpact.toFixed(1), interpretation, businessValue, recommendation, businessRealismProof: penaltyImpact > 0 ? 'TEMPERING_RESULTS' : 'NO_INFLATION', qualityAssurance: penaltyImpact >= 8 && penaltyImpact <= 15 ? 'OPTIMAL_RANGE' : 'SUBOPTIMAL_RANGE' };
   },
 
@@ -461,7 +461,7 @@ const ValidatorManager = {
     const progressMade = currentAccuracy - previousAccuracy;
     const progressNeeded = Math.max(0, targetAccuracy - currentAccuracy);
     let trajectory = 'UNKNOWN', recommendation = 'CONTINUE_CURRENT_APPROACH', urgency = 'NORMAL';
-    
+
     if (currentAccuracy >= targetAccuracy) { trajectory = 'TARGET_ACHIEVED'; recommendation = 'MAINTAIN_QUALITY_STANDARDS'; urgency = 'LOW'; }
     else if (daysRemaining <= 0) { trajectory = 'TARGET_MISSED'; recommendation = 'EXTEND_TIMELINE_OR_LOWER_TARGET'; urgency = 'HIGH'; }
     else {
@@ -471,13 +471,12 @@ const ValidatorManager = {
       else if (progressMade >= requiredDailyProgress * 0.7) { trajectory = 'NEEDS_SLIGHT_ACCELERATION'; recommendation = 'INCREASE_AI_OPTIMIZATION'; urgency = 'MEDIUM'; }
       else { trajectory = 'NEEDS_SIGNIFICANT_ACCELERATION'; recommendation = 'MAJOR_IMPROVEMENTS_REQUIRED'; urgency = 'HIGH'; }
     }
-    
+
     return { trajectory, recommendation, urgency, progressMade: progressMade.toFixed(1), progressNeeded: progressNeeded.toFixed(1), requiredDailyProgress: Math.max(0, progressNeeded / daysRemaining).toFixed(1), currentProgressRate: progressMade.toFixed(1), projectedFinalAccuracy: Math.min(100, currentAccuracy + (progressMade * daysRemaining)).toFixed(1), onTrack: progressMade >= (progressNeeded / daysRemaining) * 0.8 };
   },
 
   compilePenaltyBreakdown(validationResults) {
     const breakdown = {}, fieldBreakdown = {};
-    
     validationResults.forEach(result => {
       if (result.penalties) {
         result.penalties.forEach(penalty => {
@@ -487,7 +486,7 @@ const ValidatorManager = {
           if (!breakdown[penalty.reason].fields.includes(penalty.field)) breakdown[penalty.reason].fields.push(penalty.field);
           if (penalty.severity && !breakdown[penalty.reason].severities.includes(penalty.severity)) breakdown[penalty.reason].severities.push(penalty.severity);
           if (penalty.siteType && !breakdown[penalty.reason].siteTypes.includes(penalty.siteType)) breakdown[penalty.reason].siteTypes.push(penalty.siteType);
-          
+
           if (!fieldBreakdown[penalty.field]) fieldBreakdown[penalty.field] = { totalPenalties: 0, reasons: {}, siteTypes: [], totalWeight: 0 };
           fieldBreakdown[penalty.field].totalPenalties++;
           fieldBreakdown[penalty.field].totalWeight += penalty.penaltyWeight || 0;
@@ -496,7 +495,6 @@ const ValidatorManager = {
         });
       }
     });
-    
     return { breakdown, fieldBreakdown };
   },
 
@@ -505,9 +503,8 @@ const ValidatorManager = {
     const penaltyAnalysis = this.analyzePenaltyImpact(businessMetrics.rawBusinessAccuracy, businessMetrics.validatedBusinessAccuracy);
     const trajectoryAnalysis = this.analyzeTrajectory(previousAccuracy, businessMetrics.validatedBusinessAccuracy);
     const penaltyBreakdowns = this.compilePenaltyBreakdown(validationResults);
-    
     const allWeakFields = validationResults.reduce((acc, result) => { if (result.weakFields) result.weakFields.forEach(field => { if (!acc.includes(field)) acc.push(field); }); return acc; }, []);
-    
+
     const report = {
       day10Version: DAY10_VERSION,
       timestamp: new Date().toISOString(),
@@ -520,26 +517,24 @@ const ValidatorManager = {
       recommendations: this.generateRecommendations(penaltyAnalysis, trajectoryAnalysis),
       validationResults: logLevel === 'detailed' ? validationResults : undefined
     };
-    
+
     if (logLevel !== 'silent') {
       enterpriseLogger('info', `Day 10 validation report: ${report.executiveSummary.currentValidatedAccuracy} accuracy, ${report.validationSummary.totalPenalties} penalties, ${report.validationSummary.autoCorrected} auto-corrected, ${report.executiveSummary.trajectory}`);
     }
-    
     return report;
   },
 
   generateRecommendations(penaltyAnalysis, trajectoryAnalysis) {
     const recommendations = [];
-    
     if (penaltyAnalysis.qualityAssurance === 'OPTIMAL_RANGE') recommendations.push({ type: 'VALIDATION', priority: 'LOW', message: 'Penalty impact is in optimal range (8-15%). Maintain current validation standards.' });
     else if (parseFloat(penaltyAnalysis.penaltyImpactPercent) < 5) recommendations.push({ type: 'VALIDATION', priority: 'MEDIUM', message: 'Low penalty impact suggests validation may be too lenient. Consider stricter standards.' });
     else if (parseFloat(penaltyAnalysis.penaltyImpactPercent) > 20) recommendations.push({ type: 'VALIDATION', priority: 'HIGH', message: 'High penalty impact suggests validation may be too strict. Review penalty thresholds.' });
-    
+
     recommendations.push({ type: 'TRAJECTORY', priority: trajectoryAnalysis.urgency, message: `${trajectoryAnalysis.recommendation} - Currently ${trajectoryAnalysis.trajectory.replace(/_/g, ' ').toLowerCase()}.` });
-    
+
     if (trajectoryAnalysis.onTrack) recommendations.push({ type: 'BUSINESS', priority: 'LOW', message: 'On track to reach target accuracy. Continue current approach.' });
     else recommendations.push({ type: 'BUSINESS', priority: 'HIGH', message: 'Behind trajectory for target accuracy. Consider AI optimization and validation review.' });
-    
+
     return recommendations;
   }
 };

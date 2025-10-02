@@ -9,8 +9,8 @@ console.log('[AI-Extractor] Day 10 AI ENGINE v1 loading - 80% Accuracy Target wi
 
 const DAY10_CONFIG = {
   version: 'day10-ai-engine-v1-gemini-2.0-fix',
-  model: 'gemini-2.0-flash-lite', // ✅ CRITICAL FIX: Updated to Gemini 2.0
-  apiVersion: 'v1', // ✅ CRITICAL FIX: Changed from v1beta to v1
+  model: 'gemini-2.0-flash-lite',
+  apiVersion: 'v1',
   maxRetries: 3,
   confidenceThreshold: 50,
   retryBackoffMs: 1000,
@@ -33,7 +33,6 @@ const DAY10_CONFIG = {
 // Day 10: PII Stripping
 function stripPIIDay10(text) {
   if (!text || typeof text !== 'string') return text;
-
   return text
     .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL_REDACTED]')
     .replace(/(\+?1[-.]?)?\(?([0-9]{3})\)?[-.]?([0-9]{3})[-.]?([0-9]{4})/g, '[PHONE_REDACTED]')
@@ -44,15 +43,12 @@ function stripPIIDay10(text) {
 // Day 10: Date Standardization
 function standardizeDateDay10(dateString) {
   if (!dateString || typeof dateString !== 'string') return null;
-
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return null;
-
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-
     return `${year}-${month}-${day}`;
   } catch (error) {
     return null;
@@ -68,7 +64,6 @@ function enforceTokenLimitsDay10(text, maxLength) {
 // Day 10: Confidence Validation
 function validateConfidenceDay10(extractedData) {
   const confidence = extractedData?.confidence_score;
-
   if (!confidence || typeof confidence !== 'number') {
     console.warn('[AI-Extractor] No confidence score found, defaulting to 50');
     return {
@@ -117,7 +112,6 @@ function postProcessDay10(extractedData) {
   if (DAY10_CONFIG.enablePIIStripping) {
     Object.keys(processed).forEach(key => {
       const value = processed[key];
-
       if (typeof value === 'string') {
         processed[key] = stripPIIDay10(value);
       } else if (Array.isArray(value)) {
@@ -162,7 +156,6 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
     timeout = 30000
   } = options;
 
-  // ✅ CRITICAL FIX: Updated API endpoint to v1 with Gemini 2.0 model
   const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${DAY10_CONFIG.model}:generateContent?key=${apiKey}`;
 
   const requestBody = {
@@ -226,10 +219,8 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
           DAY10_CONFIG.retryBackoffMs * Math.pow(2, retryCount),
           DAY10_CONFIG.maxBackoffMs
         );
-
         console.warn(`[AI-Extractor] Retrying in ${backoffDelay}ms...`);
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
-
         return extractWithGeminiDay10(prompt, apiKey, {
           ...options,
           retryCount: retryCount + 1
@@ -298,22 +289,18 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
   } catch (error) {
     if (error.name === 'AbortError') {
       console.error('[AI-Extractor] Gemini API timeout', { timeout });
-
       if (retryCount < maxRetries - 1) {
         const backoffDelay = Math.min(
           DAY10_CONFIG.retryBackoffMs * Math.pow(2, retryCount),
           DAY10_CONFIG.maxBackoffMs
         );
-
         console.warn(`[AI-Extractor] Retrying after timeout in ${backoffDelay}ms...`);
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
-
         return extractWithGeminiDay10(prompt, apiKey, {
           ...options,
           retryCount: retryCount + 1
         });
       }
-
       throw new Error('API timeout after retries');
     }
 
@@ -322,7 +309,6 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
       retryCount: retryCount,
       model: DAY10_CONFIG.model
     });
-
     throw error;
   }
 }
@@ -331,7 +317,6 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
 // EXPORTS
 // ============================================================================
 
-// Make functions available globally for Chrome extension
 if (typeof window !== 'undefined') {
   window.AIExtractor = {
     extractWithGeminiDay10,
