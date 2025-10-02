@@ -1,55 +1,43 @@
 {
   "manifest_version": 3,
-  "name": "Web Weaver Lightning - Day 10 AI Engine v1",
-  "version": "10.0.0",
-  "description": "Enterprise-grade web content extraction with Day 10 AI Engine (80% Accuracy Target) - Secure Backend Architecture",
+  "name": "Web Weaver Lightning",
+  "version": "1.0.0",
+  "description": "AI-powered web data extraction with 80% accuracy target",
   "permissions": [
     "activeTab",
     "storage",
-    "scripting",
-    "tabs",
-    "alarms",
-    "contextMenus"
+    "scripting"
   ],
   "host_permissions": [
-    "https://web-weaver-proxy.vercel.app/*",
-    "https://www.bloomberg.com/*",
-    "https://www.amazon.com/*",
-    "https://www.allrecipes.com/*",
-    "https://en.wikipedia.org/*",
-    "https://medium.com/*"
+    "http://*/*",
+    "https://*/*"
   ],
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "run_at": "document_idle",
-      "all_frames": false
+      "run_at": "document_idle"
     }
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Day 10 AI Engine - Web Weaver Lightning (Secure Backend)",
     "default_icon": {
       "16": "icons/icon16.png",
-      "32": "icons/icon32.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
   },
   "icons": {
     "16": "icons/icon16.png",
-    "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
   "web_accessible_resources": [
     {
-      "resources": ["icons/*.png"],
+      "resources": ["prompts/*", "config/*"],
       "matches": ["<all_urls>"]
     }
   ]

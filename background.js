@@ -1,556 +1,444 @@
-// Day 10: ULTIMATE ENTERPRISE AI ENGINE v1 - Proxy Architecture with Smart Tab Management
-// /background.js - DAY 10 ENHANCED (Service Worker Compatible) - Gemini 2.0 Proxy Fix
+// Web Weaver Lightning - Background Service Worker
+// Days 4-10: AI Integration, Validation, Analytics
+// The intelligent core that processes extraction with Gemini AI
 
-console.log('[Background] Day 10 AI ENGINE v1 loading - Secure Proxy Architecture with 80% Accuracy Target');
+console.log('[WebWeaver-BG] Service worker loading...');
 
-const DAY10_VERSION = 'day10-ai-engine-v1-proxy-secure';
-const DAY8_VERSION = 'day8-day9-ultimate-enterprise-champion';
+// ============================================================================
+// CONFIGURATION (Day 10)
+// ============================================================================
 
-let isInitialized = false;
-
-let AI_CONFIG = {
-  model: 'gemini-2.0-flash-lite',
-  maxTokens: 3000,
-  temperature: 0.1,
-  aiTimeout: 30000,
-  tabTimeout: 6000,
-  maxConcurrentTabs: 8,
-  day10Version: DAY10_VERSION,
-  day8Version: DAY8_VERSION,
-  confidenceThreshold: 50,
-  enableAutoCorrect: true,
-  enablePIIStripping: true,
-  dateStandardization: 'YYYY-MM-DD',
-  modulesLoaded: false,
-  enterpriseConfig: null,
-  configVersion: null,
-  useAIExtraction: true,
-  fallbackToDom: true,
-  intelligentParsing: true,
-  contextAwareness: true,
-  realTimeAnalytics: true,
-  liveExtractionTesting: true,
-  dynamicPerformanceTracking: true,
-  smartTabManagement: true,
-  autoCloseTestTabs: true,
-  tabCleanupDelay: 2000,
-  maxTabLifetime: 30000,
-  proxyEndpoint: 'https://web-weaver-proxy.vercel.app/api/gemini-proxy',
-  logging: {
-    throttleModuleLoads: false,
-    maxLogsPerSecond: 15,
-    lastLogTime: 0,
-    timestampCache: null,
-    timestampCacheExpiry: 100
-  },
-  cache: {
-    schemaMappings: new Map(),
-    siteConfigs: new Map(),
-    configTimestamp: null,
-    configExpiry: 3600000,
-    persistenceQueue: new Set(),
-    extractionResults: new Map(),
-    tabRegistry: new Map()
-  }
+const CONFIG = {
+  version: '1.0.0-day10',
+  geminiModel: 'gemini-2.0-flash-exp',
+  apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
+  confidenceThreshold: 80, // Day 10: 80% accuracy target
+  maxRetries: 2,
+  timeout: 30000
 };
 
-const BackgroundLogger = (() => {
-  let lastLogTime = 0;
-  let timestampCache = null;
-  const timestampCacheExpiry = AI_CONFIG.logging.timestampCacheExpiry;
+// ============================================================================
+// STATE MANAGEMENT
+// ============================================================================
 
-  function getTimestamp() {
-    const now = Date.now();
-    if (timestampCache && now - lastLogTime < timestampCacheExpiry) return timestampCache;
-    timestampCache = new Date().toISOString();
-    lastLogTime = now;
-    return timestampCache;
-  }
+let isReady = false;
+let aiEnabled = false; // Toggle for AI on/off
 
-  function shouldLog(level) {
-    if (AI_CONFIG.logging.throttleModuleLoads && level === 'MODULE_LOAD') return false;
-    return Date.now() - lastLogTime > 1000 / AI_CONFIG.logging.maxLogsPerSecond;
-  }
+// Analytics Storage (Day 9-10)
+const analytics = {
+  totalExtractions: 0,
+  basicExtractions: 0,
+  aiExtractions: 0,
+  successfulAI: 0,
+  failedAI: 0,
+  totalConfidence: 0,
+  perSite: {} // Track accuracy per domain
+};
 
-  function log(type, msg, data) {
-    if (!shouldLog(type)) return;
-    const ts = getTimestamp();
-    const fmt = `[${ts}] [Background-Day10] [${type}] ${msg}`;
-    if (data) {
-      if (type === 'ERROR') console.error(fmt, data);
-      else if (type === 'WARN') console.warn(fmt, data);
-      else console.log(fmt, data);
-    } else {
-      console.log(fmt);
-    }
-  }
+// ============================================================================
+// API KEY MANAGEMENT
+// ============================================================================
 
-  return {
-    info: (msg, data) => log('INFO', msg, data),
-    success: (msg, data) => log('SUCCESS', msg, data),
-    warn: (msg, data) => log('WARN', msg, data),
-    error: (msg, data) => log('ERROR', msg, data),
-    debug: (msg, data) => log('DEBUG', msg, data)
-  };
-})();
-
-function standardizeDateDay10(dateString) {
-  if (!dateString || typeof dateString !== 'string') return null;
+async function getApiKey() {
   try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  } catch {
-    return dateString;
-  }
-}
-
-function stripPIIDay10(text) {
-  if (!text || typeof text !== 'string') return text;
-  text = text.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[EMAIL_REDACTED]');
-  text = text.replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, '[PHONE_REDACTED]');
-  text = text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, '[SSN_REDACTED]');
-  text = text.replace(/\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/g, '[CARD_REDACTED]');
-  return text;
-}
-
-function postProcessDay10(data) {
-  if (!data || typeof data !== 'object') return data;
-  BackgroundLogger.debug('[AI] Day 10 post-processing...');
-  let processed = Object.assign({}, data);
-
-  if (processed.publication_date) {
-    processed.publication_date = standardizeDateDay10(processed.publication_date);
-  }
-
-  if (AI_CONFIG.enablePIIStripping) {
-    for (const key in processed) {
-      if (typeof processed[key] === 'string') {
-        processed[key] = stripPIIDay10(processed[key]);
-      }
-    }
-  }
-
-  if (processed.title) processed.title = processed.title.substring(0, 200);
-  if (processed.description) processed.description = processed.description.substring(0, 1000);
-  if (processed.main_content_summary) processed.main_content_summary = processed.main_content_summary.substring(0, 2000);
-  if (Array.isArray(processed.ingredients)) processed.ingredients = processed.ingredients.slice(0, 50);
-  if (Array.isArray(processed.instructions)) processed.instructions = processed.instructions.slice(0, 30);
-
-  return processed;
-}
-
-function validateConfidenceDay10(extractedData) {
-  const confidence = extractedData && extractedData.confidence_score;
-  if (!confidence || typeof confidence !== 'number') {
-    return { valid: true, confidence: 50, warning: 'NO_CONFIDENCE_SCORE' };
-  }
-  if (confidence < AI_CONFIG.confidenceThreshold) {
-    return { valid: false, confidence: confidence, reason: 'CONFIDENCE_TOO_LOW', autoDiscard: true };
-  }
-  return { valid: true, confidence: confidence };
-}
-
-async function callGeminiAPIDay10(prompt, options) {
-  if (!options) options = {};
-  const PROXY_ENDPOINT = AI_CONFIG.proxyEndpoint;
-  const extensionId = chrome.runtime.id || 'temp-dev-mode-bypass';
-
-  BackgroundLogger.info('Day 10 Proxy Architecture Enabled');
-  BackgroundLogger.info(`Endpoint: ${PROXY_ENDPOINT}`);
-  BackgroundLogger.info(`Extension ID: ${extensionId}`);
-
-  const startTime = Date.now();
-
-  try {
-    const response = await fetch(PROXY_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-chrome-extension-id': extensionId
-      },
-      body: JSON.stringify({
-        prompt: prompt,
-        temperature: options.temperature || AI_CONFIG.temperature || 0.1,
-        maxTokens: options.maxTokens || AI_CONFIG.maxTokens || 3000
-      }),
-      signal: AbortSignal.timeout(AI_CONFIG.aiTimeout || 30000)
-    });
-
-    const responseTime = Date.now() - startTime;
-    BackgroundLogger.info(`[AI] Proxy response time: ${responseTime}ms`);
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      BackgroundLogger.error('[AI] Proxy error response', data);
-      throw new Error(data.message || data.error || `HTTP ${response.status}`);
-    }
-
-    if (!data.success) {
-      BackgroundLogger.error('[AI] Invalid proxy response', data);
-      throw new Error('Unexpected proxy response format');
-    }
-
-    const candidates = data.data && data.data.candidates;
-    if (!candidates || candidates.length === 0) {
-      throw new Error('No response from AI model');
-    }
-
-    const content = candidates[0].content.parts[0].text;
-    if (!content) {
-      throw new Error('Invalid AI response structure');
-    }
-
-    BackgroundLogger.success('[AI] Extraction successful via proxy');
-    BackgroundLogger.info(`[AI] Response length: ${content.length} characters`);
-
-    let parsedData;
-    try {
-      let cleanContent = content;
-      const codeBlockMarker = '```' + 'json';
-      const codeBlockEnd = '```';
-      if (cleanContent.indexOf(codeBlockMarker) !== -1) {
-        cleanContent = cleanContent.split(codeBlockMarker).join('');
-      }
-      if (cleanContent.indexOf(codeBlockEnd) !== -1) {
-        cleanContent = cleanContent.split(codeBlockEnd).join('');
-      }
-      cleanContent = cleanContent.trim();
-      parsedData = JSON.parse(cleanContent);
-    } catch (parseError) {
-      BackgroundLogger.error('[AI] JSON parse error', parseError);
-      throw new Error('AI returned non-JSON response');
-    }
-
-    const confidence = parsedData.confidence_score;
-    if (typeof confidence === 'number') {
-      BackgroundLogger.info(`[AI] Confidence score: ${confidence}%`);
-      if (confidence < 50) {
-        BackgroundLogger.warn('[AI] Low confidence extraction');
-        throw new Error('AI confidence too low - extraction unreliable');
-      }
-    } else {
-      BackgroundLogger.warn('[AI] No confidence score in response');
-    }
-
-    const processedData = postProcessDay10(parsedData);
-    BackgroundLogger.success('[AI] Post-processing complete');
-
-    return {
-      success: true,
-      data: processedData,
-      metadata: {
-        responseTime: responseTime,
-        model: (data.metadata && data.metadata.model) || 'gemini-2.0-flash-lite',
-        timestamp: (data.metadata && data.metadata.timestamp) || new Date().toISOString(),
-        confidence: confidence || 50,
-        proxyVersion: (data.metadata && data.metadata.version) || 'unknown',
-        day10Enhanced: true
-      }
-    };
+    const result = await chrome.storage.local.get(['geminiApiKey']);
+    return result.geminiApiKey || null;
   } catch (error) {
-    const responseTime = Date.now() - startTime;
-    BackgroundLogger.error(`[AI] Proxy call failed: ${error.message}`);
-    BackgroundLogger.error(`[AI] Time elapsed: ${responseTime}ms`);
-    if (error.name === 'AbortError') {
-      throw new Error('AI request timeout - try again');
-    }
-    if (error.message.indexOf('Failed to fetch') !== -1) {
-      throw new Error('Network error - check proxy endpoint');
-    }
-    throw new Error(`AI extraction failed: ${error.message}`);
+    console.error('[WebWeaver-BG] ❌ Failed to load API key:', error);
+    return null;
   }
 }
 
-class SmartTabManager {
-  constructor() {
-    this.openTabs = new Set();
-    this.tabCreationTimes = new Map();
-    this.tabCleanupTimeouts = new Map();
-    this.maxTabAge = AI_CONFIG.maxTabLifetime;
-  }
-
-  async createTab(url, options) {
-    if (!options) options = {};
-    try {
-      BackgroundLogger.info('Creating smart-managed tab', { url });
-      const tab = await chrome.tabs.create(Object.assign({ url, active: false }, options));
-      this.openTabs.add(tab.id);
-      this.tabCreationTimes.set(tab.id, Date.now());
-      if (AI_CONFIG.autoCloseTestTabs) {
-        const timeoutId = setTimeout(() => this.closeTab(tab.id, 'timeout'), this.maxTabAge);
-        this.tabCleanupTimeouts.set(tab.id, timeoutId);
-      }
-      BackgroundLogger.info('Tab created and registered', { tabId: tab.id, totalOpenTabs: this.openTabs.size });
-      return tab;
-    } catch (error) {
-      BackgroundLogger.error('Failed to create smart-managed tab', { error: error.message, url });
-      throw error;
+async function saveApiKey(apiKey) {
+  try {
+    if (!apiKey || apiKey.length < 20 || !apiKey.startsWith('AIza')) {
+      throw new Error('Invalid Gemini API key format');
     }
-  }
-
-  async closeTab(tabId, reason) {
-    if (!reason) reason = 'manual';
-    try {
-      if (!this.openTabs.has(tabId)) {
-        BackgroundLogger.warn('Attempted to close unregistered tab', { tabId });
-        return;
-      }
-      BackgroundLogger.info('Closing smart-managed tab', {
-        tabId,
-        reason,
-        ageMs: Date.now() - (this.tabCreationTimes.get(tabId) || Date.now())
-      });
-      const timeoutId = this.tabCleanupTimeouts.get(tabId);
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        this.tabCleanupTimeouts.delete(tabId);
-      }
-      try {
-        await chrome.tabs.remove(tabId);
-      } catch (tabError) {
-        BackgroundLogger.warn('Tab already closed or inaccessible', { tabId, error: tabError.message });
-      }
-      this.openTabs.delete(tabId);
-      this.tabCreationTimes.delete(tabId);
-      BackgroundLogger.info('Tab closed and unregistered', { tabId, remainingTabs: this.openTabs.size });
-    } catch (error) {
-      BackgroundLogger.error('Failed to close smart-managed tab', { error: error.message, tabId });
-    }
-  }
-
-  async closeAllTabs(reason) {
-    if (!reason) reason = 'cleanup';
-    BackgroundLogger.info('Closing all smart-managed tabs', { count: this.openTabs.size, reason });
-    const tabIds = Array.from(this.openTabs);
-    for (const tabId of tabIds) {
-      await this.closeTab(tabId, reason);
-      await new Promise(r => setTimeout(r, 100));
-    }
-    BackgroundLogger.info('All smart-managed tabs closed');
-  }
-
-  getOpenTabsInfo() {
-    return {
-      count: this.openTabs.size,
-      tabs: Array.from(this.openTabs).map(tabId => ({
-        tabId,
-        age: Date.now() - (this.tabCreationTimes.get(tabId) || Date.now()),
-        hasCleanupTimeout: this.tabCleanupTimeouts.has(tabId)
-      }))
-    };
+    await chrome.storage.local.set({ geminiApiKey: apiKey });
+    console.log('[WebWeaver-BG] ✅ API key saved');
+    return { success: true };
+  } catch (error) {
+    console.error('[WebWeaver-BG] ❌ Save failed:', error);
+    return { success: false, error: error.message };
   }
 }
 
-const tabManager = new SmartTabManager();
+async function getAiEnabled() {
+  const result = await chrome.storage.local.get(['aiEnabled']);
+  return result.aiEnabled !== false; // Default true
+}
 
-const BackgroundUtils = {
-  async loadConfig() {
-    try {
-      BackgroundLogger.info('Loading enterprise configuration');
-      const response = await fetch(chrome.runtime.getURL('config/enterprise-sites.json'));
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const config = await response.json();
-      AI_CONFIG.enterpriseConfig = config;
-      AI_CONFIG.configVersion = config.version || 'unknown';
-      AI_CONFIG.cache.configTimestamp = Date.now();
-      BackgroundLogger.success('Enterprise config loaded', {
-        version: AI_CONFIG.configVersion,
-        sitesCount: (config.sites && config.sites.length) || 0
-      });
-      return config;
-    } catch (error) {
-      BackgroundLogger.error('Failed to load config', { error: error.message });
-      return null;
-    }
-  },
+async function setAiEnabled(enabled) {
+  await chrome.storage.local.set({ aiEnabled: enabled });
+  aiEnabled = enabled;
+  console.log(`[WebWeaver-BG] AI ${enabled ? 'ENABLED' : 'DISABLED'}`);
+}
 
-  async getSystemStatus() {
-    return {
-      version: DAY10_VERSION,
-      modulesLoaded: AI_CONFIG.modulesLoaded,
-      enterpriseConfig: {
-        loaded: !!AI_CONFIG.enterpriseConfig,
-        version: AI_CONFIG.configVersion
-      },
-      day10Features: {
-        confidenceThreshold: AI_CONFIG.confidenceThreshold,
-        proxyEnabled: true,
-        proxyEndpoint: AI_CONFIG.proxyEndpoint
-      },
-      initialized: isInitialized
-    };
-  }
-};
+// ============================================================================
+// WEBSITE TYPE DETECTION (Day 4-6: First AI Call)
+// ============================================================================
 
-class AnalyticsEngine {
-  constructor() {
-    this.metrics = {
-      totalExtractions: 0,
-      successfulExtractions: 0,
-      failedExtractions: 0,
-      autoDiscards: 0,
-      averageConfidence: 0,
-      averageAccuracy: 0,
-      performanceByType: {},
-      day10Extractions: 0
-    };
-  }
+async function detectWebsiteType(basicData) {
+  const apiKey = await getApiKey();
+  if (!apiKey) throw new Error('No API key configured');
+  
+  const detectionPrompt = `You are a website classifier. Analyze this data and return ONLY a JSON object with this exact structure:
+{
+  "type": "ecommerce|news|recipe|wiki|blog|other",
+  "confidence": 0.0-1.0
+}
 
-  recordExtraction(result) {
-    this.metrics.totalExtractions++;
-    this.metrics.day10Extractions++;
-    if (result.success) {
-      this.metrics.successfulExtractions++;
-      const confidence = (result.metadata && result.metadata.confidence) || 50;
-      this.metrics.averageConfidence =
-        (this.metrics.averageConfidence * (this.metrics.successfulExtractions - 1) + confidence) /
-        this.metrics.successfulExtractions;
-    } else {
-      this.metrics.failedExtractions++;
-      if (result.reason === 'LOW_CONFIDENCE') {
-        this.metrics.autoDiscards++;
+Website data:
+URL: ${basicData.url}
+Title: ${basicData.title}
+Description: ${basicData.description || 'None'}
+Sample text: ${basicData.mainText.substring(0, 500)}
+
+Return ONLY the JSON object, no markdown, no explanation.`;
+
+  const url = `${CONFIG.apiEndpoint}/${CONFIG.geminiModel}:generateContent?key=${apiKey}`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: detectionPrompt }] }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 100
       }
-    }
-    BackgroundLogger.debug('Day 10 analytics updated', {
-      totalExtractions: this.metrics.totalExtractions,
-      successRate: `${(this.metrics.successfulExtractions / this.metrics.totalExtractions * 100).toFixed(1)}%`,
-      avgConfidence: `${this.metrics.averageConfidence.toFixed(1)}%`
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Gemini API error: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  
+  if (!content) throw new Error('No response from Gemini');
+  
+  // Parse JSON
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('Invalid JSON response');
+  
+  return JSON.parse(jsonMatch[0]);
+}
+
+// ============================================================================
+// DYNAMIC PROMPT GENERATION (Day 6: Second AI Call)
+// ============================================================================
+
+async function generateCustomPrompt(websiteType, basicData) {
+  const apiKey = await getApiKey();
+  
+  const metaPrompt = `You are an expert prompt engineer. Create a data extraction prompt for a ${websiteType} website.
+
+The prompt should:
+1. Extract ALL relevant fields for a ${websiteType} website
+2. Return valid JSON with field names as keys
+3. Include a confidence_score (0-100) field
+4. Handle missing data gracefully (use null)
+
+Website context:
+- URL: ${basicData.url}
+- Title: ${basicData.title}
+
+Return ONLY the extraction prompt as plain text, no JSON wrapper.`;
+
+  const url = `${CONFIG.apiEndpoint}/${CONFIG.geminiModel}:generateContent?key=${apiKey}`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: metaPrompt }] }],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 500
+      }
+    })
+  });
+  
+  if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
+  
+  const data = await response.json();
+  const customPrompt = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  
+  if (!customPrompt) throw new Error('Failed to generate custom prompt');
+  
+  return customPrompt;
+}
+
+// ============================================================================
+// AI EXTRACTION (Day 7: Third AI Call with Custom Prompt)
+// ============================================================================
+
+async function extractWithAI(customPrompt, basicData) {
+  const apiKey = await getApiKey();
+  
+  const fullPrompt = `${customPrompt}
+
+Page data to extract from:
+URL: ${basicData.url}
+Title: ${basicData.title}
+Description: ${basicData.description || 'None'}
+Main content: ${basicData.mainText.substring(0, 3000)}
+${basicData.price ? 'Price: ' + basicData.price : ''}
+${basicData.author ? 'Author: ' + basicData.author : ''}
+
+Return ONLY valid JSON, no markdown, no explanation.`;
+
+  const url = `${CONFIG.apiEndpoint}/${CONFIG.geminiModel}:generateContent?key=${apiKey}`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: fullPrompt }] }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 2048
+      }
+    })
+  });
+  
+  if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
+  
+  const data = await response.json();
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  
+  if (!content) throw new Error('No extraction result');
+  
+  // Parse JSON
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('Invalid JSON response');
+  
+  return JSON.parse(jsonMatch[0]);
+}
+
+// ============================================================================
+// MAIN EXTRACTION ORCHESTRATOR (Day 10)
+// ============================================================================
+
+async function performExtraction(tabId, useAI) {
+  console.log(`[WebWeaver-BG] 🎯 Starting extraction (AI: ${useAI ? 'ON' : 'OFF'})`);
+  
+  analytics.totalExtractions++;
+  
+  try {
+    // Step 1: Get basic data from content script
+    const basicResponse = await chrome.tabs.sendMessage(tabId, { 
+      action: 'extractBasic' 
     });
-  }
-
-  getAnalytics() {
-    return {
-      businessMetrics: {
-        totalExtractions: this.metrics.totalExtractions,
-        successfulExtractions: this.metrics.successfulExtractions,
-        failedExtractions: this.metrics.failedExtractions,
-        successRate: this.metrics.totalExtractions > 0
-          ? (this.metrics.successfulExtractions / this.metrics.totalExtractions * 100)
-          : 0,
-        averageConfidence: this.metrics.averageConfidence
-      },
-      day10Status: {
-        confidenceAverage: this.metrics.averageConfidence,
-        autoDiscards: this.metrics.autoDiscards,
-        totalExtractions: this.metrics.day10Extractions
+    
+    if (!basicResponse || !basicResponse.success) {
+      throw new Error('Failed to extract basic data from page');
+    }
+    
+    const basicData = basicResponse.data;
+    const domain = basicData.domain;
+    
+    console.log(`[WebWeaver-BG] ✅ Basic data extracted from: ${domain}`);
+    
+    // If AI disabled, return basic data
+    if (!useAI) {
+      analytics.basicExtractions++;
+      updateSiteStats(domain, true, 0, 'basic');
+      
+      return {
+        success: true,
+        data: {
+          ...basicData,
+          _meta: {
+            ...basicData._meta,
+            aiEnhanced: false
+          }
+        }
+      };
+    }
+    
+    // Step 2: AI Enhancement (3-step process)
+    analytics.aiExtractions++;
+    
+    // 2a: Detect website type
+    console.log('[WebWeaver-BG] 🔍 Detecting website type...');
+    const typeDetection = await detectWebsiteType(basicData);
+    console.log(`[WebWeaver-BG] ✅ Type detected: ${typeDetection.type} (${typeDetection.confidence})`);
+    
+    // 2b: Generate custom prompt
+    console.log('[WebWeaver-BG] 📝 Generating custom extraction prompt...');
+    const customPrompt = await generateCustomPrompt(typeDetection.type, basicData);
+    console.log('[WebWeaver-BG] ✅ Custom prompt generated');
+    
+    // 2c: Extract with custom prompt
+    console.log('[WebWeaver-BG] 🤖 Extracting with AI...');
+    const aiData = await extractWithAI(customPrompt, basicData);
+    console.log('[WebWeaver-BG] ✅ AI extraction complete');
+    
+    // Step 3: Merge and validate
+    const confidence = aiData.confidence_score || 50;
+    
+    const finalData = {
+      ...basicData,
+      ...aiData,
+      _meta: {
+        extractedAt: new Date().toISOString(),
+        version: CONFIG.version,
+        method: 'ai',
+        aiEnhanced: true,
+        websiteType: typeDetection.type,
+        confidence: confidence,
+        url: basicData.url,
+        domain: domain
       }
     };
-  }
-
-  reset() {
-    this.metrics = {
-      totalExtractions: 0,
-      successfulExtractions: 0,
-      failedExtractions: 0,
-      autoDiscards: 0,
-      averageConfidence: 0,
-      averageAccuracy: 0,
-      performanceByType: {},
-      day10Extractions: 0
-    };
-    BackgroundLogger.info('Day 10 analytics reset');
+    
+    // Step 4: Update analytics (Day 10)
+    if (confidence >= CONFIG.confidenceThreshold) {
+      analytics.successfulAI++;
+      analytics.totalConfidence += confidence;
+      updateSiteStats(domain, true, confidence, 'ai');
+      console.log(`[WebWeaver-BG] ✅ HIGH CONFIDENCE: ${confidence}%`);
+    } else {
+      analytics.failedAI++;
+      updateSiteStats(domain, false, confidence, 'ai');
+      console.log(`[WebWeaver-BG] ⚠️ LOW CONFIDENCE: ${confidence}%`);
+    }
+    
+    return { success: true, data: finalData };
+    
+  } catch (error) {
+    console.error('[WebWeaver-BG] ❌ Extraction failed:', error);
+    analytics.failedAI++;
+    return { success: false, error: error.message };
   }
 }
 
-const analyticsEngine = new AnalyticsEngine();
+// ============================================================================
+// ANALYTICS (Day 9-10)
+// ============================================================================
+
+function updateSiteStats(domain, success, confidence, method) {
+  if (!analytics.perSite[domain]) {
+    analytics.perSite[domain] = {
+      total: 0,
+      successful: 0,
+      failed: 0,
+      avgConfidence: 0,
+      method: method
+    };
+  }
+  
+  const site = analytics.perSite[domain];
+  site.total++;
+  
+  if (success) {
+    site.successful++;
+    site.avgConfidence = ((site.avgConfidence * (site.successful - 1)) + confidence) / site.successful;
+  } else {
+    site.failed++;
+  }
+}
+
+function getAnalytics() {
+  const avgConfidence = analytics.successfulAI > 0 
+    ? analytics.totalConfidence / analytics.successfulAI 
+    : 0;
+    
+  const successRate = analytics.aiExtractions > 0
+    ? (analytics.successfulAI / analytics.aiExtractions) * 100
+    : 0;
+  
+  return {
+    overall: {
+      total: analytics.totalExtractions,
+      basic: analytics.basicExtractions,
+      ai: analytics.aiExtractions,
+      avgConfidence: Math.round(avgConfidence),
+      successRate: Math.round(successRate),
+      passedThreshold: analytics.successfulAI,
+      failedThreshold: analytics.failedAI
+    },
+    perSite: analytics.perSite,
+    target: CONFIG.confidenceThreshold
+  };
+}
+
+// ============================================================================
+// MESSAGE HANDLER
+// ============================================================================
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('[WebWeaver-BG] 📨 Message:', request.action);
+  
   (async () => {
     try {
-      BackgroundLogger.info('Message received', { action: request.action, tabId: sender.tab && sender.tab.id });
-
       switch (request.action) {
-        case 'getSystemStatus':
-          try {
-            if (!isInitialized) {
-              sendResponse({
-                success: true,
-                status: {
-                  systemReady: false,
-                  apiKeyConfigured: false,
-                  enterpriseConfigLoaded: false,
-                  day10Enhanced: false,
-                  proxyEnabled: true,
-                  initializing: true
-                }
-              });
-              return;
-            }
-            const status = await BackgroundUtils.getSystemStatus();
-            sendResponse({
-              success: true,
-              status: {
-                systemReady: true,
-                apiKeyConfigured: true,
-                enterpriseConfigLoaded: status.enterpriseConfig.loaded,
-                day10Enhanced: true,
-                proxyEnabled: true,
-                version: status.version,
-                enterpriseConfig: status.enterpriseConfig,
-                day10Features: status.day10Features
-              }
-            });
-          } catch (error) {
-            BackgroundLogger.error('Error in getSystemStatus handler', { error: error.message });
-            sendResponse({
-              success: false,
-              error: error.message || 'Failed to get system status'
-            });
-          }
+        case 'saveApiKey':
+          const saveResult = await saveApiKey(request.apiKey);
+          sendResponse(saveResult);
           break;
-
+        
+        case 'getApiKey':
+          const apiKey = await getApiKey();
+          sendResponse({ success: true, hasKey: !!apiKey });
+          break;
+        
+        case 'setAiEnabled':
+          await setAiEnabled(request.enabled);
+          sendResponse({ success: true, enabled: request.enabled });
+          break;
+        
+        case 'getAiEnabled':
+          const enabled = await getAiEnabled();
+          sendResponse({ success: true, enabled: enabled });
+          break;
+        
+        case 'extract':
+          const useAI = request.useAI !== false; // Default true
+          const result = await performExtraction(request.tabId, useAI);
+          sendResponse(result);
+          break;
+        
         case 'getAnalytics':
-          sendResponse({ success: true, analytics: analyticsEngine.getAnalytics() });
+          const analyticsData = getAnalytics();
+          sendResponse({ success: true, data: analyticsData });
           break;
-
-        case 'cleanupTabs':
-          await tabManager.closeAllTabs('user_request');
-          sendResponse({ success: true, message: 'All managed tabs closed' });
+        
+        case 'ping':
+          sendResponse({ success: true, ready: isReady });
           break;
-
+        
         default:
-          BackgroundLogger.warn('Unknown action', { action: request.action });
           sendResponse({ success: false, error: 'Unknown action' });
-          break;
       }
     } catch (error) {
-      BackgroundLogger.error('Message handler error', {
-        action: request.action,
-        error: error.message
-      });
-      sendResponse({
-        success: false,
-        error: error.message || 'Unknown error'
-      });
+      console.error('[WebWeaver-BG] ❌ Error:', error);
+      sendResponse({ success: false, error: error.message });
     }
   })();
-  return true;
+  
+  return true; // Keep channel open
 });
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
 
 (async () => {
-  try {
-    BackgroundLogger.info('Initializing Day 10 AI ENGINE v1', {
-      version: DAY10_VERSION,
-      model: AI_CONFIG.model,
-      proxyEndpoint: AI_CONFIG.proxyEndpoint
-    });
-    await BackgroundUtils.loadConfig();
-    AI_CONFIG.modulesLoaded = true;
-    isInitialized = true;
-    BackgroundLogger.success('Day 10 AI Engine v1 initialization complete');
-    BackgroundLogger.info('Proxy-based security enabled - API key secured in backend');
-  } catch (error) {
-    BackgroundLogger.error('Initialization failed', { error: error.message });
-  }
+  console.log('[WebWeaver-BG] 🚀 Initializing...');
+  
+  aiEnabled = await getAiEnabled();
+  isReady = true;
+  
+  console.log(`
+╔════════════════════════════════════════════════╗
+║  🎯 WEB WEAVER LIGHTNING - READY              ║
+║  Version: ${CONFIG.version.padEnd(30)}║
+║  Target: ${CONFIG.confidenceThreshold}% Confidence${' '.padEnd(28)}║
+║  AI Status: ${aiEnabled ? 'ENABLED ✓' : 'DISABLED ✗'.padEnd(30)}║
+╚════════════════════════════════════════════════╝
+  `);
 })();
-
-BackgroundLogger.info('Day 10 background.js module loaded', {
-  version: DAY10_VERSION,
-  model: AI_CONFIG.model,
-  securityMode: 'PROXY_ENABLED'
-});

@@ -90,3 +90,8 @@ SUCCESS CRITERIA:
 ✅ Site-appropriate field selection
 
 CONTEXT: You are powered by Gemini 2.0 Flash Lite, optimized for fast, accurate JSON extraction.
+
+SITE-SPECIFIC: Wikipedia
+- main_content_summary: Extract first 2-3 paragraphs from article body
+- Use .mw-parser-output p:first-of-type selector
+- Ignore infoboxes and navboxes
