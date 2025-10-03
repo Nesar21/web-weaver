@@ -123,7 +123,7 @@ function classifyPageLayout() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// EXISTING EXTRACTION LOGIC (UNCHANGED)
+// EXTRACTION FUNCTIONS
 // ═══════════════════════════════════════════════════════════════
 
 function extractPageData() {
@@ -174,18 +174,39 @@ function extractPageData() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// MESSAGE LISTENER (UNCHANGED)
+// MESSAGE LISTENER (HANDLES BOTH STANDARD AND HYBRID)
 // ═══════════════════════════════════════════════════════════════
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('[Content] Message received:', request.action);
 
-  if (request.action === 'extractPageData') {
-    const data = extractPageData();
-    sendResponse({ success: true, data });
+  try {
+    if (request.action === 'extractPageData') {
+      // Standard extraction
+      const data = extractPageData();
+      sendResponse({ success: true, data });
+    } 
+    else if (request.action === 'extractWithHybrid') {
+      // DAY 10: Hybrid extraction
+      console.log('[Content] 🔥 Hybrid extraction requested');
+      
+      const data = extractPageData();
+      
+      // Note: The actual hybrid pipeline (Layer 2 & 3) happens in background.js
+      // Content script just provides the classified data
+      
+      sendResponse({ success: true, data });
+    }
+    else {
+      console.warn('[Content] ⚠️ Unknown action:', request.action);
+      sendResponse({ success: false, error: 'Unknown action' });
+    }
+  } catch (error) {
+    console.error('[Content] ❌ Message handler error:', error);
+    sendResponse({ success: false, error: error.message });
   }
 
-  return true;
+  return true; // Keep message channel open for async response
 });
 
 console.log('[Content] ✅ Content script with Hybrid Classifier ready!');

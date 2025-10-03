@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadAnalytics();
   
   setupEventListeners();
+  setupHybridButton(); // NEW: Setup hybrid button
   
   console.log('[WebWeaver-Popup] ✅ Ready');
 });
@@ -241,6 +242,7 @@ function displayResults(data) {
   const displayData = { ...data };
   const meta = displayData._meta;
   delete displayData._meta;
+  delete displayData._hybrid; // Don't show in standard view
   
   let output = '';
   
@@ -366,7 +368,7 @@ function convertToCSV(data) {
   const flatData = {};
   
   for (const [key, value] of Object.entries(data)) {
-    if (key === '_meta') continue; // Skip metadata
+    if (key === '_meta' || key === '_hybrid') continue; // Skip metadata
     
     if (Array.isArray(value)) {
       flatData[key] = value.join('; ');
@@ -403,50 +405,29 @@ function hideStatus() {
 }
 
 // ============================================================================
-// READY
+// DAY 10: HYBRID CLASSIFIER
 // ============================================================================
-
-console.log('[WebWeaver-Popup] ✅ Script loaded');
-
-// ═════════════════════════════════════════════════════════════════
-// DAY 10: HYBRID CLASSIFIER UI INTEGRATION
-// ═════════════════════════════════════════════════════════════════
 
 async function extractWithHybridClassifier() {
   console.log('[Popup] 🎯 Starting Hybrid Extraction...');
   
-  // Show loading state
-  const statusDiv = document.getElementById('status');
-  if (statusDiv) {
-    statusDiv.textContent = '🛂 Classifying page structure...';
-  }
-
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
-    const response = await chrome.tabs.sendMessage(tab.id, { 
-      action: 'extractWithHybrid' 
+    // Send hybrid extraction request to background
+    const response = await chrome.runtime.sendMessage({ 
+      action: 'extractWithHybrid',
+      tabId: tab.id
     });
 
     if (response.success) {
       const hybrid = response.data._hybrid;
       
-      // Display classification results
       console.log('[Popup] ✅ Hybrid extraction complete!');
       console.log('[Popup] 📊 Layer 1:', hybrid.layer1Classification, `(${hybrid.layer1Confidence}%)`);
       console.log('[Popup] 🤖 Layer 2:', hybrid.layer2Used ? 'Used' : 'Skipped');
       console.log('[Popup] 📋 Layer 3:', hybrid.layer3Prompt);
       console.log('[Popup] ⏱️ Total time:', hybrid.totalPipelineTime + 'ms');
-
-      if (statusDiv) {
-        statusDiv.innerHTML = `
-          ✅ Classification: <strong>${hybrid.finalClassification}</strong><br>
-          🛂 DOM: ${hybrid.layer1Classification} (${hybrid.layer1Confidence}%)<br>
-          ${hybrid.layer2Used ? `🤖 AI Fallback: ${hybrid.layer2Time}ms<br>` : ''}
-          📋 Prompt: ${hybrid.layer3Prompt}<br>
-          ⏱️ Total: ${hybrid.totalPipelineTime}ms
-        `;
-      }
 
       return response.data;
     } else {
@@ -455,19 +436,68 @@ async function extractWithHybridClassifier() {
 
   } catch (error) {
     console.error('[Popup] ❌ Hybrid extraction failed:', error);
-    if (statusDiv) {
-      statusDiv.textContent = '❌ Error: ' + error.message;
-    }
-    return null;
+    throw error;
   }
 }
 
-// Add button listener if you have a hybrid extraction button
-document.addEventListener('DOMContentLoaded', () => {
+function setupHybridButton() {
   const hybridBtn = document.getElementById('extractHybridBtn');
+  const hybridInfo = document.getElementById('hybridInfo');
+  
   if (hybridBtn) {
-    hybridBtn.addEventListener('click', extractWithHybridClassifier);
+    console.log('[Popup] 🔥 Hybrid button found, attaching listener');
+    
+    hybridBtn.addEventListener('click', async () => {
+      console.log('[Popup] 🔥 Hybrid Extract clicked');
+      hybridBtn.disabled = true;
+      showStatus('⏳ Hybrid classification in progress...', 'loading');
+      
+      try {
+        const data = await extractWithHybridClassifier();
+        
+        if (data && data._hybrid) {
+          // Show hybrid info panel
+          hybridInfo.classList.remove('hidden');
+          
+          // Populate hybrid metrics
+          document.getElementById('layer1Result').textContent = 
+            `${data._hybrid.layer1Classification} (${data._hybrid.layer1Confidence}%)`;
+          
+          document.getElementById('layer2Result').textContent = 
+            data._hybrid.layer2Used ? `Used (${data._hybrid.layer2Time}ms)` : 'Skipped';
+          
+          document.getElementById('layer3Result').textContent = 
+            data._hybrid.layer3Prompt;
+          
+          document.getElementById('totalTime').textContent = 
+            `${data._hybrid.totalPipelineTime}ms`;
+          
+          // Display full results
+          currentData = data;
+          displayResults(data);
+          
+          // Enable export buttons
+          elements.copyBtn.disabled = false;
+          elements.jsonBtn.disabled = false;
+          elements.csvBtn.disabled = false;
+          
+          showStatus('✅ Hybrid extraction complete!', 'success');
+        }
+        
+      } catch (error) {
+        console.error('[Popup] ❌ Hybrid extraction error:', error);
+        showStatus(`❌ ${error.message}`, 'error');
+      } finally {
+        hybridBtn.disabled = false;
+      }
+    });
+  } else {
+    console.warn('[Popup] ⚠️ Hybrid button not found in DOM');
   }
-});
+}
 
-console.log('[Popup] ✅ Hybrid Classifier UI ready!');
+// ============================================================================
+// READY
+// ============================================================================
+
+console.log('[WebWeaver-Popup] ✅ Script loaded');
