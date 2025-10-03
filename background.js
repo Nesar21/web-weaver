@@ -442,3 +442,204 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 ╚════════════════════════════════════════════════╝
   `);
 })();
+
+// ═════════════════════════════════════════════════════════════════
+// DAY 10: HYBRID CLASSIFIER INTEGRATION - LAYER 2 & 3
+// AI Fallback + Prompt Router
+// ═════════════════════════════════════════════════════════════════
+
+console.log('[Background] 🎯 Day 10 Hybrid Classifier enabled');
+
+/**
+ * LAYER 2: AI FALLBACK CLASSIFIER
+ * Called only when DOM returns UNCERTAIN
+ */
+async function classifyWithAI(pageData) {
+  console.log('[Background] 🤖 LAYER 2: AI Fallback Classification...');
+
+  try {
+    // Load fallback prompt
+    const promptTemplate = `You are a page classifier. Analyze the page structure and determine if it contains ONE primary entity or MULTIPLE entities.
+
+URL: ${pageData.url}
+Title: ${pageData.title}
+
+DOM Signals:
+- Articles: ${pageData.classificationSignals.articleCount}
+- H1 tags: ${pageData.classificationSignals.h1Count}
+- Word count: ${pageData.classificationSignals.wordCount}
+- Repeating patterns: ${pageData.classificationSignals.repeatingPatterns}
+
+Content sample (first 300 words):
+${pageData.mainText.substring(0, 1500)}
+
+Respond with ONLY ONE WORD:
+SINGLE_ITEM or MULTI_ITEM
+
+No explanation. Just the classification.`;
+
+    // Get API key
+    const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
+    
+    if (!geminiApiKey) {
+      console.error('[Background] ❌ No API key for fallback');
+      return 'SINGLE_ITEM'; // Fail-safe default
+    }
+
+    // Call Gemini API with lightweight model
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptTemplate }] }],
+          generationConfig: {
+            maxOutputTokens: 10,
+            temperature: 0
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      console.error('[Background] ❌ AI fallback failed:', response.status);
+      return 'SINGLE_ITEM';
+    }
+
+    const data = await response.json();
+    const classification = data.candidates[0].content.parts[0].text.trim().toUpperCase();
+
+    console.log(`[Background] ✅ AI Fallback: ${classification}`);
+
+    // Validate response
+    if (classification.includes('SINGLE_ITEM')) {
+      return 'SINGLE_ITEM';
+    } else if (classification.includes('MULTI_ITEM')) {
+      return 'MULTI_ITEM';
+    } else {
+      console.warn('[Background] ⚠️ Invalid AI response, defaulting to SINGLE_ITEM');
+      return 'SINGLE_ITEM';
+    }
+
+  } catch (error) {
+    console.error('[Background] ❌ AI Fallback error:', error);
+    return 'SINGLE_ITEM'; // Fail-safe
+  }
+}
+
+/**
+ * LAYER 3: PROMPT ROUTER
+ * Routes to appropriate prompt based on classification
+ */
+function getPromptForClassification(classification) {
+  if (classification === 'MULTI_ITEM') {
+    console.log('[Background] 📋 Routing to MULTI_ITEM prompt (v8_multi)');
+    return 'v8_multi';
+  } else {
+    console.log('[Background] 📄 Routing to SINGLE_ITEM prompt (v7)');
+    return 'v7';
+  }
+}
+
+/**
+ * UPDATED: Hybrid extraction with 3-layer classification
+ */
+async function extractDataWithHybridClassifier(tabId) {
+  console.log('[Background] 🚀 Starting Hybrid Extraction Pipeline...');
+  const pipelineStart = Date.now();
+
+  try {
+    // Get page data (includes Layer 1: DOM classification)
+    const response = await chrome.tabs.sendMessage(tabId, { action: 'extractPageData' });
+    
+    if (!response.success) {
+      throw new Error('Failed to extract page data');
+    }
+
+    const pageData = response.data;
+    let finalClassification = pageData.pageLayout;
+    const domConfidence = pageData.classificationConfidence;
+
+    console.log(`[Background] 📊 LAYER 1 Result: ${finalClassification} (${domConfidence}% confident)`);
+
+    // Handle NONE classification (garbage pages)
+    if (finalClassification === 'NONE') {
+      console.log('[Background] 🚫 Page classified as NONE - skipping AI extraction');
+      return {
+        success: true,
+        data: {
+          ...pageData,
+          message: 'Page classified as empty, login, or error page',
+          confidence_score: 0,
+          _hybrid: {
+            layer1: 'NONE',
+            layer2: 'skipped',
+            layer3: 'skipped',
+            totalTime: Date.now() - pipelineStart,
+            costSaved: '100%'
+          }
+        }
+      };
+    }
+
+    // Handle UNCERTAIN classification (needs AI fallback)
+    if (finalClassification === 'UNCERTAIN' || domConfidence < 80) {
+      console.log('[Background] ❓ UNCERTAIN detected - triggering AI Fallback...');
+      const fallbackStart = Date.now();
+      
+      finalClassification = await classifyWithAI(pageData);
+      
+      const fallbackTime = Date.now() - fallbackStart;
+      console.log(`[Background] ✅ LAYER 2 resolved to: ${finalClassification} in ${fallbackTime}ms`);
+      
+      pageData._fallbackUsed = true;
+      pageData._fallbackTime = fallbackTime;
+    }
+
+    // LAYER 3: Route to appropriate prompt
+    const promptVersion = getPromptForClassification(finalClassification);
+    
+    // Extract with appropriate prompt
+    console.log(`[Background] 🤖 LAYER 3: Extracting with prompt ${promptVersion}...`);
+    
+    // Here you would call your existing AI extraction with the selected prompt
+    // For now, return the classification data
+    const result = {
+      success: true,
+      data: {
+        ...pageData,
+        _hybrid: {
+          layer1Classification: pageData.pageLayout,
+          layer1Confidence: domConfidence,
+          layer2Used: pageData._fallbackUsed || false,
+          layer2Time: pageData._fallbackTime || 0,
+          layer3Prompt: promptVersion,
+          finalClassification: finalClassification,
+          totalPipelineTime: Date.now() - pipelineStart
+        }
+      }
+    };
+
+    console.log('[Background] ✅ Hybrid Pipeline complete!');
+    console.log('[Background] 📊 Pipeline metrics:', result.data._hybrid);
+
+    return result;
+
+  } catch (error) {
+    console.error('[Background] ❌ Hybrid pipeline failed:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Add hybrid extraction to existing message listener
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'extractWithHybrid') {
+    extractDataWithHybridClassifier(sender.tab.id)
+      .then(sendResponse)
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+});
+
+console.log('[Background] ✅ Hybrid Classifier ready!');

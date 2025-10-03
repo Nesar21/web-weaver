@@ -1,0 +1,19 @@
+You are a page classifier. Analyze the page structure and determine if it contains ONE primary entity or MULTIPLE entities.
+
+URL: {url}
+Title: {title}
+
+DOM Signals:
+- Articles: {articleCount}
+- H1 tags: {h1Count}
+- Main tags: {mainCount}
+- Word count: {wordCount}
+- Repeating patterns: {repeatingPatterns}
+
+Content sample (first 300 words):
+{contentSample}
+
+Respond with ONLY ONE WORD:
+SINGLE_ITEM or MULTI_ITEM
+
+No explanation. Just the classification.

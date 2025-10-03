@@ -1,0 +1,43 @@
+You are a multi-item extractor. Your goal is to extract ALL repeating entities (articles, products, posts, listings) from this page.
+
+URL: {url}
+Title: {title}
+
+Content:
+{mainText}
+
+Extract ONLY items that appear to be part of a repeating list structure. For EACH item, extract:
+- title (required)
+- url (if available)
+- summary (1-2 sentences if available)
+- image_url (if available)
+- price (if product, include currency)
+- metadata (date, author, category if available)
+
+Output ONLY valid JSON in this exact format:
+{
+  "items": [
+    {
+      "title": "Item title",
+      "url": "Item URL",
+      "summary": "Brief description",
+      "image_url": "Image URL",
+      "price": "Price with currency",
+      "metadata": {
+        "date": "Publication date",
+        "author": "Author name",
+        "category": "Category/tag"
+      }
+    }
+  ],
+  "page_type": "homepage" | "search_results" | "category_page" | "listing",
+  "total_items": <number>,
+  "confidence_score": 80-100
+}
+
+RULES:
+- Minimum 2 items, maximum 20 items
+- Each item MUST have at least a title
+- If no clear list detected, return {"items": [], "total_items": 0, "confidence_score": 0}
+- Provide confidence_score based on clarity of list structure
+- NO explanations, ONLY JSON

@@ -407,3 +407,67 @@ function hideStatus() {
 // ============================================================================
 
 console.log('[WebWeaver-Popup] ✅ Script loaded');
+
+// ═════════════════════════════════════════════════════════════════
+// DAY 10: HYBRID CLASSIFIER UI INTEGRATION
+// ═════════════════════════════════════════════════════════════════
+
+async function extractWithHybridClassifier() {
+  console.log('[Popup] 🎯 Starting Hybrid Extraction...');
+  
+  // Show loading state
+  const statusDiv = document.getElementById('status');
+  if (statusDiv) {
+    statusDiv.textContent = '🛂 Classifying page structure...';
+  }
+
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    const response = await chrome.tabs.sendMessage(tab.id, { 
+      action: 'extractWithHybrid' 
+    });
+
+    if (response.success) {
+      const hybrid = response.data._hybrid;
+      
+      // Display classification results
+      console.log('[Popup] ✅ Hybrid extraction complete!');
+      console.log('[Popup] 📊 Layer 1:', hybrid.layer1Classification, `(${hybrid.layer1Confidence}%)`);
+      console.log('[Popup] 🤖 Layer 2:', hybrid.layer2Used ? 'Used' : 'Skipped');
+      console.log('[Popup] 📋 Layer 3:', hybrid.layer3Prompt);
+      console.log('[Popup] ⏱️ Total time:', hybrid.totalPipelineTime + 'ms');
+
+      if (statusDiv) {
+        statusDiv.innerHTML = `
+          ✅ Classification: <strong>${hybrid.finalClassification}</strong><br>
+          🛂 DOM: ${hybrid.layer1Classification} (${hybrid.layer1Confidence}%)<br>
+          ${hybrid.layer2Used ? `🤖 AI Fallback: ${hybrid.layer2Time}ms<br>` : ''}
+          📋 Prompt: ${hybrid.layer3Prompt}<br>
+          ⏱️ Total: ${hybrid.totalPipelineTime}ms
+        `;
+      }
+
+      return response.data;
+    } else {
+      throw new Error(response.error || 'Extraction failed');
+    }
+
+  } catch (error) {
+    console.error('[Popup] ❌ Hybrid extraction failed:', error);
+    if (statusDiv) {
+      statusDiv.textContent = '❌ Error: ' + error.message;
+    }
+    return null;
+  }
+}
+
+// Add button listener if you have a hybrid extraction button
+document.addEventListener('DOMContentLoaded', () => {
+  const hybridBtn = document.getElementById('extractHybridBtn');
+  if (hybridBtn) {
+    hybridBtn.addEventListener('click', extractWithHybridClassifier);
+  }
+});
+
+console.log('[Popup] ✅ Hybrid Classifier UI ready!');
