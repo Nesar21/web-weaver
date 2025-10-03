@@ -40,13 +40,13 @@ function classifyPageLayout() {
     }
 
     const bodyClass = document.body.className.toLowerCase();
-    signals.hasHomepageIndicators = 
+    signals.hasHomepageIndicators =
       bodyClass.includes('homepage') || bodyClass.includes('home-page') ||
       bodyClass.includes('index') || window.location.pathname === '/' ||
       window.location.pathname === '/index.html';
 
     const title = document.title.toLowerCase();
-    signals.hasLoginIndicators = 
+    signals.hasLoginIndicators =
       title.includes('login') || title.includes('sign in') ||
       title.includes('error') || title.includes('404') ||
       title.includes('access denied') || signals.wordCount < 50;
@@ -159,12 +159,18 @@ function extractPageData() {
       classificationConfidence: classification.confidence,
       classificationSignals: classification.signals,
       classificationReasoning: classification.reasoning,
-      classificationDuration: classification.duration
+      classificationDuration: classification.duration,
+      domDetails: {}, // placeholder for repeated blocks etc - set later
     };
+
+    // Add repeated block detection for Layer 1 heuristic signals
+    const repeatedBlocks = detectRepeatedProductBlocks();
+    pageData.domDetails.repeatedBlocksCount = repeatedBlocks.length;
+    pageData.domDetails.productGridFound = repeatedBlocks.length > 3;
 
     console.log('[Content] ✅ Page data extracted with classification');
     console.log(`[Content] 📊 Page classified as: ${classification.classification}`);
-    
+
     return pageData;
 
   } catch (error) {
@@ -189,13 +195,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     else if (request.action === 'extractWithHybrid') {
       // DAY 10: Hybrid extraction
       console.log('[Content] 🔥 Hybrid extraction requested');
-      
-      const data = extractPageData();
-      
-      // Note: The actual hybrid pipeline (Layer 2 & 3) happens in background.js
-      // Content script just provides the classified data
-      
+      const data = extractPageData(); 
       sendResponse({ success: true, data });
+    }
+    else if (request.action === 'extractProductBlocks') {
+      // Extract product blocks text for AI layer fallback
+      const productBlocks = detectRepeatedProductBlocks();
+      const blocksText = productBlocks.map(block => ({
+        text: block.innerText.trim().substring(0, 1000)
+      }));
+      sendResponse(blocksText);
     }
     else {
       console.warn('[Content] ⚠️ Unknown action:', request.action);
@@ -208,5 +217,35 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   return true; // Keep message channel open for async response
 });
+
+// ═══════════════════════════════════════════════════════════════
+// HEURISTIC TO DETECT REPEATED BLOCKS (E.G. PRODUCTS)
+// Returns array of DOM elements detected as product blocks
+// ═══════════════════════════════════════════════════════════════
+
+function detectRepeatedProductBlocks() {
+  const candidates = [];
+  const potentialProductSelectors = [
+    'div.s-main-slot div.s-result-item',
+    '.product',
+    '.product-item',
+    '.grid-item',
+    '.carousel-item',
+    '.product-card',
+    '.item',
+  ];
+
+  potentialProductSelectors.forEach(selector => {
+    const elems = [...document.querySelectorAll(selector)];
+    elems.forEach(el => {
+      if (el.innerText && el.innerText.length > 50) { // filter empty or too-small blocks
+        candidates.push(el);
+      }
+    });
+  });
+
+  // Optionally cluster or filter duplicates if needed
+  return candidates;
+}
 
 console.log('[Content] ✅ Content script with Hybrid Classifier ready!');

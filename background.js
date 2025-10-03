@@ -1,6 +1,5 @@
 // Web Weaver Lightning - Background Service Worker
 // Days 4-10: AI Integration, Validation, Analytics, Hybrid Classifier
-// The intelligent core that processes extraction with Gemini AI
 
 console.log('[WebWeaver-BG] Service worker loading...');
 
@@ -9,7 +8,7 @@ console.log('[WebWeaver-BG] Service worker loading...');
 // ============================================================================
 
 const CONFIG = {
-  version: '1.0.0-day10',
+  version: '1.0.0-day10-enhanced',
   geminiModel: 'gemini-2.0-flash-exp',
   geminiLiteModel: 'gemini-2.0-flash-lite', // DAY 10: For AI fallback
   apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
@@ -26,7 +25,7 @@ let isReady = false;
 let aiEnabled = false; // Toggle for AI on/off
 
 // Analytics Storage (Day 9-10)
-const analytics = {
+const analyticsData = {
   totalExtractions: 0,
   basicExtractions: 0,
   aiExtractions: 0,
@@ -177,21 +176,29 @@ Return ONLY the extraction prompt as plain text, no JSON wrapper.`;
 // AI EXTRACTION (Day 7: Third AI Call with Custom Prompt)
 // ============================================================================
 
-async function extractWithAI(customPrompt, basicData) {
+async function extractWithAI(customPrompt, pageData, candidateBlocks = []) {
   const apiKey = await getApiKey();
-  
+  let contentToExtract = '';
+
+  // If multi-item, extract from candidate blocks only
+  if (candidateBlocks.length > 0) {
+    contentToExtract = candidateBlocks.map(b => b.text).join('\n\n');
+  } else {
+    contentToExtract = pageData.mainText.substring(0, 3000);
+  }
+
   const fullPrompt = `${customPrompt}
 
 Page data to extract from:
-URL: ${basicData.url}
-Title: ${basicData.title}
-Description: ${basicData.meta?.description || 'None'}
-Main content: ${basicData.mainText.substring(0, 3000)}
+URL: ${pageData.url}
+Title: ${pageData.title}
+Description: ${pageData.description || 'None'}
+Content: ${contentToExtract}
 
 Return ONLY valid JSON, no markdown, no explanation.`;
 
   const url = `${CONFIG.apiEndpoint}/${CONFIG.geminiModel}:generateContent?key=${apiKey}`;
-  
+
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -203,18 +210,18 @@ Return ONLY valid JSON, no markdown, no explanation.`;
       }
     })
   });
-  
+
   if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
-  
+
   const data = await response.json();
   const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  
+
   if (!content) throw new Error('No extraction result');
-  
+
   // Parse JSON
   const jsonMatch = content.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('Invalid JSON response');
-  
+
   return JSON.parse(jsonMatch[0]);
 }
 
@@ -246,7 +253,7 @@ SINGLE_ITEM or MULTI_ITEM
 No explanation. Just the classification.`;
 
     const apiKey = await getApiKey();
-    
+
     if (!apiKey) {
       console.error('[Background] ❌ No API key for fallback');
       return 'SINGLE_ITEM'; // Fail-safe default
@@ -286,7 +293,6 @@ No explanation. Just the classification.`;
       console.warn('[Background] ⚠️ Invalid AI response, defaulting to SINGLE_ITEM');
       return 'SINGLE_ITEM';
     }
-
   } catch (error) {
     console.error('[Background] ❌ AI Fallback error:', error);
     return 'SINGLE_ITEM'; // Fail-safe
@@ -308,18 +314,45 @@ function getPromptForClassification(classification) {
 }
 
 // ============================================================================
+// Enhanced Layer 1 heuristic for multi-item DOM detection
+// ============================================================================
+
+async function analyzeDomSignals(basicData) {
+  const domDetails = basicData.domDetails || {};
+
+  const repeatedBlockCount = domDetails.repeatedBlocksCount || 0;
+  const productGridDetected = domDetails.productGridFound || false;
+
+  let confidence = 0;
+  let classification = 'NONE';
+
+  if (repeatedBlockCount > 5 || productGridDetected) {
+    classification = 'MULTI_ITEM';
+    confidence = 90 + Math.min(10, repeatedBlockCount * 2); // confidence 90-100%
+  } else if (basicData.h1Count === 1 && basicData.wordCount > 100) {
+    classification = 'SINGLE_ITEM';
+    confidence = 95;
+  } else {
+    classification = 'UNCERTAIN';
+    confidence = 50;
+  }
+
+  return { classification, confidence };
+}
+
+// ============================================================================
 // MAIN EXTRACTION ORCHESTRATOR (Day 10 - Standard Mode)
 // ============================================================================
 
 async function performExtraction(tabId, useAI) {
   console.log(`[WebWeaver-BG] 🎯 Starting extraction (AI: ${useAI ? 'ON' : 'OFF'})`);
   
-  analytics.totalExtractions++;
+  analyticsData.totalExtractions++;
   
   try {
     // Step 1: Get data from content script
     const basicResponse = await chrome.tabs.sendMessage(tabId, { 
-      action: 'extractPageData'  // FIXED: Use correct action
+      action: 'extractPageData'  
     });
     
     if (!basicResponse || !basicResponse.success) {
@@ -333,7 +366,7 @@ async function performExtraction(tabId, useAI) {
     
     // If AI disabled, return basic data
     if (!useAI) {
-      analytics.basicExtractions++;
+      analyticsData.basicExtractions++;
       updateSiteStats(domain, true, 0, 'basic');
       
       return {
@@ -353,7 +386,7 @@ async function performExtraction(tabId, useAI) {
     }
     
     // Step 2: AI Enhancement (3-step process)
-    analytics.aiExtractions++;
+    analyticsData.aiExtractions++;
     
     // 2a: Detect website type
     console.log('[WebWeaver-BG] 🔍 Detecting website type...');
@@ -390,12 +423,12 @@ async function performExtraction(tabId, useAI) {
     
     // Step 4: Update analytics (Day 10)
     if (confidence >= CONFIG.confidenceThreshold) {
-      analytics.successfulAI++;
-      analytics.totalConfidence += confidence;
+      analyticsData.successfulAI++;
+      analyticsData.totalConfidence += confidence;
       updateSiteStats(domain, true, confidence, 'ai');
       console.log(`[WebWeaver-BG] ✅ HIGH CONFIDENCE: ${confidence}%`);
     } else {
-      analytics.failedAI++;
+      analyticsData.failedAI++;
       updateSiteStats(domain, false, confidence, 'ai');
       console.log(`[WebWeaver-BG] ⚠️ LOW CONFIDENCE: ${confidence}%`);
     }
@@ -404,7 +437,7 @@ async function performExtraction(tabId, useAI) {
     
   } catch (error) {
     console.error('[WebWeaver-BG] ❌ Extraction failed:', error);
-    analytics.failedAI++;
+    analyticsData.failedAI++;
     return { success: false, error: error.message };
   }
 }
@@ -417,13 +450,13 @@ async function extractDataWithHybridClassifier(tabId) {
   console.log('[Background] 🚀 Starting Hybrid Extraction Pipeline...');
   const pipelineStart = Date.now();
 
-  analytics.totalExtractions++;
-  analytics.hybridExtractions++;
+  analyticsData.totalExtractions++;
+  analyticsData.hybridExtractions++;
 
   try {
     // Get page data (includes Layer 1: DOM classification)
     const response = await chrome.tabs.sendMessage(tabId, { 
-      action: 'extractWithHybrid'  // FIXED: Use correct action
+      action: 'extractWithHybrid'  
     });
     
     if (!response.success) {
@@ -478,31 +511,55 @@ async function extractDataWithHybridClassifier(tabId) {
     const promptVersion = getPromptForClassification(finalClassification);
     
     console.log(`[Background] 🤖 LAYER 3: Extracting with prompt ${promptVersion}...`);
-    
-    // Return the classification data
-    // NOTE: Actual AI extraction with the selected prompt would happen here
-    // For now, we return the hybrid pipeline metrics
-    
-    const result = {
-      success: true,
-      data: {
-        ...pageData,
-        _hybrid: {
-          layer1Classification: pageData.pageLayout,
-          layer1Confidence: domConfidence,
-          layer2Used: fallbackUsed,
-          layer2Time: fallbackTime,
-          layer3Prompt: promptVersion,
-          finalClassification: finalClassification,
-          totalPipelineTime: Date.now() - pipelineStart
-        }
+
+    // Step 5: Incremental extraction strategy - get candidate product blocks for multi-item pages
+    let candidateBlocks = [];
+    if (finalClassification === 'MULTI_ITEM') {
+      candidateBlocks = await chrome.tabs.sendMessage(tabId, { action: 'extractProductBlocks' });
+    }
+
+    // Generate custom prompt based on final classification
+    const customPrompt = await generateCustomPrompt(finalClassification, pageData);
+
+    // AI extraction using prompt and candidate blocks (or full page content if none)
+    const aiData = await extractWithAI(customPrompt, pageData, candidateBlocks);
+
+    // Post-process AI output (implement your logic for deduplication, validation)
+    const cleanedData = postProcessExtraction(aiData);
+
+    // Compose final result including hybrid metrics
+    const resultData = {
+      ...pageData,
+      ...cleanedData,
+      _hybrid: {
+        layer1Classification: finalClassification,
+        layer1Confidence: domConfidence,
+        layer2Used: fallbackUsed,
+        layer2Time: fallbackTime,
+        layer3Prompt: promptVersion,
+        finalClassification: finalClassification,
+        totalPipelineTime: Date.now() - pipelineStart
       }
     };
 
-    console.log('[Background] ✅ Hybrid Pipeline complete!');
-    console.log('[Background] 📊 Pipeline metrics:', result.data._hybrid);
+    // Update analytics
+    if (aiData.confidence_score >= CONFIG.confidenceThreshold) {
+      analyticsData.successfulAI++;
+      analyticsData.totalConfidence += aiData.confidence_score;
+      updateSiteStats(pageData.domain, true, aiData.confidence_score, 'hybrid');
+      console.log(`[Background] ✅ HIGH CONFIDENCE: ${aiData.confidence_score}%`);
+    } else {
+      analyticsData.failedAI++;
+      updateSiteStats(pageData.domain, false, aiData.confidence_score, 'hybrid');
+      console.log(`[Background] ⚠️ LOW CONFIDENCE: ${aiData.confidence_score}%`);
+    }
 
-    return result;
+    analyticsData.hybridExtractions++;
+
+    console.log('[Background] ✅ Hybrid Pipeline complete!');
+    console.log('[Background] 📊 Pipeline metrics:', resultData._hybrid);
+
+    return { success: true, data: resultData };
 
   } catch (error) {
     console.error('[Background] ❌ Hybrid pipeline failed:', error);
@@ -511,12 +568,26 @@ async function extractDataWithHybridClassifier(tabId) {
 }
 
 // ============================================================================
+// POST-PROCESSING OF AI EXTRACTION RESULTS
+// ============================================================================
+
+function postProcessExtraction(aiData) {
+  // Placeholder for post-processing logic
+  // Example: 
+  // - Filter duplicate products based on product_name or id
+  // - Validate price format with regex
+  // - Verify image URLs start with https://
+  // - Normalize fields and fill missing with null
+  return aiData;
+}
+
+// ============================================================================
 // ANALYTICS (Day 9-10)
 // ============================================================================
 
 function updateSiteStats(domain, success, confidence, method) {
-  if (!analytics.perSite[domain]) {
-    analytics.perSite[domain] = {
+  if (!analyticsData.perSite[domain]) {
+    analyticsData.perSite[domain] = {
       total: 0,
       successful: 0,
       failed: 0,
@@ -525,7 +596,7 @@ function updateSiteStats(domain, success, confidence, method) {
     };
   }
   
-  const site = analytics.perSite[domain];
+  const site = analyticsData.perSite[domain];
   site.total++;
   
   if (success) {
@@ -537,26 +608,26 @@ function updateSiteStats(domain, success, confidence, method) {
 }
 
 function getAnalytics() {
-  const avgConfidence = analytics.successfulAI > 0 
-    ? analytics.totalConfidence / analytics.successfulAI 
+  const avgConfidence = analyticsData.successfulAI > 0 
+    ? analyticsData.totalConfidence / analyticsData.successfulAI 
     : 0;
     
-  const successRate = analytics.aiExtractions > 0
-    ? (analytics.successfulAI / analytics.aiExtractions) * 100
+  const successRate = analyticsData.aiExtractions > 0
+    ? (analyticsData.successfulAI / analyticsData.aiExtractions) * 100
     : 0;
   
   return {
     overall: {
-      total: analytics.totalExtractions,
-      basic: analytics.basicExtractions,
-      ai: analytics.aiExtractions,
-      hybrid: analytics.hybridExtractions, // DAY 10
+      total: analyticsData.totalExtractions,
+      basic: analyticsData.basicExtractions,
+      ai: analyticsData.aiExtractions,
+      hybrid: analyticsData.hybridExtractions, // DAY 10
       avgConfidence: Math.round(avgConfidence),
       successRate: Math.round(successRate),
-      passedThreshold: analytics.successfulAI,
-      failedThreshold: analytics.failedAI
+      passedThreshold: analyticsData.successfulAI,
+      failedThreshold: analyticsData.failedAI
     },
-    perSite: analytics.perSite,
+    perSite: analyticsData.perSite,
     target: CONFIG.confidenceThreshold
   };
 }
@@ -605,8 +676,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           break;
         
         case 'getAnalytics':
-          const analyticsData = getAnalytics();
-          sendResponse({ success: true, data: analyticsData });
+          const analyticsDataResult = getAnalytics();
+          sendResponse({ success: true, data: analyticsDataResult });
           break;
         
         case 'ping':
@@ -647,3 +718,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 })();
 
 console.log('[Background] ✅ Background script with Hybrid Classifier ready!');
+
