@@ -1,6 +1,3 @@
-// Web Weaver Lightning - Background Service Worker
-// Days 4-10: AI Integration, Validation, Analytics, Hybrid Classifier
-
 console.log('[WebWeaver-BG] Service worker loading...');
 
 // ============================================================================
@@ -13,7 +10,7 @@ const CONFIG = {
   geminiLiteModel: 'gemini-2.0-flash-lite', // DAY 10: For AI fallback
   apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
   confidenceThreshold: 80, // Day 10: 80% accuracy target
-  maxRetries: 2,
+  maxRetries: 3,
   timeout: 30000
 };
 
@@ -76,13 +73,31 @@ async function setAiEnabled(enabled) {
 }
 
 // ============================================================================
+// ROBUST JSON EXTRACTION UTILITY TO AVOID 'Invalid JSON boundaries'
+// ============================================================================
+
+function extractJsonObject(text) {
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) {
+    console.error('No JSON found in AI response:', text);
+    throw new Error('No JSON detected');
+  }
+  try {
+    return JSON.parse(match[0]);
+  } catch (error) {
+    console.error('Malformed JSON:', match[0]);
+    throw error;
+  }
+}
+
+// ============================================================================
 // WEBSITE TYPE DETECTION (Day 4-6: First AI Call)
 // ============================================================================
 
 async function detectWebsiteType(basicData) {
   const apiKey = await getApiKey();
   if (!apiKey) throw new Error('No API key configured');
-  
+
   const detectionPrompt = `You are a website classifier. Analyze this data and return ONLY a JSON object with this exact structure:
 {
   "type": "ecommerce|news|recipe|wiki|blog|other",
@@ -98,7 +113,7 @@ Sample text: ${basicData.mainText.substring(0, 500)}
 Return ONLY the JSON object, no markdown, no explanation.`;
 
   const url = `${CONFIG.apiEndpoint}/${CONFIG.geminiModel}:generateContent?key=${apiKey}`;
-  
+
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -110,21 +125,18 @@ Return ONLY the JSON object, no markdown, no explanation.`;
       }
     })
   });
-  
+
   if (!response.ok) {
     throw new Error(`Gemini API error: ${response.status}`);
   }
-  
+
   const data = await response.json();
   const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  
+
   if (!content) throw new Error('No response from Gemini');
-  
-  // Parse JSON
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('Invalid JSON response');
-  
-  return JSON.parse(jsonMatch[0]);
+
+  // Use robust extraction now
+  return extractJsonObject(content);
 }
 
 // ============================================================================
@@ -133,7 +145,7 @@ Return ONLY the JSON object, no markdown, no explanation.`;
 
 async function generateCustomPrompt(websiteType, basicData) {
   const apiKey = await getApiKey();
-  
+
   const metaPrompt = `You are an expert prompt engineer. Create a data extraction prompt for a ${websiteType} website.
 
 The prompt should:
@@ -149,7 +161,7 @@ Website context:
 Return ONLY the extraction prompt as plain text, no JSON wrapper.`;
 
   const url = `${CONFIG.apiEndpoint}/${CONFIG.geminiModel}:generateContent?key=${apiKey}`;
-  
+
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -161,14 +173,14 @@ Return ONLY the extraction prompt as plain text, no JSON wrapper.`;
       }
     })
   });
-  
+
   if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
-  
+
   const data = await response.json();
   const customPrompt = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  
+
   if (!customPrompt) throw new Error('Failed to generate custom prompt');
-  
+
   return customPrompt;
 }
 
@@ -176,11 +188,11 @@ Return ONLY the extraction prompt as plain text, no JSON wrapper.`;
 // AI EXTRACTION (Day 7: Third AI Call with Custom Prompt)
 // ============================================================================
 
-async function extractWithAI(customPrompt, pageData, candidateBlocks = []) {
+async function extractWithAI(customPrompt, pageData, candidateBlocks = [], retries = 0) {
+  const MAX_RETRIES = CONFIG.maxRetries;
   const apiKey = await getApiKey();
   let contentToExtract = '';
 
-  // If multi-item, extract from candidate blocks only
   if (candidateBlocks.length > 0) {
     contentToExtract = candidateBlocks.map(b => b.text).join('\n\n');
   } else {
@@ -199,30 +211,40 @@ Return ONLY valid JSON, no markdown, no explanation.`;
 
   const url = `${CONFIG.apiEndpoint}/${CONFIG.geminiModel}:generateContent?key=${apiKey}`;
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: fullPrompt }] }],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 2048
-      }
-    })
-  });
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: fullPrompt }] }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 2048
+        }
+      })
+    });
 
-  if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
+    if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
 
-  const data = await response.json();
-  const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const data = await response.json();
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-  if (!content) throw new Error('No extraction result');
+    console.log('[WebWeaver-BG] Raw AI content:', content);
 
-  // Parse JSON
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('Invalid JSON response');
+    if (!content) throw new Error('No extraction result');
 
-  return JSON.parse(jsonMatch[0]);
+    // Use robust extraction
+    return extractJsonObject(content);
+
+  } catch (err) {
+    console.error('[WebWeaver-BG] Extraction error:', err.message);
+    if (retries < MAX_RETRIES) {
+      console.log(`[WebWeaver-BG] Retrying extraction (${retries + 1}/${MAX_RETRIES})...`);
+      return extractWithAI(customPrompt, pageData, candidateBlocks, retries + 1);
+    } else {
+      throw err;
+    }
+  }
 }
 
 // ============================================================================
@@ -284,7 +306,6 @@ No explanation. Just the classification.`;
 
     console.log(`[Background] ✅ AI Fallback: ${classification}`);
 
-    // Validate response
     if (classification.includes('SINGLE_ITEM')) {
       return 'SINGLE_ITEM';
     } else if (classification.includes('MULTI_ITEM')) {
@@ -328,7 +349,7 @@ async function analyzeDomSignals(basicData) {
 
   if (repeatedBlockCount > 5 || productGridDetected) {
     classification = 'MULTI_ITEM';
-    confidence = 90 + Math.min(10, repeatedBlockCount * 2); // confidence 90-100%
+    confidence = 90 + Math.min(10, repeatedBlockCount * 2);
   } else if (basicData.h1Count === 1 && basicData.wordCount > 100) {
     classification = 'SINGLE_ITEM';
     confidence = 95;
@@ -346,29 +367,25 @@ async function analyzeDomSignals(basicData) {
 
 async function performExtraction(tabId, useAI) {
   console.log(`[WebWeaver-BG] 🎯 Starting extraction (AI: ${useAI ? 'ON' : 'OFF'})`);
-  
+
   analyticsData.totalExtractions++;
-  
+
   try {
-    // Step 1: Get data from content script
-    const basicResponse = await chrome.tabs.sendMessage(tabId, { 
-      action: 'extractPageData'  
-    });
-    
+    const basicResponse = await chrome.tabs.sendMessage(tabId, { action: 'extractPageData' });
+
     if (!basicResponse || !basicResponse.success) {
       throw new Error('Failed to extract page data');
     }
-    
+
     const basicData = basicResponse.data;
     const domain = basicData.domain;
-    
+
     console.log(`[WebWeaver-BG] ✅ Page data extracted from: ${domain}`);
-    
-    // If AI disabled, return basic data
+
     if (!useAI) {
       analyticsData.basicExtractions++;
       updateSiteStats(domain, true, 0, 'basic');
-      
+
       return {
         success: true,
         data: {
@@ -384,28 +401,23 @@ async function performExtraction(tabId, useAI) {
         }
       };
     }
-    
-    // Step 2: AI Enhancement (3-step process)
+
     analyticsData.aiExtractions++;
-    
-    // 2a: Detect website type
+
     console.log('[WebWeaver-BG] 🔍 Detecting website type...');
     const typeDetection = await detectWebsiteType(basicData);
     console.log(`[WebWeaver-BG] ✅ Type detected: ${typeDetection.type} (${typeDetection.confidence})`);
-    
-    // 2b: Generate custom prompt
+
     console.log('[WebWeaver-BG] 📝 Generating custom extraction prompt...');
     const customPrompt = await generateCustomPrompt(typeDetection.type, basicData);
     console.log('[WebWeaver-BG] ✅ Custom prompt generated');
-    
-    // 2c: Extract with custom prompt
+
     console.log('[WebWeaver-BG] 🤖 Extracting with AI...');
     const aiData = await extractWithAI(customPrompt, basicData);
     console.log('[WebWeaver-BG] ✅ AI extraction complete');
-    
-    // Step 3: Merge and validate
+
     const confidence = aiData.confidence_score || 50;
-    
+
     const finalData = {
       ...basicData,
       ...aiData,
@@ -420,8 +432,7 @@ async function performExtraction(tabId, useAI) {
         domain: domain
       }
     };
-    
-    // Step 4: Update analytics (Day 10)
+
     if (confidence >= CONFIG.confidenceThreshold) {
       analyticsData.successfulAI++;
       analyticsData.totalConfidence += confidence;
@@ -432,9 +443,9 @@ async function performExtraction(tabId, useAI) {
       updateSiteStats(domain, false, confidence, 'ai');
       console.log(`[WebWeaver-BG] ⚠️ LOW CONFIDENCE: ${confidence}%`);
     }
-    
+
     return { success: true, data: finalData };
-    
+
   } catch (error) {
     console.error('[WebWeaver-BG] ❌ Extraction failed:', error);
     analyticsData.failedAI++;
@@ -454,11 +465,8 @@ async function extractDataWithHybridClassifier(tabId) {
   analyticsData.hybridExtractions++;
 
   try {
-    // Get page data (includes Layer 1: DOM classification)
-    const response = await chrome.tabs.sendMessage(tabId, { 
-      action: 'extractWithHybrid'  
-    });
-    
+    const response = await chrome.tabs.sendMessage(tabId, { action: 'extractWithHybrid' });
+
     if (!response.success) {
       throw new Error('Failed to extract page data');
     }
@@ -469,7 +477,6 @@ async function extractDataWithHybridClassifier(tabId) {
 
     console.log(`[Background] 📊 LAYER 1 Result: ${finalClassification} (${domConfidence}% confident)`);
 
-    // Handle NONE classification (garbage pages)
     if (finalClassification === 'NONE') {
       console.log('[Background] 🚫 Page classified as NONE - skipping AI extraction');
       return {
@@ -491,43 +498,36 @@ async function extractDataWithHybridClassifier(tabId) {
       };
     }
 
-    // Handle UNCERTAIN classification (needs AI fallback)
     let fallbackUsed = false;
     let fallbackTime = 0;
-    
+
     if (finalClassification === 'UNCERTAIN' || domConfidence < 80) {
       console.log('[Background] ❓ UNCERTAIN detected - triggering AI Fallback...');
       const fallbackStart = Date.now();
-      
+
       finalClassification = await classifyWithAI(pageData);
-      
+
       fallbackTime = Date.now() - fallbackStart;
       fallbackUsed = true;
-      
+
       console.log(`[Background] ✅ LAYER 2 resolved to: ${finalClassification} in ${fallbackTime}ms`);
     }
 
-    // LAYER 3: Route to appropriate prompt
     const promptVersion = getPromptForClassification(finalClassification);
-    
+
     console.log(`[Background] 🤖 LAYER 3: Extracting with prompt ${promptVersion}...`);
 
-    // Step 5: Incremental extraction strategy - get candidate product blocks for multi-item pages
     let candidateBlocks = [];
     if (finalClassification === 'MULTI_ITEM') {
       candidateBlocks = await chrome.tabs.sendMessage(tabId, { action: 'extractProductBlocks' });
     }
 
-    // Generate custom prompt based on final classification
     const customPrompt = await generateCustomPrompt(finalClassification, pageData);
 
-    // AI extraction using prompt and candidate blocks (or full page content if none)
     const aiData = await extractWithAI(customPrompt, pageData, candidateBlocks);
 
-    // Post-process AI output (implement your logic for deduplication, validation)
     const cleanedData = postProcessExtraction(aiData);
 
-    // Compose final result including hybrid metrics
     const resultData = {
       ...pageData,
       ...cleanedData,
@@ -542,7 +542,6 @@ async function extractDataWithHybridClassifier(tabId) {
       }
     };
 
-    // Update analytics
     if (aiData.confidence_score >= CONFIG.confidenceThreshold) {
       analyticsData.successfulAI++;
       analyticsData.totalConfidence += aiData.confidence_score;
@@ -595,10 +594,10 @@ function updateSiteStats(domain, success, confidence, method) {
       method: method
     };
   }
-  
+
   const site = analyticsData.perSite[domain];
   site.total++;
-  
+
   if (success) {
     site.successful++;
     site.avgConfidence = ((site.avgConfidence * (site.successful - 1)) + confidence) / site.successful;
@@ -611,17 +610,17 @@ function getAnalytics() {
   const avgConfidence = analyticsData.successfulAI > 0 
     ? analyticsData.totalConfidence / analyticsData.successfulAI 
     : 0;
-    
+
   const successRate = analyticsData.aiExtractions > 0
     ? (analyticsData.successfulAI / analyticsData.aiExtractions) * 100
     : 0;
-  
+
   return {
     overall: {
       total: analyticsData.totalExtractions,
       basic: analyticsData.basicExtractions,
       ai: analyticsData.aiExtractions,
-      hybrid: analyticsData.hybridExtractions, // DAY 10
+      hybrid: analyticsData.hybridExtractions,
       avgConfidence: Math.round(avgConfidence),
       successRate: Math.round(successRate),
       passedThreshold: analyticsData.successfulAI,
@@ -638,7 +637,7 @@ function getAnalytics() {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('[WebWeaver-BG] 📨 Message:', request.action);
-  
+
   (async () => {
     try {
       switch (request.action) {
@@ -646,44 +645,42 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           const saveResult = await saveApiKey(request.apiKey);
           sendResponse(saveResult);
           break;
-        
+
         case 'getApiKey':
           const apiKey = await getApiKey();
           sendResponse({ success: true, hasKey: !!apiKey });
           break;
-        
+
         case 'setAiEnabled':
           await setAiEnabled(request.enabled);
           sendResponse({ success: true, enabled: request.enabled });
           break;
-        
+
         case 'getAiEnabled':
           const enabled = await getAiEnabled();
           sendResponse({ success: true, enabled: enabled });
           break;
-        
+
         case 'extract':
-          // Standard extraction (Days 1-9)
           const useAI = request.useAI !== false;
           const result = await performExtraction(request.tabId, useAI);
           sendResponse(result);
           break;
-        
+
         case 'extractWithHybrid':
-          // DAY 10: Hybrid extraction (3-layer pipeline)
           const hybridResult = await extractDataWithHybridClassifier(request.tabId);
           sendResponse(hybridResult);
           break;
-        
+
         case 'getAnalytics':
           const analyticsDataResult = getAnalytics();
           sendResponse({ success: true, data: analyticsDataResult });
           break;
-        
+
         case 'ping':
           sendResponse({ success: true, ready: isReady });
           break;
-        
+
         default:
           sendResponse({ success: false, error: 'Unknown action' });
       }
@@ -692,8 +689,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: false, error: error.message });
     }
   })();
-  
-  return true; // Keep channel open
+
+  return true;
 });
 
 // ============================================================================
@@ -702,10 +699,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 (async () => {
   console.log('[WebWeaver-BG] 🚀 Initializing...');
-  
+
   aiEnabled = await getAiEnabled();
   isReady = true;
-  
+
   console.log(`
 ╔════════════════════════════════════════════════╗
 ║  🎯 WEB WEAVER LIGHTNING - READY              ║
