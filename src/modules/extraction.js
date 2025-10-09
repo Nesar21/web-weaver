@@ -1,11 +1,14 @@
 // Day 10: Extraction Manager Module - AI Engine v1 Enhanced (80% Accuracy Milestone)
 // /src/modules/extraction.js - DAY 10 ENHANCED
 
+
 // ============================================================================
 // DAY 10 ENHANCEMENTS - CONFIDENCE VALIDATION & POST-PROCESSING
 // ============================================================================
 
+
 const DAY10_VERSION = 'day10-ai-engine-v1-extraction';
+
 
 // Day 10: Validate confidence in extraction results
 function validateExtractionConfidenceDay10(extractionResult) {
@@ -34,6 +37,7 @@ function validateExtractionConfidenceDay10(extractionResult) {
   };
 }
 
+
 // Day 10: Enhanced metadata with Day 10 markers
 function enhanceMetadataDay10(metadata, confidenceCheck) {
   return {
@@ -46,14 +50,17 @@ function enhanceMetadataDay10(metadata, confidenceCheck) {
   };
 }
 
+
 // ============================================================================
 // EXISTING DAY 8 CODE PRESERVED BELOW (WITH DAY 10 INTEGRATIONS)
 // ============================================================================
+
 
 const CONTENT_SCRIPT_FILES = ['content.js'];
 const DEFAULT_DEPLOYMENT_TIMEOUT = 5000;
 const DEFAULT_EXTRACTION_TIMEOUT = 12000;
 const CONTENT_SCRIPT_INITIALIZATION_DELAY = 1000;
+
 
 const DEFAULT_SITE_TIMEOUTS = {
   'amazon': 15000,
@@ -64,12 +71,15 @@ const DEFAULT_SITE_TIMEOUTS = {
   'generic': 10000
 };
 
+
 const EXTRACTION_PERFORMANCE_CACHE = new Map();
 const TAB_RETRY_TRACKING = new Map();
 let DEBUG_LOGGING_ENABLED = true;
 
+
 const ExtractionManager = {
   VERSION: 'day10-extraction-v3.0', // Day 10 version bump
+
 
   // ===== ENHANCED BASIC EXTRACTION WITH DAY 10 CONFIDENCE VALIDATION =====
   handleBasicExtraction(request, sender, sendResponse, AI_CONFIG) {
@@ -160,6 +170,7 @@ const ExtractionManager = {
       }
     });
   },
+
 
   // ===== ENHANCED EXTRACTION WITH DAY 10 CONFIDENCE VALIDATION =====
   handleEnhancedExtraction(request, sender, sendResponse, AI_CONFIG) {
@@ -256,6 +267,7 @@ const ExtractionManager = {
     });
   },
 
+
   // ===== ALL OTHER METHODS FROM YOUR ORIGINAL FILE (UNCHANGED) =====
   // Copy everything from your existing extraction.js below this line:
   // - deployContentScriptWithRetry
@@ -277,6 +289,7 @@ const ExtractionManager = {
   // - executeBasicExtractionFallback
   // - executeBasicValidationFallback
   // - All utility functions
+
 
   async deployContentScriptWithRetry(tabId, siteType, AI_CONFIG, maxRetries = 3) {
     const timestamp = new Date().toISOString();
@@ -320,10 +333,12 @@ const ExtractionManager = {
     }
   },
 
+
   async waitForContentScriptInitialization() {
     const delay = CONTENT_SCRIPT_INITIALIZATION_DELAY;
     await new Promise(resolve => setTimeout(resolve, delay));
   },
+
 
   async extractPageDataWithTimeout(tabId, timeout) {
     const timestamp = new Date().toISOString();
@@ -353,13 +368,16 @@ const ExtractionManager = {
     }
   },
 
+
   getConfigurableTimeouts(AI_CONFIG) {
     return AI_CONFIG?.extractionConfig?.siteTimeouts || DEFAULT_SITE_TIMEOUTS;
   },
 
+
   getTimeoutSource(AI_CONFIG) {
     return AI_CONFIG?.extractionConfig?.siteTimeouts ? 'AI_CONFIG' : 'DEFAULT';
   },
+
 
   initializeTabRetryTracking(tabId) {
     TAB_RETRY_TRACKING.set(tabId, {
@@ -370,6 +388,7 @@ const ExtractionManager = {
     });
   },
 
+
   updateTabRetryStats(tabId, operation, attempts, successful) {
     const stats = TAB_RETRY_TRACKING.get(tabId);
     if (stats) {
@@ -378,6 +397,7 @@ const ExtractionManager = {
       TAB_RETRY_TRACKING.set(tabId, stats);
     }
   },
+
 
   getTabRetryStats(tabId) {
     const stats = TAB_RETRY_TRACKING.get(tabId);
@@ -392,9 +412,11 @@ const ExtractionManager = {
     };
   },
 
+
   cleanupTabRetryTracking(tabId) {
     TAB_RETRY_TRACKING.delete(tabId);
   },
+
 
   async cachePerformanceMetricsWithPersistence(siteType, performance, AI_CONFIG) {
     const key = `perf_${siteType}`;
@@ -429,6 +451,7 @@ const ExtractionManager = {
     }
   },
 
+
   debugLog(message, metadata = {}) {
     if (DEBUG_LOGGING_ENABLED) {
       const timestamp = new Date().toISOString();
@@ -436,10 +459,12 @@ const ExtractionManager = {
     }
   },
 
+
   setDebugLogging(enabled) {
     DEBUG_LOGGING_ENABLED = enabled;
     this.debugLog(`Debug logging ${enabled ? 'enabled' : 'disabled'}`);
   },
+
 
   async processBasicExtraction(pageData, url, siteType, AI_CONFIG) {
     let extractionResult;
@@ -454,6 +479,7 @@ const ExtractionManager = {
     
     return extractionResult;
   },
+
 
   async executeEnhancedExtractionPipeline(pageData, url, siteType, AI_CONFIG) {
     const pipelineStart = Date.now();
@@ -524,6 +550,7 @@ const ExtractionManager = {
     };
   },
 
+
   async applySchemaMapping(extractionResult, siteType, AI_CONFIG) {
     if (AI_CONFIG.utilityStatus?.schemas?.loaded && this.isModuleLoaded('SchemaManager')) {
       const mappingResult = SchemaManager.mapDataToSchema(extractionResult.data, siteType);
@@ -534,6 +561,7 @@ const ExtractionManager = {
     return extractionResult;
   },
 
+
   async executeValidation(data, siteType, AI_CONFIG) {
     if (typeof ValidationManager !== 'undefined') {
       return ValidationManager.executeUnifiedValidation(data, siteType, AI_CONFIG);
@@ -541,6 +569,7 @@ const ExtractionManager = {
       return this.executeBasicValidationFallback(data);
     }
   },
+
 
   executeBasicExtractionFallback(pageData, url) {
     const startTime = Date.now();
@@ -572,6 +601,7 @@ const ExtractionManager = {
     };
   },
 
+
   executeBasicValidationFallback(data) {
     const penalties = [];
     const validatedData = {...data};
@@ -598,6 +628,7 @@ const ExtractionManager = {
     };
   },
 
+
   determineSiteTypeWithCache(url, cache) {
     if (typeof BackgroundUtils !== 'undefined') {
       return BackgroundUtils.determineSiteTypeEnhanced(url, cache);
@@ -613,6 +644,7 @@ const ExtractionManager = {
     return 'generic';
   },
 
+
   calculateAccuracy(data) {
     if (!data || typeof data !== 'object') return 0;
     const fields = Object.keys(data);
@@ -623,9 +655,11 @@ const ExtractionManager = {
     return (filledFields.length / fields.length) * 100;
   },
 
+
   normalizePercentage(value) {
     return Math.max(0, Math.min(100, Math.round(value || 0)));
   },
+
 
   validatePrice(price) {
     if (!price) return false;
@@ -633,15 +667,18 @@ const ExtractionManager = {
     return priceRegex.test(price.toString().replace(/,/g, ''));
   },
 
+
   validateRating(rating) {
     if (!rating) return false;
     const ratingRegex = /^(\d+(\.\d+)?\/5|\d+(\.\d+)?)$/;
     return ratingRegex.test(rating.toString());
   },
 
+
   isModuleLoaded(moduleName) {
     return typeof window[moduleName] !== 'undefined';
   },
+
 
   createExtractionMonitor(extractionType, url) {
     const startTime = Date.now();
@@ -661,6 +698,7 @@ const ExtractionManager = {
     };
   },
 
+
   getSystemStatus() {
     return {
       version: this.VERSION,
@@ -676,6 +714,7 @@ const ExtractionManager = {
     };
   },
 
+
   async initialize(AI_CONFIG) {
     this.debugLog('[Day10] Initializing ExtractionManager', {
       version: this.VERSION
@@ -689,7 +728,9 @@ const ExtractionManager = {
   }
 };
 
+
 console.log(`[Day10-ExtractionManager-v${ExtractionManager.VERSION}] AI Engine v1 extraction module loaded with confidence validation`);
+
 
 if (typeof window !== 'undefined') {
   window.ExtractionManager = ExtractionManager;

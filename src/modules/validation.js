@@ -1,11 +1,14 @@
 // Day 10: Validation Manager Module - AI Engine v1 Enhanced (80% Accuracy Milestone)
 // /src/modules/validation.js - DAY 10 ENHANCED WITH CONFIDENCE VALIDATION
 
+
 // ============================================================================
 // DAY 10 ENHANCEMENTS - CONFIDENCE-BASED VALIDATION
 // ============================================================================
 
+
 const DAY10_VERSION = 'day10-ai-engine-v1-validation';
+
 
 // Day 10: Confidence-Based Validation Function
 function validateWithConfidenceDay10(extractedData, validationResult) {
@@ -45,22 +48,27 @@ function validateWithConfidenceDay10(extractedData, validationResult) {
   return validationResult;
 }
 
+
 // ============================================================================
 // EXISTING DAY 8 CODE PRESERVED BELOW (WITH DAY 10 INTEGRATION)
 // ============================================================================
+
 
 const STANDARD_VALIDATION_FIELDS = [
   'title', 'author', 'publishdate', 'description', 'summary', 'category',
   'main_content_summary'
 ];
 
+
 const ARRAY_VALIDATION_FIELDS = [
   'ingredients', 'instructions', 'links', 'images'
 ];
 
+
 const FORMAT_VALIDATION_FIELDS = [
   'price', 'reviews_rating', 'publishdate'
 ];
+
 
 const VALIDATION_PATTERNS = {
   price: /^\$?\d+(\.\d{1,2})?$/,
@@ -73,6 +81,7 @@ const VALIDATION_PATTERNS = {
   ingredient: /^[a-zA-Z0-9\s\-,()\.\/]+$/,
   currency: /^\$?[\d,]+\.?\d{0,2}$/
 };
+
 
 let SITE_VALIDATION_RULES = {
   'amazon': {
@@ -141,6 +150,7 @@ let SITE_VALIDATION_RULES = {
   }
 };
 
+
 const DEFAULT_PENALTY_SEVERITY_WEIGHTS = {
   'CRITICAL': 30,
   'HIGH': 20,
@@ -149,13 +159,16 @@ const DEFAULT_PENALTY_SEVERITY_WEIGHTS = {
   'WARNING': 5
 };
 
+
 const VALIDATION_ANALYTICS_CACHE = new Map();
 const VALIDATION_PLUGINS = new Map();
 const ANOMALY_DETECTION_CACHE = new Map();
 const VALIDATION_WORKER_POOL = [];
 
+
 const ValidationManager = {
   VERSION: 'day10-validation-v4.0', // Day 10 version bump
+
 
   // ===== UNIFIED VALIDATION WITH DAY 10 CONFIDENCE CHECK =====
   executeUnifiedValidation(data, siteType, AI_CONFIG) {
@@ -215,6 +228,7 @@ const ValidationManager = {
     return validationResult;
   },
 
+
   // ALL OTHER METHODS FROM YOUR ORIGINAL FILE (UNCHANGED)
   // Copy everything below from your existing validation.js:
   
@@ -251,6 +265,7 @@ const ValidationManager = {
     }
   },
 
+
   async validateChunkAsync(chunk, siteType, AI_CONFIG, workerIndex) {
     const chunkResults = [];
     for (const data of chunk) {
@@ -264,6 +279,7 @@ const ValidationManager = {
     return { workerIndex, results: chunkResults };
   },
 
+
   chunkArray(array, chunkSize) {
     const chunks = [];
     for (let i = 0; i < array.length; i += chunkSize) {
@@ -271,6 +287,7 @@ const ValidationManager = {
     }
     return chunks;
   },
+
 
   aggregateParallelResults(results) {
     const allResults = [];
@@ -303,6 +320,7 @@ const ValidationManager = {
     };
   },
 
+
   updateSiteValidationRules(siteType, customRules) {
     if (SITE_VALIDATION_RULES[siteType]) {
       SITE_VALIDATION_RULES[siteType] = {
@@ -316,9 +334,11 @@ const ValidationManager = {
     return false;
   },
 
+
   getSiteValidationRules(siteType) {
     return SITE_VALIDATION_RULES[siteType] || SITE_VALIDATION_RULES['generic'];
   },
+
 
   detectAnomalies(siteType, currentMetrics) {
     const historicalData = VALIDATION_ANALYTICS_CACHE.get(siteType);
@@ -369,11 +389,13 @@ const ValidationManager = {
     };
   },
 
+
   calculateAnomalyConfidence(sampleSize, deviation) {
     if (sampleSize > 30 && deviation > 1) return 'HIGH';
     if (sampleSize > 15 && deviation > 0.5) return 'MEDIUM';
     return 'LOW';
   },
+
 
   validateArrayItem(fieldName, item, siteType = 'generic') {
     switch (fieldName) {
@@ -403,6 +425,7 @@ const ValidationManager = {
     }
   },
 
+
   applyEnhancedValidationPenalties(data, siteType = 'generic', AI_CONFIG) {
     const siteRules = this.getSiteValidationRules(siteType);
     
@@ -412,6 +435,7 @@ const ValidationManager = {
     
     return this.applyStandardValidation(data, siteType, siteRules, AI_CONFIG);
   },
+
 
   applyBloombergSpecificValidation(data, siteRules) {
     const penalties = [];
@@ -489,6 +513,7 @@ const ValidationManager = {
     };
   },
 
+
   applyStandardValidation(data, siteType, siteRules, AI_CONFIG) {
     const penalties = [];
     let totalPenalty = 0;
@@ -538,6 +563,7 @@ const ValidationManager = {
     };
   },
 
+
   validateFieldContent(field, value, siteType, siteRules) {
     const penalties = [];
     const thresholds = siteRules.customThresholds?.[field];
@@ -578,6 +604,7 @@ const ValidationManager = {
     
     return penalties;
   },
+
 
   validateFieldFormat(field, value, siteType) {
     switch (field) {
@@ -620,6 +647,7 @@ const ValidationManager = {
     return null;
   },
 
+
   validateArrayField(field, value, siteType, siteRules) {
     const penalties = [];
     const minItems = siteRules.arrayMinimums?.[field];
@@ -655,6 +683,7 @@ const ValidationManager = {
     return penalties;
   },
 
+
   registerValidationPlugin(name, plugin) {
     if (typeof plugin.validate !== 'function') {
       throw new Error('Validation plugin must have a validate method');
@@ -674,6 +703,7 @@ const ValidationManager = {
     return true;
   },
 
+
   unregisterValidationPlugin(name) {
     const removed = VALIDATION_PLUGINS.delete(name);
     if (removed) {
@@ -681,6 +711,7 @@ const ValidationManager = {
     }
     return removed;
   },
+
 
   executePluginValidation(data, siteType, AI_CONFIG) {
     const pluginResults = [];
@@ -705,6 +736,7 @@ const ValidationManager = {
     return pluginResults;
   },
 
+
   cacheValidationAnalytics(siteType, validationResult) {
     if (!VALIDATION_ANALYTICS_CACHE.has(siteType)) {
       VALIDATION_ANALYTICS_CACHE.set(siteType, { validations: [] });
@@ -725,6 +757,7 @@ const ValidationManager = {
     }
   },
 
+
   isModuleLoaded(moduleName) {
     try {
       return typeof window !== 'undefined' && window[moduleName] !== undefined;
@@ -733,6 +766,7 @@ const ValidationManager = {
     }
   },
 
+
   debugLog(message, data = {}) {
     if (typeof console !== 'undefined') {
       console.log(`[ValidationManager] ${message}`, data);
@@ -740,10 +774,12 @@ const ValidationManager = {
   }
 };
 
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = ValidationManager;
 } else if (typeof window !== 'undefined') {
   window.ValidationManager = ValidationManager;
 }
+
 
 console.log(`[ValidationManager] Day 10 AI ENGINE v1 validation system loaded - Confidence validation enabled`);

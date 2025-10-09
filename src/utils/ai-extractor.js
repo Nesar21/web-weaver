@@ -1,8 +1,10 @@
 console.log('[AI-Extractor] Day 10 AI ENGINE v1 loading - 80% Accuracy Target with Gemini 2.0...');
 
+
 // ============================================================================
 // DAY 10 CONFIGURATION - AI ENGINE v1 - GEMINI 2.0 MODEL
 // ============================================================================
+
 
 const DAY10_CONFIG = {
   version: 'day10-ai-engine-v1-gemini-2.0-fix',
@@ -23,9 +25,11 @@ const DAY10_CONFIG = {
   }
 };
 
+
 // ============================================================================
 // DAY 10 UTILITY FUNCTIONS
 // ============================================================================
+
 
 // Day 10: PII Stripping
 function stripPIIDay10(text) {
@@ -36,6 +40,7 @@ function stripPIIDay10(text) {
     .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '[SSN_REDACTED]')
     .replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[CARD_REDACTED]');
 }
+
 
 // Day 10: Date Standardization
 function standardizeDateDay10(dateString) {
@@ -52,11 +57,13 @@ function standardizeDateDay10(dateString) {
   }
 }
 
+
 // Day 10: Token Limit Enforcement
 function enforceTokenLimitsDay10(text, maxLength) {
   if (!text || typeof text !== 'string') return text;
   return text.substring(0, maxLength);
 }
+
 
 // Day 10: Confidence Validation
 function validateConfidenceDay10(extractedData) {
@@ -84,12 +91,14 @@ function validateConfidenceDay10(extractedData) {
   };
 }
 
+
 // Day 10: Post-Processing Pipeline
 function postProcessDay10(extractedData) {
   if (!extractedData || typeof extractedData !== 'object') {
     return extractedData;
   }
   const processed = { ...extractedData };
+
 
   // Date standardization
   const dateFields = ['publication_date', 'publishdate', 'publish_date', 'date'];
@@ -101,6 +110,7 @@ function postProcessDay10(extractedData) {
       }
     }
   });
+
 
   // PII stripping
   if (DAY10_CONFIG.enablePIIStripping) {
@@ -115,6 +125,7 @@ function postProcessDay10(extractedData) {
       }
     });
   }
+
 
   // Token limits enforcement
   if (processed.title) {
@@ -136,27 +147,61 @@ function postProcessDay10(extractedData) {
     processed.instructions = processed.instructions.slice(0, DAY10_CONFIG.tokenLimits.instructionsMax);
   }
 
+
   return processed;
 }
+
 
 // ============================================================================
 // DAY 10: GEMINI 2.0 API EXTRACTOR WITH RETRY LOGIC
 // ============================================================================
 
-// Robust JSON extractor function to safely parse first JSON object in a string
+// Enhanced robust JSON extractor function handling trailing commas and non-JSON characters after JSON content
 function extractJsonObject(text) {
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) {
-    console.error('No JSON found in AI response:', text);
+  // Try parsing entire text as JSON directly
+  try {
+    return JSON.parse(text);
+  } catch {
+    // Extract JSON array
+    const arrayMatch = text.match(/\[[\s\S]*\]/);
+    if (arrayMatch) {
+      let jsonString = arrayMatch[0];
+      // Remove trailing commas before array end
+      jsonString = jsonString.replace(/,(\s*])/, '$1');
+      try {
+        return JSON.parse(jsonString);
+      } catch (err) {
+        console.error('Malformed JSON array:', jsonString);
+        throw err;
+      }
+    }
+    // Extract multiple adjacent JSON objects and wrap in array
+    const objectMatches = text.match(/\{[\s\S]*?\}(?=(,|\s|$))/g);
+    if (objectMatches && objectMatches.length > 1) {
+      let combined = `[${objectMatches.join(',')}]`;
+      combined = combined.replace(/,(\s*])/, '$1'); // Remove trailing comma if any
+      try {
+        return JSON.parse(combined);
+      } catch (err) {
+        console.error('Malformed combined JSON objects:', combined);
+        throw err;
+      }
+    }
+    // Fallback single JSON object extraction
+    const singleMatch = text.match(/\{[\s\S]*?\}/);
+    if (singleMatch) {
+      try {
+        return JSON.parse(singleMatch[0]);
+      } catch (err) {
+        console.error('Malformed single JSON object:', singleMatch[0]);
+        throw err;
+      }
+    }
+    console.error('No valid JSON found in AI response:', text);
     throw new Error('No JSON detected');
   }
-  try {
-    return JSON.parse(match[0]);
-  } catch (error) {
-    console.error('Malformed JSON:', match[0]);
-    throw error;
-  }
 }
+
 
 async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
   const {
@@ -164,6 +209,7 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
     maxRetries = DAY10_CONFIG.maxRetries,
     timeout = 30000
   } = options;
+
 
   const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${DAY10_CONFIG.model}:generateContent?key=${apiKey}`;
   const requestBody = {
@@ -190,15 +236,18 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
     ]
   };
 
+
   console.log(`[AI-Extractor] Calling Gemini 2.0 API (attempt ${retryCount + 1}/${maxRetries})`, {
     model: DAY10_CONFIG.model,
     apiVersion: DAY10_CONFIG.apiVersion,
     promptLength: prompt.length
   });
 
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
+
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -209,7 +258,9 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
       signal: controller.signal
     });
 
+
     clearTimeout(timeoutId);
+
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -220,6 +271,7 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
         model: DAY10_CONFIG.model,
         apiVersion: DAY10_CONFIG.apiVersion
       });
+
 
       if (retryCount < maxRetries - 1) {
         const backoffDelay = Math.min(
@@ -234,28 +286,36 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
         });
       }
 
+
       throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 
+
     const data = await response.json();
+
 
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
       console.error('[AI-Extractor] Invalid Gemini API response structure', { data });
       throw new Error('Invalid API response structure');
     }
 
+
     const textContent = data.candidates[0].content.parts[0].text;
+
 
     console.log('[AI-Extractor] Gemini 2.0 API response received', {
       responseLength: textContent.length,
       model: DAY10_CONFIG.model
     });
 
-    // Use robust JSON extraction here
+
+    // Use improved robust JSON extraction here
     const extractedData = extractJsonObject(textContent);
+
 
     // Day 10: Confidence validation
     const confidenceCheck = validateConfidenceDay10(extractedData);
+
 
     if (!confidenceCheck.valid) {
       console.warn('[AI-Extractor] Low confidence extraction discarded', {
@@ -265,14 +325,17 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
       throw new Error(`Low confidence extraction: ${confidenceCheck.confidence}`);
     }
 
+
     // Day 10: Post-processing
     const processedData = postProcessDay10(extractedData);
+
 
     console.log('[AI-Extractor] ✅ Day 10 extraction successful', {
       confidence: confidenceCheck.confidence,
       fieldsCount: Object.keys(processedData).length,
       model: DAY10_CONFIG.model
     });
+
 
     return {
       success: true,
@@ -312,9 +375,11 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
   }
 }
 
+
 // ============================================================================
 // EXPORTS
 // ============================================================================
+
 
 if (typeof window !== 'undefined') {
   window.AIExtractor = {
@@ -327,6 +392,7 @@ if (typeof window !== 'undefined') {
   };
 }
 
+
 console.log('[AI-Extractor] ✅ Day 10 AI-Extractor loaded', {
   version: DAY10_CONFIG.version,
   model: DAY10_CONFIG.model,
@@ -335,28 +401,64 @@ console.log('[AI-Extractor] ✅ Day 10 AI-Extractor loaded', {
 });
 
 
+
 // Additional robust JSON extractor and retry wrapper for external use
+
 
 const MAX_RETRIES = 3;
 
-// Robust JSON extractor function to safely parse first JSON object in a string
+
+// Enhanced robust JSON extractor function to safely parse full JSON text, including array of objects or single object
 function extractJsonObject(text) {
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) {
-    console.error('No JSON found in AI response:', text);
+  // Try parsing entire text as JSON directly
+  try {
+    return JSON.parse(text);
+  } catch {
+    // Extract JSON array
+    const arrayMatch = text.match(/\[[\s\S]*\]/);
+    if (arrayMatch) {
+      let jsonString = arrayMatch[0];
+      // Remove trailing commas before array end
+      jsonString = jsonString.replace(/,(\s*])/, '$1');
+      try {
+        return JSON.parse(jsonString);
+      } catch (err) {
+        console.error('Malformed JSON array:', jsonString);
+        throw err;
+      }
+    }
+    // Extract multiple adjacent JSON objects and wrap in array
+    const objectMatches = text.match(/\{[\s\S]*?\}(?=(,|\s|$))/g);
+    if (objectMatches && objectMatches.length > 1) {
+      let combined = `[${objectMatches.join(',')}]`;
+      combined = combined.replace(/,(\s*])/, '$1'); // Remove trailing comma if any
+      try {
+        return JSON.parse(combined);
+      } catch (err) {
+        console.error('Malformed combined JSON objects:', combined);
+        throw err;
+      }
+    }
+    // Fallback single JSON object extraction
+    const singleMatch = text.match(/\{[\s\S]*?\}/);
+    if (singleMatch) {
+      try {
+        return JSON.parse(singleMatch[0]);
+      } catch (err) {
+        console.error('Malformed single JSON object:', singleMatch[0]);
+        throw err;
+      }
+    }
+    console.error('No valid JSON found in AI response:', text);
     throw new Error('No JSON detected');
   }
-  try {
-    return JSON.parse(match[0]);
-  } catch (error) {
-    console.error('Malformed JSON:', match[0]);
-    throw error;
-  }
 }
+
 
 // Generic AI extraction call with retry logic and improved JSON extraction
 async function aiExtractWithRetry(apiKey, prompt, model, retries = 0) {
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
 
   try {
     const response = await fetch(apiUrl, {
@@ -371,22 +473,29 @@ async function aiExtractWithRetry(apiKey, prompt, model, retries = 0) {
       })
     });
 
+
     if (!response.ok) {
       throw new Error(`Gemini API error: ${response.status}`);
     }
 
+
     const data = await response.json();
     const rawContent = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
+
     console.log('[ai-extractor] Raw AI content:', rawContent);
+
 
     if (!rawContent) throw new Error('No AI content returned');
 
-    // Use robust JSON extractor
+
+    // Use enhanced robust JSON extractor
     return extractJsonObject(rawContent);
+
 
   } catch (err) {
     console.error(`[ai-extractor] Extraction error (${retries + 1}/${MAX_RETRIES}):`, err.message);
+
 
     if (retries + 1 < MAX_RETRIES) {
       return aiExtractWithRetry(apiKey, prompt, model, retries + 1);
@@ -395,5 +504,6 @@ async function aiExtractWithRetry(apiKey, prompt, model, retries = 0) {
     }
   }
 }
+
 
 export { aiExtractWithRetry, extractJsonObject };

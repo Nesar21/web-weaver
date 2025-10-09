@@ -3,7 +3,9 @@
 // DOM Heuristics (Fast) → AI Fallback (Smart) → Prompt Router
 // ═════════════════════════════════════════════════════════════════
 
+
 console.log('[Classifier] 🎯 Day 10 Hybrid Classifier loading...');
+
 
 /**
  * LAYER 1: DOM-BASED CLASSIFIER
@@ -13,6 +15,7 @@ console.log('[Classifier] 🎯 Day 10 Hybrid Classifier loading...');
 function classifyPageLayout() {
   console.log('[Classifier] 🛂 LAYER 1: DOM Classification starting...');
   const startTime = performance.now();
+
 
   try {
     const signals = {
@@ -25,9 +28,11 @@ function classifyPageLayout() {
       hasLoginIndicators: false
     };
 
+
     // Calculate word count
     const bodyText = document.body?.textContent?.trim() || '';
     signals.wordCount = bodyText.split(/\s+/).length;
+
 
     // Check for repeating patterns
     const repeatingSelectors = [
@@ -42,12 +47,14 @@ function classifyPageLayout() {
       '[data-testid="product-tile"]'
     ];
 
+
     for (const selector of repeatingSelectors) {
       const count = document.querySelectorAll(selector).length;
       if (count > 5) {
         signals.repeatingPatterns = Math.max(signals.repeatingPatterns, count);
       }
     }
+
 
     // Check for homepage indicators
     const bodyClass = document.body.className.toLowerCase();
@@ -57,6 +64,7 @@ function classifyPageLayout() {
       bodyClass.includes('index') ||
       window.location.pathname === '/' ||
       window.location.pathname === '/index.html';
+
 
     // Check for login/error indicators
     const title = document.title.toLowerCase();
@@ -68,13 +76,16 @@ function classifyPageLayout() {
       title.includes('access denied') ||
       signals.wordCount < 50;
 
+
     // ═══════════════════════════════════════════════════════════════
     // CLASSIFICATION LOGIC WITH CONFIDENCE SCORING
     // ═══════════════════════════════════════════════════════════════
 
+
     let classification = 'UNCERTAIN';
     let confidence = 50;
     let reasoning = '';
+
 
     // NONE Detection (garbage/empty pages)
     if (signals.hasLoginIndicators) {
@@ -131,7 +142,9 @@ function classifyPageLayout() {
       reasoning = 'Unclear structure, needs semantic analysis';
     }
 
+
     const duration = performance.now() - startTime;
+
 
     const result = {
       classification,
@@ -142,11 +155,14 @@ function classifyPageLayout() {
       duration: Math.round(duration)
     };
 
+
     console.log(`[Classifier] ✅ DOM Classification: ${classification} (${confidence}% confident) in ${duration.toFixed(2)}ms`);
     console.log(`[Classifier] 📊 Signals:`, signals);
     console.log(`[Classifier] 💭 Reasoning: ${reasoning}`);
 
+
     return result;
+
 
   } catch (error) {
     console.error('[Classifier] ❌ DOM Classification failed:', error);
@@ -160,6 +176,7 @@ function classifyPageLayout() {
     };
   }
 }
+
 
 // Export for use in content.js
 if (typeof module !== 'undefined' && module.exports) {
