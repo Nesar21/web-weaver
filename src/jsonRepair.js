@@ -1,102 +1,188 @@
-// jsonRepair.js
-// Automatically repairs common JSON malformations, wraps multiple objects in an array,
-// and normalizes numeric fields for robustness.
+// ============================================================================
+// jsonRepair.js - REFACTORED (Day 10 Priority 5)
+// ============================================================================
+// Production-grade JSON repair and normalization utilities
+// Duplicates removed - only unique functions remain
+// Used as standalone utility or importable module
+// ============================================================================
 
-// Utility to remove trailing commas before closing brackets
-function removeTrailingCommas(str) {
-  return str.replace(/,(\s*[}\]])/g, '$1');
-}
-
-// Detect multiple JSON objects concatenated without array brackets and wrap in array
-function wrapMultipleObjects(str) {
-  const trimmed = str.trim();
-  // Check if multiple objects are separated by commas at top level
-  if (trimmed.startsWith('{') && trimmed.includes('},{')) {
-    // Wrap entire string in brackets
-    return '[' + trimmed + ']';
-  }
-  return str;
-}
-
-// Attempt to auto-repair JSON string
-function autoRepairJSON(str) {
-  let repaired = str;
-  // Remove trailing commas
-  repaired = removeTrailingCommas(repaired);
-  // Wrap multiple objects
-  repaired = wrapMultipleObjects(repaired);
-  return repaired;
-}
-
-// Normalize fields: convert string numerics to numbers
-function normalizeFields(obj, schema) {
-  for (const key in schema) {
-    if (obj.hasOwnProperty(key)) {
-      const type = schema[key];
-      if (type === 'number') {
-        // Convert string numerics, including "4K" or "1,000"
-        if (typeof obj[key] === 'string') {
-          // Remove commas
-          let val = obj[key].replace(/,/g, '');
-          // Handle 'K' suffix
-          if (/^\d+K$/i.test(val)) {
-            val = parseInt(val, 10) * 1000;
-          } else {
-            val = parseFloat(val);
-          }
-          obj[key] = isNaN(val) ? null : val;
-        }
-      }
+/**
+ * Validate JSON against a schema
+ * Returns {valid: boolean, errors: string[]}
+ */
+function validateJSON(obj, schema) {
+  const errors = [];
+  
+  for (const [key, expectedType] of Object.entries(schema)) {
+    if (!obj.hasOwnProperty(key)) {
+      errors.push(`Missing required field: ${key}`);
+      continue;
+    }
+    
+    const actualType = typeof obj[key];
+    
+    if (expectedType === 'number' && actualType !== 'number' && obj[key] !== null) {
+      errors.push(`Field "${key}" should be number, got ${actualType}`);
+    } else if (expectedType === 'string' && actualType !== 'string' && obj[key] !== null) {
+      errors.push(`Field "${key}" should be string, got ${actualType}`);
     }
   }
-  return obj;
+  
+  return {
+    valid: errors.length === 0,
+    errors: errors
+  };
 }
 
-// Main repair and parse function
-function safeJsonParse(str, schema) {
-  try {
-    return JSON.parse(str);
-  } catch (e) {
-    // Attempt auto-repair
-    const repairedStr = autoRepairJSON(str);
-    try {
-      const parsed = JSON.parse(repairedStr);
-      // Normalize numeric fields post parsing
-      if (Array.isArray(parsed)) {
-        return parsed.map(item => normalizeFields(item, schema));
-      } else {
-        return normalizeFields(parsed, schema);
-      }
-    } catch (err) {
-      // Log and return null for debugging
-      console.error('JSON auto-repair failed:', err, 'Original:', str);
-      return null;
+/**
+ * Normalize field names (convert snake_case variations)
+ * Example: product_price, productPrice, Product_Price → price
+ */
+function normalizeFieldNames(obj, fieldMappings = {}) {
+  const normalized = {};
+  
+  // Default mappings for common variations
+  const defaultMappings = {
+    'product_name': 'name',
+    'product_price': 'price',
+    'product_url': 'url',
+    'product_image': 'image',
+    'product_rating': 'rating',
+    'number_of_reviews': 'reviews',
+    'discount_percentage': 'discount',
+    ...fieldMappings
+  };
+  
+  for (const [key, value] of Object.entries(obj)) {
+    const normalizedKey = defaultMappings[key] || key;
+    normalized[normalizedKey] = value;
+  }
+  
+  return normalized;
+}
+
+/**
+ * Deep clean extracted data (remove nulls, empty strings, etc.)
+ */
+function cleanExtractedData(obj, options = {}) {
+  const {
+    removeNull = false,
+    removeEmptyStrings = false,
+    trimStrings = true
+  } = options;
+  
+  const cleaned = {};
+  
+  for (const [key, value] of Object.entries(obj)) {
+    // Skip null values if option enabled
+    if (removeNull && value === null) continue;
+    
+    // Skip empty strings if option enabled
+    if (removeEmptyStrings && value === '') continue;
+    
+    // Trim strings if option enabled
+    if (trimStrings && typeof value === 'string') {
+      cleaned[key] = value.trim();
+    } else {
+      cleaned[key] = value;
     }
   }
+  
+  return cleaned;
 }
 
-// Example schema for product extraction
-const productSchema = {
-  product_name: 'string',
-  product_url: 'string',
-  product_image_url: 'string',
-  product_price: 'string',
-  product_original_price: 'string',
-  product_discount_percentage: 'number',
-  product_rating: 'number',
-  product_number_of_reviews: 'number',
-  product_brand: 'string',
-  product_availability: 'string',
-  product_description: 'string',
-  currency: 'string',
-  is_prime: 'string',
-  confidence_score: 'number'
+/**
+ * Example schemas for different content types
+ */
+const SCHEMAS = {
+  ecommerce: {
+    name: 'string',
+    price: 'number',
+    original_price: 'number',
+    rating: 'number',
+    reviews: 'number',
+    url: 'string',
+    image: 'string',
+    availability: 'string',
+    confidence_score: 'number'
+  },
+  
+  article: {
+    title: 'string',
+    author: 'string',
+    published_date: 'string',
+    content: 'string',
+    url: 'string',
+    read_time: 'number',
+    confidence_score: 'number'
+  },
+  
+  recipe: {
+    name: 'string',
+    ingredients: 'string',
+    instructions: 'string',
+    prep_time: 'number',
+    cook_time: 'number',
+    servings: 'number',
+    calories: 'number',
+    confidence_score: 'number'
+  }
 };
 
-// Exported function to process raw extraction JSON string
-function repairJsonString(rawJson, schema = productSchema) {
-  return safeJsonParse(rawJson, schema);
+/**
+ * Main utility function: repair + validate + clean
+ * Use this as single entry point for post-processing
+ */
+function processExtractedData(data, schemaType = 'ecommerce', options = {}) {
+  console.log(`[jsonRepair] Processing ${schemaType} data...`);
+  
+  const schema = SCHEMAS[schemaType] || SCHEMAS.ecommerce;
+  
+  // Step 1: Normalize field names
+  let processed = normalizeFieldNames(data, options.fieldMappings);
+  
+  // Step 2: Clean data (remove nulls, trim, etc.)
+  processed = cleanExtractedData(processed, options.cleanOptions);
+  
+  // Step 3: Validate against schema
+  const validation = validateJSON(processed, schema);
+  
+  if (!validation.valid) {
+    console.warn('[jsonRepair] Validation warnings:', validation.errors);
+  }
+  
+  console.log(`[jsonRepair] Processing complete. Valid: ${validation.valid}`);
+  
+  return {
+    data: processed,
+    validation: validation
+  };
 }
 
-// Usage example
-// const cleanedData = repairJsonString(extractedRawJson);
+// ============================================================================
+// EXPORT (for use in background.js or other modules)
+// ============================================================================
+
+// For Chrome extension (no module system)
+if (typeof window !== 'undefined') {
+  window.jsonRepairUtils = {
+    validateJSON,
+    normalizeFieldNames,
+    cleanExtractedData,
+    processExtractedData,
+    SCHEMAS
+  };
+}
+
+// For Node.js / module systems
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    validateJSON,
+    normalizeFieldNames,
+    cleanExtractedData,
+    processExtractedData,
+    SCHEMAS
+  };
+}
+
+console.log('[jsonRepair] ✅ Utility loaded (Refactored - Day 10)');
