@@ -5,11 +5,11 @@ console.log('[WebWeaver-BG] Service worker loading...');
 // ============================================================================
 
 const CONFIG = {
-  version: '1.0.0-day10-complete', // ✅ Updated version
-  geminiModel: 'gemini-2.0-flash-exp',
-  geminiLiteModel: 'gemini-2.0-flash-lite', // DAY 10: For AI fallback
+  version: '1.0.0-day10-stable',
+  geminiModel: 'gemini-2.0-flash-exp',        // ✅ YOUR KEY HAS THIS
+  geminiLiteModel: 'gemini-2.0-flash-exp',     // ✅ Same model
   apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
-  confidenceThreshold: 80, // Day 10: 80% accuracy target
+  confidenceThreshold: 80,
   maxRetries: 3,
   timeout: 30000
 };

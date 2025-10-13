@@ -10,36 +10,23 @@ console.log('[WebWeaver-Popup] Loading...');
 
 let currentData = null;
 let aiEnabled = true;
-let analyticsInterval = null; // ✅ PRIORITY 3B: Track interval for cleanup
+let analyticsInterval = null;
 
 // ============================================================================
 // DOM ELEMENTS
 // ============================================================================
 
 const elements = {
-  // API Section
   apiSection: document.getElementById('apiSection'),
   apiKeyInput: document.getElementById('apiKeyInput'),
   saveKeyBtn: document.getElementById('saveKeyBtn'),
-
-  // AI Toggle
   aiToggle: document.getElementById('aiToggle'),
-
-  // Extract
   extractBtn: document.getElementById('extractBtn'),
-
-  // Status
   status: document.getElementById('status'),
-
-  // Results
   results: document.getElementById('results'),
-
-  // Export
   copyBtn: document.getElementById('copyBtn'),
   jsonBtn: document.getElementById('jsonBtn'),
   csvBtn: document.getElementById('csvBtn'),
-
-  // Analytics
   analytics: document.getElementById('analytics'),
   totalExtractions: document.getElementById('totalExtractions'),
   aiExtractions: document.getElementById('aiExtractions'),
@@ -59,9 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadAiToggle();
   await loadAnalytics();
   setupEventListeners();
-  setupHybridButton(); // NEW: Setup hybrid button
-  
-  // ✅ PRIORITY 3B: Start real-time analytics refresh
+  setupHybridButton();
   startAnalyticsAutoRefresh();
   
   console.log('[WebWeaver-Popup] ✅ Ready');
@@ -76,24 +61,20 @@ function setupEventListeners() {
   elements.csvBtn.addEventListener('click', () => handleExport('csv'));
 }
 
-// ✅ PRIORITY 3B: Auto-refresh analytics every 3 seconds
 function startAnalyticsAutoRefresh() {
-  // Clear existing interval if any
   if (analyticsInterval) {
     clearInterval(analyticsInterval);
   }
   
-  // Start new interval (refresh every 3 seconds)
   analyticsInterval = setInterval(async () => {
     if (aiEnabled) {
-      await loadAnalytics(true); // true = silent refresh (no console spam)
+      await loadAnalytics(true);
     }
   }, 3000);
   
   console.log('[WebWeaver-Popup] 🔄 Analytics auto-refresh started (3s interval)');
 }
 
-// ✅ PRIORITY 3B: Cleanup on popup close
 window.addEventListener('beforeunload', () => {
   if (analyticsInterval) {
     clearInterval(analyticsInterval);
@@ -204,22 +185,18 @@ async function handleExtract() {
   showStatus(`⏳ Extracting data (${mode} mode)...`, 'loading');
 
   try {
-    // Get current tab
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
     if (!tab || !tab.id) {
       throw new Error('No active tab found');
     }
 
-    // Check if on valid page
     if (tab.url.startsWith('chrome://') || tab.url.startsWith('about:')) {
       throw new Error('Cannot extract from Chrome internal pages. Please navigate to a real website.');
     }
 
-    // Start timer
     const startTime = Date.now();
 
-    // Send extraction request
     const response = await chrome.runtime.sendMessage({
       action: 'extract',
       tabId: tab.id,
@@ -236,12 +213,10 @@ async function handleExtract() {
       const confidenceText = aiEnabled ? ` • ${confidence}% confidence` : '';
       showStatus(`✅ Extraction complete in ${duration}s${confidenceText}`, 'success');
 
-      // Enable export buttons
       elements.copyBtn.disabled = false;
       elements.jsonBtn.disabled = false;
       elements.csvBtn.disabled = false;
 
-      // ✅ PRIORITY 3B: ALWAYS refresh analytics after ANY extraction
       await loadAnalytics();
       console.log('[WebWeaver-Popup] 📊 Analytics refreshed after extraction');
 
@@ -259,21 +234,18 @@ async function handleExtract() {
 }
 
 function displayResults(data) {
-  // Create clean display version (without _meta for readability)
   const displayData = { ...data };
   const meta = displayData._meta;
   delete displayData._meta;
-  delete displayData._hybrid; // Don't show in standard view
+  delete displayData._hybrid;
 
   let output = '';
 
-  // Show metadata header if AI was used
   if (meta && meta.aiEnhanced) {
     output += `🤖 AI-Enhanced Extraction\n`;
     output += `Type: ${meta.websiteType || 'unknown'}\n`;
     output += `Confidence: ${meta.confidence}%\n`;
     
-    // ✅ PRIORITY 3B: Show confidence reasoning if available
     if (data.confidence_reasoning) {
       output += `Reasoning: ${data.confidence_reasoning}\n`;
     }
@@ -291,7 +263,7 @@ function displayResults(data) {
 }
 
 // ============================================================================
-// PRIORITY 3B: ENHANCED ANALYTICS WITH REAL-TIME UPDATES
+// ANALYTICS
 // ============================================================================
 
 async function loadAnalytics(silent = false) {
@@ -303,11 +275,9 @@ async function loadAnalytics(silent = false) {
     if (response.success) {
       const analytics = response.data;
       
-      // Update counters
       elements.totalExtractions.textContent = analytics.overall.total;
       elements.aiExtractions.textContent = analytics.overall.ai;
 
-      // ✅ PRIORITY 3B: Show true average (includes ALL extractions)
       const avgConf = analytics.overall.avgConfidence;
       elements.avgConfidence.textContent = avgConf + '%';
       elements.avgConfidence.className = 'stat-value ' + getConfidenceClass(avgConf);
@@ -316,7 +286,6 @@ async function loadAnalytics(silent = false) {
       elements.successRate.textContent = successRate + '%';
       elements.successRate.className = 'stat-value ' + getConfidenceClass(successRate);
 
-      // Target status (Day 10: 80% goal)
       if (avgConf >= analytics.target) {
         elements.targetStatus.textContent = '✅ Target reached!';
         elements.targetStatus.className = 'stat-value good';
@@ -326,7 +295,6 @@ async function loadAnalytics(silent = false) {
         elements.targetStatus.className = 'stat-value warning';
       }
 
-      // ✅ PRIORITY 3B: Log detailed analytics (only if not silent refresh)
       if (!silent) {
         console.log('[WebWeaver-Popup] 📊 Analytics loaded:', {
           total: analytics.overall.total,
@@ -336,7 +304,6 @@ async function loadAnalytics(silent = false) {
           distribution: analytics.overall.confidenceDistribution
         });
         
-        // Log confidence distribution if available
         if (analytics.overall.confidenceDistribution) {
           console.log('[WebWeaver-Popup] 📈 Confidence Distribution:', analytics.overall.confidenceDistribution);
         }
@@ -384,12 +351,11 @@ async function handleExport(format) {
       filename = `web-weaver-${Date.now()}.json`;
       mimeType = 'application/json';
     } else if (format === 'csv') {
-      content = convertToCSV(currentData);
-      filename = `web-weaver-${Date.now()}.csv`;
-      mimeType = 'text/csv';
+      content = convertToFlatCSV(currentData);
+      filename = `web-weaver-flat-${Date.now()}.csv`;
+      mimeType = 'text/csv;charset=utf-8;';
     }
 
-    // Create download
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -407,31 +373,154 @@ async function handleExport(format) {
   }
 }
 
-function convertToCSV(data) {
-  // Flatten data for CSV
-  const flatData = {};
+// ============================================================================
+// PRIORITY 6: UNIVERSAL HUMAN-READABLE FLAT CSV EXPORT
+// ============================================================================
+
+function convertToFlatCSV(data) {
+  console.log('[Popup] 🔧 Flattening data for CSV...');
   
-  for (const [key, value] of Object.entries(data)) {
-    if (key === '_meta' || key === '_hybrid') continue; // Skip metadata
+  const rows = [];
+  const commonFields = {
+    url: data.url,
+    domain: data.domain,
+    title: data.title,
+    pageLayout: data.pageLayout,
+    extractedAt: data._meta?.extractedAt || new Date().toISOString(),
+    method: data._meta?.method || 'unknown',
+    overall_confidence: data.confidence_score || data._meta?.confidence || 0
+  };
+  
+  const itemKeys = Object.keys(data)
+    .filter(k => !isNaN(k) && parseInt(k) < 100)
+    .sort((a, b) => parseInt(a) - parseInt(b));
+  
+  if (itemKeys.length > 0) {
+    console.log(`[Popup] 📦 Multi-item: ${itemKeys.length} items found`);
     
-    if (Array.isArray(value)) {
-      flatData[key] = value.join('; ');
-    } else if (typeof value === 'object' && value !== null) {
-      flatData[key] = JSON.stringify(value);
-    } else {
-      flatData[key] = value;
+    itemKeys.forEach(key => {
+      const item = data[key];
+      rows.push({
+        item_index: parseInt(key) + 1,
+        ...flattenObject(item),
+        ...commonFields
+      });
+    });
+  } else {
+    console.log('[Popup] 📄 Single-item extraction');
+    
+    const cleanData = {};
+    
+    for (const [key, value] of Object.entries(data)) {
+      if (key === '_meta' || key === '_hybrid') continue;
+      
+      // ✅ PRIORITY 6B: Skip empty/null fields for cleaner CSV
+      if (value === null || value === undefined || value === '') continue;
+      
+      if (key === 'mainText' && typeof value === 'string' && value.length > 500) {
+        cleanData[key] = value.substring(0, 500) + '...';
+        continue;
+      }
+      
+      if (typeof value !== 'object') {
+        cleanData[key] = value;
+      } else if (Array.isArray(value)) {
+        if (value.length === 0) {
+          continue; // ✅ Skip empty arrays
+        } else if (typeof value[0] === 'object' && value[0] !== null) {
+          console.log(`[Popup] ⏭️ Skipping complex array: ${key}`);
+          continue;
+        } else {
+          cleanData[key] = value.join('; ');
+        }
+      } else {
+        console.log(`[Popup] ⏭️ Skipping complex object: ${key}`);
+        continue;
+      }
+    }
+    
+    rows.push({
+      ...cleanData,
+      ...commonFields
+    });
+  }
+  
+  return buildCSVFromRows(rows);
+}
+
+function flattenObject(obj, maxDepth = 1) {
+  const flat = {};
+  
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === null || value === undefined) {
+      flat[key] = '';
+    } else if (typeof value !== 'object') {
+      flat[key] = value;
+    } else if (Array.isArray(value)) {
+      const simpleValues = value.filter(v => typeof v !== 'object' || v === null);
+      flat[key] = simpleValues.join('; ');
     }
   }
+  
+  return flat;
+}
 
-  // Create CSV
-  const headers = Object.keys(flatData).join(',');
-  const values = Object.values(flatData).map(v => {
-    if (v === null || v === undefined) return '';
-    const str = String(v).replace(/"/g, '""');
-    return `"${str}"`;
-  }).join(',');
-
-  return `${headers}\n${values}`;
+function buildCSVFromRows(rows) {
+  if (rows.length === 0) {
+    console.error('[Popup] ❌ No rows to build CSV');
+    return '';
+  }
+  
+  const priorityColumns = [
+    'item_index',
+    'product_name', 'article_title', 'blog_title',
+    'price', 'original_price', 'discount_percentage',
+    'rating', 'number_of_reviews',
+    'article_author', 'blog_author', 'author',
+    'publication_date', 'article_date', 'blog_publication_date',
+    'estimated_reading_time', 'number_of_comments', 'number_of_likes',
+    'confidence_score', 'confidence_reasoning',
+    'url', 'domain', 'pageLayout', 'method'
+  ];
+  
+  const allKeys = new Set();
+  rows.forEach(row => {
+    Object.keys(row).forEach(key => {
+      if (typeof row[key] !== 'object' || row[key] === null) {
+        allKeys.add(key);
+      }
+    });
+  });
+  
+  const headers = [
+    ...priorityColumns.filter(col => allKeys.has(col)),
+    ...Array.from(allKeys)
+      .filter(col => !priorityColumns.includes(col))
+      .sort()
+  ];
+  
+  let csv = headers.join(',') + '\n';
+  
+  rows.forEach(row => {
+    const values = headers.map(header => {
+      let value = row[header];
+      
+      if (value === null || value === undefined) return '';
+      
+      value = String(value);
+      
+      if (value.includes(',') || value.includes('\n') || value.includes('"')) {
+        value = '"' + value.replace(/"/g, '""') + '"';
+      }
+      
+      return value;
+    });
+    
+    csv += values.join(',') + '\n';
+  });
+  
+  console.log(`[Popup] ✅ Built CSV: ${rows.length} rows × ${headers.length} columns`);
+  return csv;
 }
 
 // ============================================================================
@@ -458,7 +547,6 @@ async function extractWithHybridClassifier() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-    // Send hybrid extraction request to background
     const response = await chrome.runtime.sendMessage({
       action: 'extractWithHybrid',
       tabId: tab.id
@@ -472,7 +560,6 @@ async function extractWithHybridClassifier() {
       console.log('[Popup] 📋 Layer 3:', hybrid.layer3Prompt);
       console.log('[Popup] ⏱️ Total time:', hybrid.totalPipelineTime + 'ms');
       
-      // ✅ PRIORITY 3B: Refresh analytics after hybrid extraction
       await loadAnalytics();
       
       return response.data;
@@ -501,10 +588,8 @@ function setupHybridButton() {
         const data = await extractWithHybridClassifier();
 
         if (data && data._hybrid) {
-          // Show hybrid info panel
           hybridInfo.classList.remove('hidden');
 
-          // Populate hybrid metrics
           document.getElementById('layer1Result').textContent = 
             `${data._hybrid.layer1Classification} (${data._hybrid.layer1Confidence}%)`;
           
@@ -517,11 +602,9 @@ function setupHybridButton() {
           document.getElementById('totalTime').textContent = 
             `${data._hybrid.totalPipelineTime}ms`;
 
-          // Display full results
           currentData = data;
           displayResults(data);
 
-          // Enable export buttons
           elements.copyBtn.disabled = false;
           elements.jsonBtn.disabled = false;
           elements.csvBtn.disabled = false;
