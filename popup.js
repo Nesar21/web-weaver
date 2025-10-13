@@ -1,630 +1,565 @@
-// Web Weaver Lightning - Popup Controller
-// Complete Days 1-10 implementation
-// Handles UI, extraction, export, and analytics
+/**
+ * Web Weaver Lightning - Popup UI Controller
+ * Version: 2.0.0 (Day 11 Enhancement)
+ * Author: FAANG-Level Developer Agent
+ * 
+ * MAJOR CHANGES IN V2.0:
+ * - Smart Auto Mode integration
+ * - Real-time quota monitoring
+ * - Confidence meter with tiers
+ * - Auto decision reasoning display
+ * - Today's analytics mini-dashboard
+ * - Enhanced metadata display
+ */
 
-console.log('[WebWeaver-Popup] Loading...');
+console.log('[Popup] Web Weaver Lightning v2.0 loading...');
 
-// ============================================================================
-// STATE
-// ============================================================================
+// ========================================
+// STATE MANAGEMENT
+// ========================================
 
-let currentData = null;
-let aiEnabled = true;
-let analyticsInterval = null;
+let currentMode = 'auto'; // Default to Smart Auto
+let selectedMode = 'auto';
+let isExtracting = false;
+let lastExtractionData = null;
 
-// ============================================================================
+// ========================================
 // DOM ELEMENTS
-// ============================================================================
+// ========================================
 
-const elements = {
-  apiSection: document.getElementById('apiSection'),
-  apiKeyInput: document.getElementById('apiKeyInput'),
-  saveKeyBtn: document.getElementById('saveKeyBtn'),
-  aiToggle: document.getElementById('aiToggle'),
-  extractBtn: document.getElementById('extractBtn'),
-  status: document.getElementById('status'),
-  results: document.getElementById('results'),
-  copyBtn: document.getElementById('copyBtn'),
-  jsonBtn: document.getElementById('jsonBtn'),
-  csvBtn: document.getElementById('csvBtn'),
-  analytics: document.getElementById('analytics'),
-  totalExtractions: document.getElementById('totalExtractions'),
-  aiExtractions: document.getElementById('aiExtractions'),
-  avgConfidence: document.getElementById('avgConfidence'),
-  successRate: document.getElementById('successRate'),
-  targetStatus: document.getElementById('targetStatus')
-};
+// API Key
+const apiKeyInput = document.getElementById('apiKeyInput');
+const saveKeyBtn = document.getElementById('saveKeyBtn');
 
-// ============================================================================
+// Mode Selector
+const modeBtns = document.querySelectorAll('.mode-btn');
+
+// Quota
+const quotaSection = document.getElementById('quotaSection');
+const quotaValue = document.getElementById('quotaValue');
+const quotaBarFill = document.getElementById('quotaBarFill');
+const quotaReset = document.getElementById('quotaReset');
+
+// Extract Button
+const extractBtn = document.getElementById('extractBtn');
+const extractBtnText = document.getElementById('extractBtnText');
+
+// Auto Decision
+const autoDecision = document.getElementById('autoDecision');
+const autoDecisionMode = document.getElementById('autoDecisionMode');
+const autoDecisionReason = document.getElementById('autoDecisionReason');
+
+// Results
+const resultPlaceholder = document.getElementById('resultPlaceholder');
+const resultContainer = document.getElementById('resultContainer');
+const confidenceValue = document.getElementById('confidenceValue');
+const confidenceBarFill = document.getElementById('confidenceBarFill');
+const confidenceTier = document.getElementById('confidenceTier');
+const confidenceTierIcon = document.getElementById('confidenceTierIcon');
+const confidenceTierText = document.getElementById('confidenceTierText');
+
+// Metadata
+const metadataMode = document.getElementById('metadataMode');
+const metadataApiCalls = document.getElementById('metadataApiCalls');
+const metadataDuration = document.getElementById('metadataDuration');
+const metadataClassification = document.getElementById('metadataClassification');
+const resultData = document.getElementById('resultData');
+
+// Action Buttons
+const copyBtn = document.getElementById('copyBtn');
+const downloadJsonBtn = document.getElementById('downloadJsonBtn');
+const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+
+// Analytics
+const statsTotal = document.getElementById('statsTotal');
+const statsEco = document.getElementById('statsEco');
+const statsConfidence = document.getElementById('statsConfidence');
+const statsSuccess = document.getElementById('statsSuccess');
+
+// ========================================
 // INITIALIZATION
-// ============================================================================
+// ========================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[WebWeaver-Popup] DOM loaded');
+  console.log('[Popup] Initializing UI...');
   
-  await checkApiKey();
-  await loadAiToggle();
-  await loadAnalytics();
+  // Load saved API key
+  await loadApiKey();
+  
+  // Load quota status
+  await updateQuotaDisplay();
+  
+  // Load analytics
+  await updateAnalytics();
+  
+  // Setup event listeners
   setupEventListeners();
-  setupHybridButton();
-  startAnalyticsAutoRefresh();
   
-  console.log('[WebWeaver-Popup] ✅ Ready');
+  console.log('[Popup] UI initialized successfully');
 });
 
-function setupEventListeners() {
-  elements.saveKeyBtn.addEventListener('click', handleSaveApiKey);
-  elements.aiToggle.addEventListener('change', handleAiToggle);
-  elements.extractBtn.addEventListener('click', handleExtract);
-  elements.copyBtn.addEventListener('click', handleCopy);
-  elements.jsonBtn.addEventListener('click', () => handleExport('json'));
-  elements.csvBtn.addEventListener('click', () => handleExport('csv'));
-}
-
-function startAnalyticsAutoRefresh() {
-  if (analyticsInterval) {
-    clearInterval(analyticsInterval);
-  }
-  
-  analyticsInterval = setInterval(async () => {
-    if (aiEnabled) {
-      await loadAnalytics(true);
-    }
-  }, 3000);
-  
-  console.log('[WebWeaver-Popup] 🔄 Analytics auto-refresh started (3s interval)');
-}
-
-window.addEventListener('beforeunload', () => {
-  if (analyticsInterval) {
-    clearInterval(analyticsInterval);
-    console.log('[WebWeaver-Popup] 🛑 Analytics auto-refresh stopped');
-  }
-});
-
-// ============================================================================
+// ========================================
 // API KEY MANAGEMENT
-// ============================================================================
+// ========================================
 
-async function checkApiKey() {
+async function loadApiKey() {
   try {
     const response = await chrome.runtime.sendMessage({ action: 'getApiKey' });
-    if (response.success && response.hasKey) {
-      elements.apiSection.classList.add('hidden');
-      console.log('[WebWeaver-Popup] ✅ API key configured');
-    } else {
-      elements.apiSection.classList.remove('hidden');
-      console.log('[WebWeaver-Popup] ⚠️ No API key found');
+    if (response && response.apiKey) {
+      apiKeyInput.value = response.apiKey;
+      apiKeyInput.type = 'password';
+      console.log('[Popup] API key loaded');
     }
   } catch (error) {
-    console.error('[WebWeaver-Popup] ❌ Check API key failed:', error);
+    console.error('[Popup] Failed to load API key:', error);
   }
 }
 
-async function handleSaveApiKey() {
-  const apiKey = elements.apiKeyInput.value.trim();
+async function saveApiKey() {
+  const apiKey = apiKeyInput.value.trim();
   
   if (!apiKey) {
-    showStatus('Please enter an API key', 'error');
+    alert('Please enter an API key');
     return;
   }
-
-  showStatus('Saving API key...', 'loading');
   
   try {
-    const response = await chrome.runtime.sendMessage({
-      action: 'saveApiKey',
-      apiKey: apiKey
+    await chrome.runtime.sendMessage({ 
+      action: 'saveApiKey', 
+      apiKey 
     });
+    
+    apiKeyInput.type = 'password';
+    saveKeyBtn.textContent = '✓ Saved';
+    
+    setTimeout(() => {
+      saveKeyBtn.textContent = 'Save';
+    }, 2000);
+    
+    console.log('[Popup] API key saved');
+  } catch (error) {
+    console.error('[Popup] Failed to save API key:', error);
+    alert('Failed to save API key. Please try again.');
+  }
+}
 
-    if (response.success) {
-      showStatus('✅ API key saved successfully!', 'success');
-      elements.apiKeyInput.value = '';
-      setTimeout(() => {
-        elements.apiSection.classList.add('hidden');
-        hideStatus();
-      }, 2000);
+// ========================================
+// MODE SELECTION
+// ========================================
+
+function selectMode(mode) {
+  console.log('[Popup] Mode selected:', mode);
+  
+  selectedMode = mode;
+  
+  // Update UI
+  modeBtns.forEach(btn => {
+    if (btn.dataset.mode === mode) {
+      btn.classList.add('active');
     } else {
-      showStatus(`❌ ${response.error}`, 'error');
+      btn.classList.remove('active');
     }
-  } catch (error) {
-    showStatus('❌ Failed to save API key', 'error');
-    console.error('[WebWeaver-Popup] ❌ Save error:', error);
-  }
-}
-
-// ============================================================================
-// AI TOGGLE
-// ============================================================================
-
-async function loadAiToggle() {
-  try {
-    const response = await chrome.runtime.sendMessage({ action: 'getAiEnabled' });
-    if (response.success) {
-      aiEnabled = response.enabled;
-      elements.aiToggle.checked = aiEnabled;
-      updateAnalyticsVisibility();
-    }
-  } catch (error) {
-    console.error('[WebWeaver-Popup] ❌ Load AI toggle failed:', error);
-  }
-}
-
-async function handleAiToggle() {
-  aiEnabled = elements.aiToggle.checked;
+  });
   
+  // Hide auto decision if not in auto mode
+  if (mode !== 'auto') {
+    autoDecision.classList.add('hidden');
+  }
+}
+
+// ========================================
+// QUOTA MANAGEMENT
+// ========================================
+
+async function updateQuotaDisplay() {
   try {
-    await chrome.runtime.sendMessage({
-      action: 'setAiEnabled',
-      enabled: aiEnabled
+    const response = await chrome.runtime.sendMessage({ 
+      action: 'getQuotaStatus' 
     });
     
-    updateAnalyticsVisibility();
-    const mode = aiEnabled ? 'AI-Enhanced' : 'Basic';
-    showStatus(`🔄 Switched to ${mode} mode`, 'success');
-    setTimeout(hideStatus, 2000);
-    console.log(`[WebWeaver-Popup] 🔄 AI ${aiEnabled ? 'ENABLED' : 'DISABLED'}`);
-  } catch (error) {
-    console.error('[WebWeaver-Popup] ❌ Toggle AI failed:', error);
-  }
-}
-
-function updateAnalyticsVisibility() {
-  elements.analytics.style.display = aiEnabled ? 'block' : 'none';
-}
-
-// ============================================================================
-// EXTRACTION
-// ============================================================================
-
-async function handleExtract() {
-  console.log('[WebWeaver-Popup] 🎯 Extract clicked');
-  elements.extractBtn.disabled = true;
-  
-  const mode = aiEnabled ? 'AI-Enhanced' : 'Basic';
-  showStatus(`⏳ Extracting data (${mode} mode)...`, 'loading');
-
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    
-    if (!tab || !tab.id) {
-      throw new Error('No active tab found');
-    }
-
-    if (tab.url.startsWith('chrome://') || tab.url.startsWith('about:')) {
-      throw new Error('Cannot extract from Chrome internal pages. Please navigate to a real website.');
-    }
-
-    const startTime = Date.now();
-
-    const response = await chrome.runtime.sendMessage({
-      action: 'extract',
-      tabId: tab.id,
-      useAI: aiEnabled
-    });
-
-    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-
-    if (response.success) {
-      currentData = response.data;
-      displayResults(response.data);
-
-      const confidence = response.data._meta?.confidence || 0;
-      const confidenceText = aiEnabled ? ` • ${confidence}% confidence` : '';
-      showStatus(`✅ Extraction complete in ${duration}s${confidenceText}`, 'success');
-
-      elements.copyBtn.disabled = false;
-      elements.jsonBtn.disabled = false;
-      elements.csvBtn.disabled = false;
-
-      await loadAnalytics();
-      console.log('[WebWeaver-Popup] 📊 Analytics refreshed after extraction');
-
-      setTimeout(hideStatus, 3000);
-    } else {
-      throw new Error(response.error || 'Extraction failed');
-    }
-  } catch (error) {
-    console.error('[WebWeaver-Popup] ❌ Extract error:', error);
-    showStatus(`❌ ${error.message}`, 'error');
-    elements.results.textContent = `Error: ${error.message}`;
-  } finally {
-    elements.extractBtn.disabled = false;
-  }
-}
-
-function displayResults(data) {
-  const displayData = { ...data };
-  const meta = displayData._meta;
-  delete displayData._meta;
-  delete displayData._hybrid;
-
-  let output = '';
-
-  if (meta && meta.aiEnhanced) {
-    output += `🤖 AI-Enhanced Extraction\n`;
-    output += `Type: ${meta.websiteType || 'unknown'}\n`;
-    output += `Confidence: ${meta.confidence}%\n`;
-    
-    if (data.confidence_reasoning) {
-      output += `Reasoning: ${data.confidence_reasoning}\n`;
-    }
-    
-    output += `Time: ${new Date(meta.extractedAt).toLocaleTimeString()}\n`;
-    output += '\n' + '─'.repeat(50) + '\n\n';
-  } else if (meta) {
-    output += `📦 Basic Extraction\n`;
-    output += `Time: ${new Date(meta.extractedAt).toLocaleTimeString()}\n`;
-    output += '\n' + '─'.repeat(50) + '\n\n';
-  }
-
-  output += JSON.stringify(displayData, null, 2);
-  elements.results.textContent = output;
-}
-
-// ============================================================================
-// ANALYTICS
-// ============================================================================
-
-async function loadAnalytics(silent = false) {
-  if (!aiEnabled) return;
-
-  try {
-    const response = await chrome.runtime.sendMessage({ action: 'getAnalytics' });
-    
-    if (response.success) {
-      const analytics = response.data;
+    if (response && response.success && response.data) {
+      const quota = response.data;
       
-      elements.totalExtractions.textContent = analytics.overall.total;
-      elements.aiExtractions.textContent = analytics.overall.ai;
-
-      const avgConf = analytics.overall.avgConfidence;
-      elements.avgConfidence.textContent = avgConf + '%';
-      elements.avgConfidence.className = 'stat-value ' + getConfidenceClass(avgConf);
-
-      const successRate = analytics.overall.successRate;
-      elements.successRate.textContent = successRate + '%';
-      elements.successRate.className = 'stat-value ' + getConfidenceClass(successRate);
-
-      if (avgConf >= analytics.target) {
-        elements.targetStatus.textContent = '✅ Target reached!';
-        elements.targetStatus.className = 'stat-value good';
-      } else {
-        const remaining = Math.max(0, analytics.target - avgConf);
-        elements.targetStatus.textContent = `${remaining}% to go`;
-        elements.targetStatus.className = 'stat-value warning';
+      // Update values
+      quotaValue.textContent = `${quota.used || 0} / ${quota.total || 1500}`;
+      const percent = quota.percent || ((quota.used || 0) / (quota.total || 1500));
+      quotaBarFill.style.width = `${percent * 100}%`;
+      
+      // Update reset time
+      if (quota.resetTime) {
+        const resetDate = new Date(quota.resetTime);
+        quotaReset.textContent = `Resets at ${resetDate.toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })}`;
       }
-
-      if (!silent) {
-        console.log('[WebWeaver-Popup] 📊 Analytics loaded:', {
-          total: analytics.overall.total,
-          ai: analytics.overall.ai,
-          avgConfidence: avgConf,
-          successRate: successRate,
-          distribution: analytics.overall.confidenceDistribution
-        });
-        
-        if (analytics.overall.confidenceDistribution) {
-          console.log('[WebWeaver-Popup] 📈 Confidence Distribution:', analytics.overall.confidenceDistribution);
-        }
+      
+      // Update status styling
+      quotaSection.className = 'quota-section';
+      
+      if (quota.status === 'critical') {
+        quotaSection.classList.add('critical');
+      } else if (quota.status === 'warning') {
+        quotaSection.classList.add('warning');
       }
+      
+      console.log('[Popup] Quota updated:', quota.used, '/', quota.total);
     }
   } catch (error) {
-    if (!silent) {
-      console.error('[WebWeaver-Popup] ❌ Load analytics failed:', error);
-    }
+    console.error('[Popup] Failed to update quota:', error);
   }
 }
 
-function getConfidenceClass(value) {
-  if (value >= 80) return 'good';
-  if (value >= 60) return 'warning';
-  return 'bad';
-}
+// ========================================
+// EXTRACTION
+// ========================================
 
-// ============================================================================
-// EXPORT
-// ============================================================================
-
-async function handleCopy() {
-  if (!currentData) return;
-
-  try {
-    const text = JSON.stringify(currentData, null, 2);
-    await navigator.clipboard.writeText(text);
-    showStatus('📋 Copied to clipboard!', 'success');
-    setTimeout(hideStatus, 2000);
-  } catch (error) {
-    showStatus('❌ Copy failed', 'error');
-    console.error('[WebWeaver-Popup] ❌ Copy error:', error);
+async function extractData() {
+  if (isExtracting) {
+    console.log('[Popup] Extraction already in progress');
+    return;
   }
-}
-
-async function handleExport(format) {
-  if (!currentData) return;
-
-  try {
-    let content, filename, mimeType;
-
-    if (format === 'json') {
-      content = JSON.stringify(currentData, null, 2);
-      filename = `web-weaver-${Date.now()}.json`;
-      mimeType = 'application/json';
-    } else if (format === 'csv') {
-      content = convertToFlatCSV(currentData);
-      filename = `web-weaver-flat-${Date.now()}.csv`;
-      mimeType = 'text/csv;charset=utf-8;';
-    }
-
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    showStatus(`💾 Downloaded ${format.toUpperCase()}!`, 'success');
-    setTimeout(hideStatus, 2000);
-    console.log(`[WebWeaver-Popup] 💾 Exported as ${format}`);
-  } catch (error) {
-    showStatus(`❌ Export failed`, 'error');
-    console.error('[WebWeaver-Popup] ❌ Export error:', error);
-  }
-}
-
-// ============================================================================
-// PRIORITY 6: UNIVERSAL HUMAN-READABLE FLAT CSV EXPORT
-// ============================================================================
-
-function convertToFlatCSV(data) {
-  console.log('[Popup] 🔧 Flattening data for CSV...');
   
-  const rows = [];
-  const commonFields = {
-    url: data.url,
-    domain: data.domain,
-    title: data.title,
-    pageLayout: data.pageLayout,
-    extractedAt: data._meta?.extractedAt || new Date().toISOString(),
-    method: data._meta?.method || 'unknown',
-    overall_confidence: data.confidence_score || data._meta?.confidence || 0
+  isExtracting = true;
+  
+  // Update button state
+  extractBtn.disabled = true;
+  extractBtn.innerHTML = `
+    <div class="spinner"></div>
+    <span>Extracting...</span>
+  `;
+  
+  console.log('[Popup] Starting extraction | Mode:', selectedMode);
+  
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'extractData',
+      mode: selectedMode
+    });
+    
+    if (response && response.success) {
+      console.log('[Popup] ✅ Extraction successful');
+      
+      // Store data
+      lastExtractionData = response;
+      
+      // Display results
+      displayResults(response);
+      
+      // Update quota
+      await updateQuotaDisplay();
+      
+      // Update analytics
+      await updateAnalytics();
+      
+    } else {
+      console.error('[Popup] ❌ Extraction failed:', response.error);
+      
+      // Handle specific errors
+      if (response.suggestQueue) {
+        // Quota exhausted - offer queue option
+        const shouldQueue = confirm(response.message + '\n\nAdd to queue?');
+        if (shouldQueue) {
+          // TODO: Implement queue functionality
+          alert('Queue feature coming soon!');
+        }
+      } else if (response.rateLimitInfo) {
+        // Rate limit hit - show queue info
+        alert(response.message);
+      } else {
+        // Generic error
+        alert(`Extraction failed: ${response.error || 'Unknown error'}`);
+      }
+    }
+    
+  } catch (error) {
+    console.error('[Popup] ❌ Extraction failed:', error);
+    alert(`Extraction failed: ${error.message}`);
+  } finally {
+    // Reset button state
+    isExtracting = false;
+    extractBtn.disabled = false;
+    extractBtn.innerHTML = `
+      <span>🚀</span>
+      <span>Extract Data</span>
+    `;
+  }
+}
+
+// ========================================
+// RESULTS DISPLAY
+// ========================================
+
+function displayResults(response) {
+  const { data, metadata } = response;
+  
+  console.log('[Popup] Displaying results | Confidence:', metadata.confidence);
+  
+  // Show results container
+  resultPlaceholder.classList.add('hidden');
+  resultContainer.classList.remove('hidden');
+  
+  // Display Auto Decision (if applicable)
+  if (metadata.autoDecision) {
+    autoDecision.classList.remove('hidden');
+    autoDecisionMode.textContent = metadata.mode.toUpperCase();
+    autoDecisionReason.textContent = metadata.autoDecision.reasoning;
+  }
+  
+  // Update confidence meter
+  updateConfidenceMeter(metadata.confidence || 0);
+  
+  // Update metadata
+  metadataMode.textContent = (metadata.mode || 'unknown').toUpperCase();
+  metadataApiCalls.textContent = metadata.apiCalls || 0;
+  metadataDuration.textContent = ((metadata.duration || 0) / 1000).toFixed(1) + 's';
+  metadataClassification.textContent = formatClassification(metadata.classification);
+  
+  // Display mode badge styling
+  if (metadata.upgraded) {
+    metadataMode.textContent += ' ⬆️';
+  } else if (metadata.downgraded) {
+    metadataMode.textContent += ' ⬇️';
+  }
+  
+  if (metadata.cached) {
+    metadataMode.textContent += ' 💾';
+  }
+  
+  // Display extracted data
+  resultData.textContent = JSON.stringify(data, null, 2);
+}
+
+function updateConfidenceMeter(confidence) {
+  confidenceValue.textContent = confidence + '%';
+  confidenceBarFill.style.width = confidence + '%';
+  
+  // Determine tier and color
+  let tier, color, icon, text;
+  
+  if (confidence >= 90) {
+    tier = 'excellent';
+    color = '#10b981'; // green
+    icon = '🟢';
+    text = 'Excellent';
+  } else if (confidence >= 75) {
+    tier = 'good';
+    color = '#f59e0b'; // orange
+    icon = '🟡';
+    text = 'Good';
+  } else {
+    tier = 'caution';
+    color = '#ef4444'; // red
+    icon = '🔴';
+    text = 'Caution';
+  }
+  
+  confidenceBarFill.style.background = color;
+  confidenceTier.className = `confidence-tier ${tier}`;
+  confidenceTierIcon.textContent = icon;
+  confidenceTierText.textContent = text;
+  confidenceTier.classList.remove('hidden');
+}
+
+function formatClassification(classification) {
+  if (!classification) return 'Unknown';
+  
+  const map = {
+    'SINGLE_ITEM': '1 Item',
+    'MULTI_ITEM': 'Multiple',
+    'UNCERTAIN': 'Uncertain',
+    'NONE': 'None'
   };
   
-  const itemKeys = Object.keys(data)
-    .filter(k => !isNaN(k) && parseInt(k) < 100)
-    .sort((a, b) => parseInt(a) - parseInt(b));
-  
-  if (itemKeys.length > 0) {
-    console.log(`[Popup] 📦 Multi-item: ${itemKeys.length} items found`);
-    
-    itemKeys.forEach(key => {
-      const item = data[key];
-      rows.push({
-        item_index: parseInt(key) + 1,
-        ...flattenObject(item),
-        ...commonFields
-      });
-    });
-  } else {
-    console.log('[Popup] 📄 Single-item extraction');
-    
-    const cleanData = {};
-    
-    for (const [key, value] of Object.entries(data)) {
-      if (key === '_meta' || key === '_hybrid') continue;
-      
-      // ✅ PRIORITY 6B: Skip empty/null fields for cleaner CSV
-      if (value === null || value === undefined || value === '') continue;
-      
-      if (key === 'mainText' && typeof value === 'string' && value.length > 500) {
-        cleanData[key] = value.substring(0, 500) + '...';
-        continue;
-      }
-      
-      if (typeof value !== 'object') {
-        cleanData[key] = value;
-      } else if (Array.isArray(value)) {
-        if (value.length === 0) {
-          continue; // ✅ Skip empty arrays
-        } else if (typeof value[0] === 'object' && value[0] !== null) {
-          console.log(`[Popup] ⏭️ Skipping complex array: ${key}`);
-          continue;
-        } else {
-          cleanData[key] = value.join('; ');
-        }
-      } else {
-        console.log(`[Popup] ⏭️ Skipping complex object: ${key}`);
-        continue;
-      }
-    }
-    
-    rows.push({
-      ...cleanData,
-      ...commonFields
-    });
-  }
-  
-  return buildCSVFromRows(rows);
+  return map[classification] || classification;
 }
 
-function flattenObject(obj, maxDepth = 1) {
-  const flat = {};
-  
-  for (const [key, value] of Object.entries(obj)) {
-    if (value === null || value === undefined) {
-      flat[key] = '';
-    } else if (typeof value !== 'object') {
-      flat[key] = value;
-    } else if (Array.isArray(value)) {
-      const simpleValues = value.filter(v => typeof v !== 'object' || v === null);
-      flat[key] = simpleValues.join('; ');
-    }
-  }
-  
-  return flat;
-}
+// ========================================
+// ANALYTICS
+// ========================================
 
-function buildCSVFromRows(rows) {
-  if (rows.length === 0) {
-    console.error('[Popup] ❌ No rows to build CSV');
-    return '';
-  }
-  
-  const priorityColumns = [
-    'item_index',
-    'product_name', 'article_title', 'blog_title',
-    'price', 'original_price', 'discount_percentage',
-    'rating', 'number_of_reviews',
-    'article_author', 'blog_author', 'author',
-    'publication_date', 'article_date', 'blog_publication_date',
-    'estimated_reading_time', 'number_of_comments', 'number_of_likes',
-    'confidence_score', 'confidence_reasoning',
-    'url', 'domain', 'pageLayout', 'method'
-  ];
-  
-  const allKeys = new Set();
-  rows.forEach(row => {
-    Object.keys(row).forEach(key => {
-      if (typeof row[key] !== 'object' || row[key] === null) {
-        allKeys.add(key);
-      }
-    });
-  });
-  
-  const headers = [
-    ...priorityColumns.filter(col => allKeys.has(col)),
-    ...Array.from(allKeys)
-      .filter(col => !priorityColumns.includes(col))
-      .sort()
-  ];
-  
-  let csv = headers.join(',') + '\n';
-  
-  rows.forEach(row => {
-    const values = headers.map(header => {
-      let value = row[header];
-      
-      if (value === null || value === undefined) return '';
-      
-      value = String(value);
-      
-      if (value.includes(',') || value.includes('\n') || value.includes('"')) {
-        value = '"' + value.replace(/"/g, '""') + '"';
-      }
-      
-      return value;
-    });
-    
-    csv += values.join(',') + '\n';
-  });
-  
-  console.log(`[Popup] ✅ Built CSV: ${rows.length} rows × ${headers.length} columns`);
-  return csv;
-}
-
-// ============================================================================
-// UI HELPERS
-// ============================================================================
-
-function showStatus(message, type) {
-  elements.status.textContent = message;
-  elements.status.className = `status ${type}`;
-  elements.status.classList.remove('hidden');
-}
-
-function hideStatus() {
-  elements.status.classList.add('hidden');
-}
-
-// ============================================================================
-// DAY 10: HYBRID CLASSIFIER
-// ============================================================================
-
-async function extractWithHybridClassifier() {
-  console.log('[Popup] 🎯 Starting Hybrid Extraction...');
-
+async function updateAnalytics() {
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-    const response = await chrome.runtime.sendMessage({
-      action: 'extractWithHybrid',
-      tabId: tab.id
+    const response = await chrome.runtime.sendMessage({ 
+      action: 'getAnalytics' 
     });
-
-    if (response.success) {
-      const hybrid = response.data._hybrid;
-      console.log('[Popup] ✅ Hybrid extraction complete!');
-      console.log('[Popup] 📊 Layer 1:', hybrid.layer1Classification, `(${hybrid.layer1Confidence}%)`);
-      console.log('[Popup] 🤖 Layer 2:', hybrid.layer2Used ? 'Used' : 'Skipped');
-      console.log('[Popup] 📋 Layer 3:', hybrid.layer3Prompt);
-      console.log('[Popup] ⏱️ Total time:', hybrid.totalPipelineTime + 'ms');
+    
+    // ✅ FIX: Add safety checks for undefined data
+    if (response && response.success && response.data && response.data.today) {
+      const analytics = response.data;
+      const today = analytics.today;
       
-      await loadAnalytics();
+      // Update stats with fallback values
+      statsTotal.textContent = today.totalExtractions || 0;
       
-      return response.data;
+      // Calculate Eco percentage
+      const totalModeUsage = (today.modeUsage?.eco || 0) + 
+                            (today.modeUsage?.balanced || 0) + 
+                            (today.modeUsage?.auto || 0);
+      const ecoPercent = totalModeUsage > 0 
+        ? Math.round((today.modeUsage?.eco || 0) / totalModeUsage * 100)
+        : 0;
+      statsEco.textContent = ecoPercent + '%';
+      
+      // Avg confidence
+      statsConfidence.textContent = Math.round(today.avgConfidence || 0) + '%';
+      
+      // Success rate
+      const successRate = today.successRate || 0;
+      statsSuccess.textContent = Math.round(successRate * 100) + '%';
+      
+      console.log('[Popup] Analytics updated');
     } else {
-      throw new Error(response.error || 'Extraction failed');
+      console.warn('[Popup] Analytics data not available');
+      // Set default values
+      statsTotal.textContent = '0';
+      statsEco.textContent = '0%';
+      statsConfidence.textContent = '0%';
+      statsSuccess.textContent = '0%';
     }
   } catch (error) {
-    console.error('[Popup] ❌ Hybrid extraction failed:', error);
-    throw error;
+    console.error('[Popup] Failed to update analytics:', error);
   }
 }
 
-function setupHybridButton() {
-  const hybridBtn = document.getElementById('extractHybridBtn');
-  const hybridInfo = document.getElementById('hybridInfo');
+// ========================================
+// ACTION BUTTONS
+// ========================================
 
-  if (hybridBtn) {
-    console.log('[Popup] 🔥 Hybrid button found, attaching listener');
+function copyToClipboard() {
+  if (!lastExtractionData) {
+    alert('No data to copy');
+    return;
+  }
+  
+  const text = JSON.stringify(lastExtractionData.data, null, 2);
+  
+  navigator.clipboard.writeText(text).then(() => {
+    copyBtn.innerHTML = '<span>✓</span><span>Copied!</span>';
+    setTimeout(() => {
+      copyBtn.innerHTML = '<span>📋</span><span>Copy</span>';
+    }, 2000);
+  }).catch(err => {
+    console.error('[Popup] Copy failed:', err);
+    alert('Failed to copy to clipboard');
+  });
+}
+
+function downloadJson() {
+  if (!lastExtractionData) {
+    alert('No data to download');
+    return;
+  }
+  
+  const dataStr = JSON.stringify(lastExtractionData.data, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `web-weaver-${Date.now()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  console.log('[Popup] JSON downloaded');
+}
+
+function downloadCsv() {
+  if (!lastExtractionData) {
+    alert('No data to download');
+    return;
+  }
+  
+  const data = lastExtractionData.data;
+  let csv = '';
+  
+  // Handle array of objects
+  if (Array.isArray(data) && data.length > 0) {
+    // Get headers
+    const headers = Object.keys(data[0]);
+    csv = headers.join(',') + '\n';
     
-    hybridBtn.addEventListener('click', async () => {
-      console.log('[Popup] 🔥 Hybrid Extract clicked');
-      hybridBtn.disabled = true;
-      showStatus('⏳ Hybrid classification in progress...', 'loading');
-
-      try {
-        const data = await extractWithHybridClassifier();
-
-        if (data && data._hybrid) {
-          hybridInfo.classList.remove('hidden');
-
-          document.getElementById('layer1Result').textContent = 
-            `${data._hybrid.layer1Classification} (${data._hybrid.layer1Confidence}%)`;
-          
-          document.getElementById('layer2Result').textContent = 
-            data._hybrid.layer2Used ? `Used (${data._hybrid.layer2Time}ms)` : 'Skipped';
-          
-          document.getElementById('layer3Result').textContent = 
-            data._hybrid.layer3Prompt;
-          
-          document.getElementById('totalTime').textContent = 
-            `${data._hybrid.totalPipelineTime}ms`;
-
-          currentData = data;
-          displayResults(data);
-
-          elements.copyBtn.disabled = false;
-          elements.jsonBtn.disabled = false;
-          elements.csvBtn.disabled = false;
-
-          showStatus('✅ Hybrid extraction complete!', 'success');
+    // Add rows
+    data.forEach(row => {
+      const values = headers.map(header => {
+        const value = row[header];
+        // Escape commas and quotes
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          return '"' + value.replace(/"/g, '""') + '"';
         }
-      } catch (error) {
-        console.error('[Popup] ❌ Hybrid extraction error:', error);
-        showStatus(`❌ ${error.message}`, 'error');
-      } finally {
-        hybridBtn.disabled = false;
-      }
+        return value;
+      });
+      csv += values.join(',') + '\n';
     });
-  } else {
-    console.warn('[Popup] ⚠️ Hybrid button not found in DOM');
   }
+  // Handle single object
+  else if (typeof data === 'object') {
+    csv = 'Field,Value\n';
+    Object.entries(data).forEach(([key, value]) => {
+      if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+        value = '"' + value.replace(/"/g, '""') + '"';
+      }
+      csv += `${key},${value}\n`;
+    });
+  }
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `web-weaver-${Date.now()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  console.log('[Popup] CSV downloaded');
 }
 
-// ============================================================================
-// READY
-// ============================================================================
+// ========================================
+// EVENT LISTENERS
+// ========================================
 
-console.log('[WebWeaver-Popup] ✅ Script loaded');
+function setupEventListeners() {
+  // API Key
+  saveKeyBtn.addEventListener('click', saveApiKey);
+  apiKeyInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') saveApiKey();
+  });
+  
+  // Mode Selection
+  modeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectMode(btn.dataset.mode);
+    });
+  });
+  
+  // Extract Button
+  extractBtn.addEventListener('click', extractData);
+  
+  // Action Buttons
+  copyBtn.addEventListener('click', copyToClipboard);
+  downloadJsonBtn.addEventListener('click', downloadJson);
+  downloadCsvBtn.addEventListener('click', downloadCsv);
+  
+  console.log('[Popup] Event listeners registered');
+}
+
+// ========================================
+// AUTO-REFRESH QUOTA & ANALYTICS
+// ========================================
+
+// Refresh quota every 30 seconds
+setInterval(() => {
+  updateQuotaDisplay();
+}, 30000);
+
+// Refresh analytics every 60 seconds
+setInterval(() => {
+  updateAnalytics();
+}, 60000);
+
+console.log('[Popup] Auto-refresh timers started');

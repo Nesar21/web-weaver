@@ -1,9 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Web Weaver Lightning</title>
   <style>
+    /* ===================================== */
+    /* MODERN CSS VARIABLES */
+    /* ===================================== */
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+      --bg-dark: #1e293b;
+      --bg-light: #f1f5f9;
+      --card-bg: #ffffff;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    /* ===================================== */
+    /* BASE STYLES */
+    /* ===================================== */
     * {
       margin: 0;
       padding: 0;
@@ -11,425 +37,679 @@
     }
 
     body {
-      width: 400px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      width: 420px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #2d3748;
+      color: var(--text-primary);
+      line-height: 1.6;
     }
 
     .container {
-      background: white;
-      padding: 20px;
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      margin: 8px;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
     }
 
+    /* ===================================== */
+    /* HEADER */
+    /* ===================================== */
     .header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 16px 20px;
       text-align: center;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 2px solid #e2e8f0;
+      position: relative;
     }
 
     .header h1 {
       font-size: 20px;
-      color: #667eea;
-      margin-bottom: 5px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
     .header .version {
-      font-size: 11px;
-      color: #718096;
+      font-size: 12px;
+      opacity: 0.9;
+      font-weight: 400;
     }
 
-    /* API Section */
-    .api-section {
-      background: #fff5f5;
-      border: 1px solid #feb2b2;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
+    /* ===================================== */
+    /* API KEY SECTION */
+    /* ===================================== */
+    .section {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .api-section.hidden {
-      display: none;
-    }
-
-    .api-section h3 {
-      color: #c53030;
+    .section-title {
       font-size: 14px;
-      margin-bottom: 10px;
-    }
-
-    .api-section input {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #cbd5e0;
-      border-radius: 4px;
-      font-size: 12px;
-      margin-bottom: 10px;
-    }
-
-    .api-section button {
-      width: 100%;
-      padding: 8px;
-      background: #667eea;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
       font-weight: 600;
-    }
-
-    .api-section button:hover {
-      background: #5a67d8;
-    }
-
-    /* AI Toggle */
-    .ai-toggle {
+      margin-bottom: 12px;
+      color: var(--text-primary);
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 15px;
-      padding: 12px;
-      background: #f7fafc;
-      border-radius: 8px;
+      gap: 8px;
     }
 
-    .ai-toggle label {
+    .input-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    input[type="text"], input[type="password"] {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       font-size: 13px;
-      font-weight: 600;
-      color: #2d3748;
-    }
-
-    .toggle-switch {
-      position: relative;
-      width: 50px;
-      height: 26px;
-    }
-
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #cbd5e0;
-      transition: .3s;
-      border-radius: 34px;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 4px;
-      bottom: 4px;
-      background-color: white;
-      transition: .3s;
-      border-radius: 50%;
-    }
-
-    input:checked + .slider {
-      background-color: #48bb78;
-    }
-
-    input:checked + .slider:before {
-      transform: translateX(24px);
-    }
-
-    /* Buttons */
-    .btn {
-      width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 10px;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .btn:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
-
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .btn.secondary {
-      background: #718096;
-    }
-
-    .btn.secondary:hover:not(:disabled) {
-      box-shadow: 0 4px 12px rgba(113, 128, 150, 0.4);
-    }
-
-    /* DAY 10: Hybrid Button */
-    .btn.hybrid {
-      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-    }
-
-    .btn.hybrid:hover:not(:disabled) {
-      box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
-    }
-
-    /* Status */
-    .status {
-      padding: 10px;
-      border-radius: 6px;
-      font-size: 12px;
-      margin-bottom: 15px;
-      text-align: center;
-    }
-
-    .status.hidden {
-      display: none;
-    }
-
-    .status.success {
-      background: #c6f6d5;
-      color: #22543d;
-      border: 1px solid #9ae6b4;
-    }
-
-    .status.error {
-      background: #fed7d7;
-      color: #742a2a;
-      border: 1px solid #fc8181;
-    }
-
-    .status.loading {
-      background: #bee3f8;
-      color: #2c5282;
-      border: 1px solid #90cdf4;
-    }
-
-    /* Results */
-    .results {
-      background: #f7fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      padding: 12px;
       font-family: 'Courier New', monospace;
-      font-size: 11px;
-      max-height: 300px;
-      overflow-y: auto;
-      margin-bottom: 15px;
-      white-space: pre-wrap;
-      word-break: break-word;
+      transition: border-color 0.2s;
     }
 
-    /* Export Buttons */
-    .export-buttons {
+    input[type="text"]:focus, input[type="password"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    /* ===================================== */
+    /* MODE SELECTOR */
+    /* ===================================== */
+    .mode-selector {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
-      margin-bottom: 15px;
+      margin-bottom: 16px;
     }
 
-    .export-btn {
-      padding: 8px;
-      background: #4a5568;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    .export-btn:hover:not(:disabled) {
-      background: #2d3748;
-    }
-
-    .export-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    /* Analytics */
-    .analytics {
-      background: #f7fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 15px;
-      margin-top: 15px;
-    }
-
-    .analytics h3 {
-      font-size: 14px;
-      margin-bottom: 12px;
-      color: #2d3748;
-      text-align: center;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .stat {
+    .mode-btn {
+      padding: 12px 8px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
       background: white;
-      padding: 10px;
-      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
       text-align: center;
-      border: 1px solid #e2e8f0;
+      position: relative;
+      overflow: hidden;
     }
 
-    .stat-label {
-      font-size: 10px;
-      color: #718096;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    .mode-btn:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .mode-btn.active {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: white;
+    }
+
+    .mode-btn .mode-icon {
+      font-size: 20px;
+      display: block;
       margin-bottom: 4px;
     }
 
-    .stat-value {
+    .mode-btn .mode-name {
+      font-size: 12px;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .mode-btn .mode-desc {
+      font-size: 10px;
+      opacity: 0.7;
+      display: block;
+    }
+
+    .mode-btn.active .mode-desc {
+      opacity: 0.9;
+    }
+
+    /* ===================================== */
+    /* QUOTA METER */
+    /* ===================================== */
+    .quota-section {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+    }
+
+    .quota-section.warning {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    }
+
+    .quota-section.critical {
+      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    }
+
+    .quota-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .quota-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .quota-value {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .quota-bar {
+      height: 6px;
+      background: rgba(0,0,0,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+
+    .quota-bar-fill {
+      height: 100%;
+      background: var(--success);
+      transition: width 0.3s, background 0.3s;
+    }
+
+    .quota-section.warning .quota-bar-fill {
+      background: var(--warning);
+    }
+
+    .quota-section.critical .quota-bar-fill {
+      background: var(--danger);
+    }
+
+    .quota-reset {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    /* ===================================== */
+    /* EXTRACT BUTTON */
+    /* ===================================== */
+    .extract-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .extract-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .extract-btn:active {
+      transform: translateY(0);
+    }
+
+    .extract-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .extract-btn .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ===================================== */
+    /* AUTO MODE DECISION DISPLAY */
+    /* ===================================== */
+    .auto-decision {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      margin-top: 12px;
+      border-left: 4px solid var(--info);
+    }
+
+    .auto-decision-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .auto-decision-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--info);
+    }
+
+    .auto-decision-mode {
+      padding: 4px 8px;
+      background: var(--info);
+      color: white;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .auto-decision-reason {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ===================================== */
+    /* CONFIDENCE METER */
+    /* ===================================== */
+    .confidence-meter {
+      margin-top: 16px;
+    }
+
+    .confidence-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .confidence-label {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .confidence-value {
       font-size: 18px;
       font-weight: 700;
     }
 
-    .stat-value.good {
-      color: #48bb78;
+    .confidence-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 6px;
     }
 
-    .stat-value.warning {
-      color: #ed8936;
+    .confidence-bar-fill {
+      height: 100%;
+      transition: width 0.5s, background 0.3s;
+      border-radius: 4px;
     }
 
-    .stat-value.bad {
-      color: #f56565;
-    }
-
-    /* DAY 10: Hybrid Classification Display */
-    .hybrid-info {
-      background: #e6fffa;
-      border: 1px solid #81e6d9;
-      border-radius: 6px;
-      padding: 10px;
-      margin-bottom: 15px;
+    .confidence-tier {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 4px;
       font-size: 11px;
-    }
-
-    .hybrid-info.hidden {
-      display: none;
-    }
-
-    .hybrid-info .layer {
-      margin-bottom: 5px;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .hybrid-info .layer-label {
       font-weight: 600;
-      color: #234e52;
+      margin-top: 4px;
     }
 
-    .hybrid-info .layer-value {
-      color: #285e61;
+    .confidence-tier.excellent {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .confidence-tier.good {
+      background: #fed7aa;
+      color: #92400e;
+    }
+
+    .confidence-tier.caution {
+      background: #fecaca;
+      color: #991b1b;
+    }
+
+    /* ===================================== */
+    /* METADATA DISPLAY */
+    /* ===================================== */
+    .metadata {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .metadata-item {
+      background: var(--bg-light);
+      padding: 10px;
+      border-radius: var(--radius);
+      text-align: center;
+    }
+
+    .metadata-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .metadata-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* ===================================== */
+    /* RESULTS SECTION */
+    /* ===================================== */
+    .results-section {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .result-placeholder {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .result-data {
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: var(--radius);
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    /* ===================================== */
+    /* ACTION BUTTONS */
+    /* ===================================== */
+    .action-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .action-btn {
+      padding: 10px;
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .action-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    /* ===================================== */
+    /* ANALYTICS MINI DASHBOARD */
+    /* ===================================== */
+    .analytics-mini {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .analytics-card {
+      background: var(--bg-light);
+      padding: 12px 8px;
+      border-radius: var(--radius);
+      text-align: center;
+    }
+
+    .analytics-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .analytics-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* ===================================== */
+    /* UTILITY CLASSES */
+    /* ===================================== */
+    .hidden {
+      display: none !important;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      padding: 8px 16px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    /* ===================================== */
+    /* SCROLLBAR STYLING */
+    /* ===================================== */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-light);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-secondary);
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
+    <!-- HEADER -->
     <div class="header">
-      <h1>⚡ Web Weaver Lightning</h1>
-      <div class="version">Day 10 Hybrid Classifier v1.0.0</div>
+      <h1>
+        <span>⚡</span>
+        <span>Web Weaver Lightning</span>
+      </h1>
+      <div class="version">v2.0.0 - Smart Auto Mode Edition</div>
     </div>
 
-    <!-- API Key Section -->
-    <div id="apiSection" class="api-section">
-      <h3>🔑 Gemini API Key Required</h3>
-      <input type="password" id="apiKeyInput" placeholder="Enter your Gemini API key (AIza...)">
-      <button id="saveKeyBtn">Save API Key</button>
-    </div>
-
-    <!-- AI Toggle -->
-    <div class="ai-toggle">
-      <label>🤖 AI Enhancement</label>
-      <label class="toggle-switch">
-        <input type="checkbox" id="aiToggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <!-- Extract Buttons -->
-    <button id="extractBtn" class="btn">🎯 Extract Data (Standard)</button>
-    <button id="extractHybridBtn" class="btn hybrid">🔥 Extract Data (Hybrid Classifier)</button>
-
-    <!-- Status -->
-    <div id="status" class="status hidden"></div>
-
-    <!-- Hybrid Classification Info (DAY 10) -->
-    <div id="hybridInfo" class="hybrid-info hidden">
-      <div class="layer">
-        <span class="layer-label">🛂 Layer 1 (DOM):</span>
-        <span id="layer1Result" class="layer-value">-</span>
-      </div>
-      <div class="layer">
-        <span class="layer-label">🤖 Layer 2 (AI Fallback):</span>
-        <span id="layer2Result" class="layer-value">-</span>
-      </div>
-      <div class="layer">
-        <span class="layer-label">📋 Layer 3 (Prompt):</span>
-        <span id="layer3Result" class="layer-value">-</span>
-      </div>
-      <div class="layer">
-        <span class="layer-label">⏱️ Total Time:</span>
-        <span id="totalTime" class="layer-value">-</span>
+    <!-- API KEY SECTION -->
+    <div class="section" id="apiKeySection">
+      <div class="section-title">🔑 Gemini API Key</div>
+      <div class="input-group">
+        <input type="password" id="apiKeyInput" placeholder="Enter your API key...">
+        <button class="btn-primary" id="saveKeyBtn">Save</button>
       </div>
     </div>
 
-    <!-- Results -->
-    <pre id="results" class="results">No data extracted yet. Click "Extract Data" to begin.</pre>
+    <!-- MODE SELECTOR -->
+    <div class="section">
+      <div class="section-title">🎯 Extraction Mode</div>
+      <div class="mode-selector">
+        <div class="mode-btn" data-mode="eco">
+          <span class="mode-icon">🌿</span>
+          <span class="mode-name">Eco</span>
+          <span class="mode-desc">~1.4 API calls</span>
+        </div>
+        <div class="mode-btn active" data-mode="auto">
+          <span class="mode-icon">🤖</span>
+          <span class="mode-name">Smart Auto</span>
+          <span class="mode-desc">Intelligent</span>
+        </div>
+        <div class="mode-btn" data-mode="balanced">
+          <span class="mode-icon">⚖️</span>
+          <span class="mode-name">Balanced</span>
+          <span class="mode-desc">~2.4 API calls</span>
+        </div>
+      </div>
 
-    <!-- Export Buttons -->
-    <div class="export-buttons">
-      <button id="copyBtn" class="export-btn" disabled>📋 Copy</button>
-      <button id="jsonBtn" class="export-btn" disabled>💾 JSON</button>
-      <button id="csvBtn" class="export-btn" disabled>📊 CSV</button>
+      <!-- QUOTA METER -->
+      <div class="quota-section" id="quotaSection">
+        <div class="quota-header">
+          <span class="quota-title">Daily Quota</span>
+          <span class="quota-value" id="quotaValue">0 / 1500</span>
+        </div>
+        <div class="quota-bar">
+          <div class="quota-bar-fill" id="quotaBarFill" style="width: 0%"></div>
+        </div>
+        <div class="quota-reset" id="quotaReset">Resets at 12:30 PM IST</div>
+      </div>
+
+      <!-- EXTRACT BUTTON -->
+      <button class="extract-btn" id="extractBtn">
+        <span>🚀</span>
+        <span id="extractBtnText">Extract Data</span>
+      </button>
+
+      <!-- AUTO DECISION DISPLAY -->
+      <div class="auto-decision hidden" id="autoDecision">
+        <div class="auto-decision-header">
+          <span class="auto-decision-title">🤖 Smart Auto Decision</span>
+          <span class="auto-decision-mode" id="autoDecisionMode">ECO</span>
+        </div>
+        <div class="auto-decision-reason" id="autoDecisionReason"></div>
+      </div>
     </div>
 
-    <!-- Analytics -->
-    <div id="analytics" class="analytics">
-      <h3>📊 Analytics (Day 10 Target: 80%)</h3>
-      <div class="stats-grid">
-        <div class="stat">
-          <div class="stat-label">Total</div>
-          <div id="totalExtractions" class="stat-value">0</div>
+    <!-- RESULTS SECTION -->
+    <div class="section results-section">
+      <div class="section-title">📊 Extraction Results</div>
+      
+      <div class="result-placeholder" id="resultPlaceholder">
+        No data extracted yet. Select a mode and click "Extract Data" to begin.
+      </div>
+
+      <div class="hidden" id="resultContainer">
+        <!-- CONFIDENCE METER -->
+        <div class="confidence-meter">
+          <div class="confidence-header">
+            <span class="confidence-label">Confidence Score</span>
+            <span class="confidence-value" id="confidenceValue">0%</span>
+          </div>
+          <div class="confidence-bar">
+            <div class="confidence-bar-fill" id="confidenceBarFill" style="width: 0%; background: #10b981"></div>
+          </div>
+          <div>
+            <span class="confidence-tier excellent hidden" id="confidenceTier">
+              <span id="confidenceTierIcon">🟢</span>
+              <span id="confidenceTierText">Excellent</span>
+            </span>
+          </div>
         </div>
-        <div class="stat">
-          <div class="stat-label">AI Used</div>
-          <div id="aiExtractions" class="stat-value">0</div>
+
+        <!-- METADATA -->
+        <div class="metadata">
+          <div class="metadata-item">
+            <div class="metadata-label">Mode Used</div>
+            <div class="metadata-value" id="metadataMode">-</div>
+          </div>
+          <div class="metadata-item">
+            <div class="metadata-label">API Calls</div>
+            <div class="metadata-value" id="metadataApiCalls">-</div>
+          </div>
+          <div class="metadata-item">
+            <div class="metadata-label">Duration</div>
+            <div class="metadata-value" id="metadataDuration">-</div>
+          </div>
+          <div class="metadata-item">
+            <div class="metadata-label">Classification</div>
+            <div class="metadata-value" id="metadataClassification">-</div>
+          </div>
         </div>
-        <div class="stat">
-          <div class="stat-label">Avg Confidence</div>
-          <div id="avgConfidence" class="stat-value">0%</div>
+
+        <!-- EXTRACTED DATA -->
+        <div style="margin-top: 16px;">
+          <div class="section-title">Extracted Data</div>
+          <div class="result-data" id="resultData"></div>
         </div>
-        <div class="stat">
-          <div class="stat-label">Success Rate</div>
-          <div id="successRate" class="stat-value">0%</div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="action-buttons">
+          <button class="action-btn" id="copyBtn">
+            <span>📋</span>
+            <span>Copy</span>
+          </button>
+          <button class="action-btn" id="downloadJsonBtn">
+            <span>💾</span>
+            <span>JSON</span>
+          </button>
+          <button class="action-btn" id="downloadCsvBtn">
+            <span>📊</span>
+            <span>CSV</span>
+          </button>
         </div>
-        <div class="stat" style="grid-column: 1 / -1;">
-          <div class="stat-label">Day 10 Target</div>
-          <div id="targetStatus" class="stat-value">-</div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS MINI DASHBOARD -->
+    <div class="section">
+      <div class="section-title">📈 Today's Stats</div>
+      <div class="analytics-mini">
+        <div class="analytics-card">
+          <div class="analytics-label">Total</div>
+          <div class="analytics-value" id="statsTotal">0</div>
+        </div>
+        <div class="analytics-card">
+          <div class="analytics-label">Eco %</div>
+          <div class="analytics-value" id="statsEco">0%</div>
+        </div>
+        <div class="analytics-card">
+          <div class="analytics-label">Avg Conf</div>
+          <div class="analytics-value" id="statsConfidence">0%</div>
+        </div>
+        <div class="analytics-card">
+          <div class="analytics-label">Success</div>
+          <div class="analytics-value" id="statsSuccess">0%</div>
         </div>
       </div>
     </div>

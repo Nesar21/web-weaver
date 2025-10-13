@@ -253,6 +253,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: true, data });
     }
 
+    else if (request.action === 'getPageData') {
+      // ✅ NEW: v2.0 compatibility (same as extractPageData)
+      console.log('[Content] getPageData requested');
+      const data = extractPageData();
+      sendResponse({ success: true, data });
+    }
+
     else if (request.action === 'extractWithHybrid') {
       // DAY 10: Hybrid extraction
       console.log('[Content] 🔥 Hybrid extraction requested');
