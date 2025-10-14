@@ -1,36 +1,39 @@
 /**
  * Web Weaver Lightning - Smart Auto Mode
- * Version: 2.0.0
+ * Version: 3.0.0 (FIX #3: Removed rateLimit dependency)
  * Author: FAANG-Level Developer Agent
  * 
  * Intelligent mode selection based on multiple factors:
  * - Cache reliability
- * - Quota remaining
  * - DOM confidence
  * - Domain history
  * - Page complexity
+ * 
+ * 🔧 FIX #3: Removed quota tracking (now uses 429 handling only)
  */
 
-
 class SmartAutoMode {
-  constructor(smartCache, rateLimitManager) {
+  constructor(smartCache, rateLimitManager = null) {
     this.cache = smartCache;
-    this.rateLimit = rateLimitManager;
+    // 🔧 FIX #3: No longer using rateLimitManager
+    // this.rateLimit = rateLimitManager;  // REMOVED!
     
     // Decision weights from CONFIG
     this.weights = CONFIG.MODES.auto.decisionWeights;
     this.thresholds = CONFIG.MODES.auto.thresholds;
     
-    console.log('[SmartAutoMode] Initialized with weights:', this.weights);
+    console.log('[SmartAutoMode] ✅ Initialized v3.0 (quota tracking disabled)');
+    console.log('[SmartAutoMode] Decision weights:', this.weights);
   }
   
   /**
-   * Main decision function - decides Eco vs Balanced
+   * Main decision function - decides between modes
+   * 🔧 FIX #3: Updated to not use quota checks
    */
   async decideMode(url, domAnalysis) {
     console.log('[SmartAutoMode] 🤖 Making mode decision for:', url);
     
-    // Step 1: Gather all decision factors
+    // Step 1: Gather all decision factors (without quota)
     const factors = await this.gatherFactors(url, domAnalysis);
     
     console.log('[SmartAutoMode] Decision factors:', factors);
@@ -47,7 +50,18 @@ class SmartAutoMode {
     console.log('[SmartAutoMode] Calculated score:', score.toFixed(2));
     
     // Step 4: Make decision based on score
-    const mode = score >= 0.6 ? 'eco' : 'balanced';
+    // 🔧 FIX #3: Now decides between offline, min, balanced, max
+    let mode;
+    if (score >= 0.8) {
+      mode = 'min';  // High confidence, use minimal AI
+    } else if (score >= 0.5) {
+      mode = 'balanced';  // Moderate confidence
+    } else if (score >= 0.3) {
+      mode = 'balanced';  // Low confidence still uses balanced
+    } else {
+      mode = 'max';  // Very uncertain, use maximum verification
+    }
+    
     const confidence = Math.abs(score - 0.5) * 2;  // 0.5 = uncertain, 0/1 = certain
     
     const reasoning = this.generateReasoning(factors, mode, score);
@@ -65,6 +79,7 @@ class SmartAutoMode {
   
   /**
    * Gather all decision factors
+   * 🔧 FIX #3: Removed quota-related factors
    */
   async gatherFactors(url, domAnalysis) {
     const factors = {};
@@ -75,23 +90,20 @@ class SmartAutoMode {
     factors.hasCacheData = !!domainMetrics;
     factors.cacheAge = domainMetrics ? domainMetrics.age : null;
     
-    // Factor 2: Quota Remaining
-    const quotaStatus = this.rateLimit.getQuotaStatus();
-    factors.quotaRemaining = quotaStatus.remaining / quotaStatus.total;
-    factors.quotaPercentage = quotaStatus.percentage;
-    factors.quotaStatus = quotaStatus.status;
+    // 🔧 FIX #3: REMOVED quota factors
+    // No longer checking quotaStatus, quotaRemaining, etc.
     
-    // Factor 3: DOM Confidence
+    // Factor 2: DOM Confidence
     factors.domConfidence = domAnalysis.confidence || 50;
     factors.domClassification = domAnalysis.classification;
     factors.domCertainty = domAnalysis.certainty;
     
-    // Factor 4: Domain History
+    // Factor 3: Domain History
     factors.extractionCount = domainMetrics ? domainMetrics.extractionCount : 0;
     factors.isNewDomain = !domainMetrics || domainMetrics.extractionCount < 3;
     factors.avgConfidence = domainMetrics ? domainMetrics.avgConfidence : 0;
     
-    // Factor 5: Page Complexity
+    // Factor 4: Page Complexity
     factors.pageComplexity = this.assessPageComplexity(domAnalysis);
     
     return factors;
@@ -99,76 +111,64 @@ class SmartAutoMode {
   
   /**
    * Check for hard force conditions
+   * 🔧 FIX #3: Removed quota-based force conditions
    */
   checkForceConditions(factors) {
-    // FORCE ECO conditions
-    const forceEcoThresholds = this.thresholds.forceEco;
-    
-    if (factors.quotaRemaining < forceEcoThresholds.quotaRemaining &&
-        factors.cacheReliability > forceEcoThresholds.cacheReliability &&
-        factors.domConfidence >= forceEcoThresholds.domConfidence) {
-      
+    // FORCE MIN MODE conditions (high confidence)
+    if (factors.cacheReliability > 0.9 && factors.domConfidence >= 90) {
       return {
-        mode: 'eco',
+        mode: 'min',
         confidence: 0.95,
-        reasoning: 'Forced Eco Mode: Low quota + high cache reliability + high DOM confidence',
+        reasoning: 'Forced Min Mode: Very high cache reliability + very high DOM confidence',
         forced: true
       };
     }
     
-    // FORCE BALANCED conditions (critical uncertainty)
-    if (factors.isNewDomain && factors.domConfidence < 70) {
+    // FORCE MAX MODE conditions (critical uncertainty)
+    if (factors.isNewDomain && factors.domConfidence < 60) {
       return {
-        mode: 'balanced',
+        mode: 'max',
         confidence: 0.90,
-        reasoning: 'Forced Balanced Mode: New domain with uncertain DOM analysis',
+        reasoning: 'Forced Max Mode: New domain with very uncertain DOM analysis',
         forced: true
       };
     }
     
-    // QUOTA CRITICAL - Force Eco regardless
-    if (factors.quotaStatus === 'force_eco' || factors.quotaStatus === 'critical') {
-      return {
-        mode: 'eco',
-        confidence: 0.99,
-        reasoning: 'Forced Eco Mode: Quota critical threshold reached',
-        forced: true
-      };
-    }
+    // 🔧 FIX #3: REMOVED quota-based force conditions
+    // No longer forcing modes based on quota status
     
     return null;  // No force conditions
   }
   
   /**
    * Calculate weighted decision score
-   * Score: 0 = Balanced, 1 = Eco
+   * Score: 0 = Max mode, 1 = Min mode
+   * 🔧 FIX #3: Removed quota weighting
    */
   calculateScore(factors) {
     let score = 0;
     
-    // Factor 1: Cache Reliability (35% weight)
-    // Higher reliability = More Eco
-    score += factors.cacheReliability * this.weights.cacheReliability;
+    // Factor 1: Cache Reliability (40% weight - increased from 35%)
+    // Higher reliability = More Min mode
+    score += factors.cacheReliability * 0.40;
     
-    // Factor 2: Quota Remaining (25% weight)
-    // Lower quota = More Eco
-    const quotaScore = 1 - factors.quotaRemaining;  // Invert (low quota = high score)
-    score += quotaScore * this.weights.quotaRemaining;
+    // 🔧 FIX #3: REMOVED quota weighting (was 25%)
+    // Quota is now handled by 429 errors, not proactive decision-making
     
-    // Factor 3: DOM Confidence (20% weight)
-    // Higher confidence = More Eco
+    // Factor 2: DOM Confidence (35% weight - increased from 20%)
+    // Higher confidence = More Min mode
     const domScore = factors.domConfidence / 100;  // Normalize to 0-1
-    score += domScore * this.weights.domConfidence;
+    score += domScore * 0.35;
     
-    // Factor 4: Domain History (15% weight)
-    // More history = More Eco
+    // Factor 3: Domain History (20% weight - increased from 15%)
+    // More history = More Min mode
     const historyScore = Math.min(1.0, factors.extractionCount / 10);  // Cap at 10 extractions
-    score += historyScore * this.weights.domainHistory;
+    score += historyScore * 0.20;
     
-    // Factor 5: Page Complexity (5% weight)
-    // Lower complexity = More Eco
+    // Factor 4: Page Complexity (5% weight - same)
+    // Lower complexity = More Min mode
     const complexityScore = 1 - factors.pageComplexity;  // Invert
-    score += complexityScore * this.weights.pageComplexity;
+    score += complexityScore * 0.05;
     
     return score;
   }
@@ -207,41 +207,49 @@ class SmartAutoMode {
   
   /**
    * Generate human-readable reasoning
+   * 🔧 FIX #3: Updated to not mention quota
    */
   generateReasoning(factors, mode, score) {
     const reasons = [];
     
-    // Primary reason (highest weighted factor)
-    if (factors.quotaStatus === 'force_eco' || factors.quotaStatus === 'critical') {
-      reasons.push('quota critical');
-    } else if (factors.quotaRemaining < 0.3) {
-      reasons.push('low quota remaining');
-    }
+    // 🔧 FIX #3: REMOVED quota reasoning
+    // No longer mentioning quota status in reasoning
     
+    // Cache reliability reasoning
     if (factors.cacheReliability > 0.85) {
       reasons.push('high cache reliability');
     } else if (factors.cacheReliability < 0.5) {
       reasons.push('low cache reliability');
     }
     
+    // DOM confidence reasoning
     if (factors.domConfidence >= 85) {
       reasons.push('high DOM confidence');
     } else if (factors.domConfidence < 70) {
       reasons.push('uncertain DOM analysis');
     }
     
+    // Domain history reasoning
     if (factors.isNewDomain) {
       reasons.push('new domain');
     } else if (factors.extractionCount > 10) {
       reasons.push('established domain history');
     }
     
+    // Page complexity reasoning
     if (factors.pageComplexity > 0.7) {
       reasons.push('complex page structure');
     }
     
     // Build final reasoning string
-    const prefix = mode === 'eco' ? 'Eco Mode selected:' : 'Balanced Mode selected:';
+    const modeNames = {
+      'offline': 'Offline Mode',
+      'min': 'Min Mode',
+      'balanced': 'Balanced Mode',
+      'max': 'Max Mode'
+    };
+    
+    const prefix = `${modeNames[mode]} selected:`;
     
     if (reasons.length === 0) {
       return `${prefix} neutral factors (score: ${score.toFixed(2)})`;
@@ -252,14 +260,15 @@ class SmartAutoMode {
   
   /**
    * Mid-extraction upgrade decision (if extraction quality is poor)
+   * 🔧 FIX #3: Updated mode progression
    */
   async upgradeMode(url, currentMode, reason) {
     console.log('[SmartAutoMode] ⬆️ Upgrade requested | Current:', currentMode, '| Reason:', reason);
     
-    if (currentMode === 'balanced') {
-      console.log('[SmartAutoMode] Already at maximum mode (Balanced)');
+    if (currentMode === 'max') {
+      console.log('[SmartAutoMode] Already at maximum mode (Max)');
       return {
-        mode: 'balanced',
+        mode: 'max',
         upgraded: false,
         reasoning: 'Already at maximum extraction quality'
       };
@@ -277,48 +286,53 @@ class SmartAutoMode {
       };
     }
     
-    // Upgrade to Balanced
-    console.log('[SmartAutoMode] ✅ Upgrading to Balanced mode');
+    // Upgrade progression: offline → min → balanced → max
+    const upgradePath = {
+      'offline': 'min',
+      'min': 'balanced',
+      'balanced': 'max'
+    };
+    
+    const newMode = upgradePath[currentMode];
+    
+    console.log('[SmartAutoMode] ✅ Upgrading to', newMode, 'mode');
     
     return {
-      mode: 'balanced',
+      mode: newMode,
       upgraded: true,
       reasoning: `Upgraded due to: ${reason}`
     };
   }
   
   /**
-   * Mid-extraction downgrade decision (if quota is critical)
+   * Mid-extraction downgrade decision
+   * 🔧 FIX #3: Downgrades now triggered by 429 errors, not quota checks
    */
   async downgradeMode(url, currentMode, reason) {
     console.log('[SmartAutoMode] ⬇️ Downgrade requested | Current:', currentMode, '| Reason:', reason);
     
-    if (currentMode === 'eco') {
-      console.log('[SmartAutoMode] Already at minimum mode (Eco)');
+    if (currentMode === 'offline') {
+      console.log('[SmartAutoMode] Already at minimum mode (Offline)');
       return {
-        mode: 'eco',
+        mode: 'offline',
         downgraded: false,
         reasoning: 'Already at minimum API usage'
       };
     }
     
-    // Check if downgrade is allowed
-    const switching = CONFIG.MODES.auto.switching;
+    // Downgrade progression: max → balanced → min → offline
+    const downgradePath = {
+      'max': 'balanced',
+      'balanced': 'min',
+      'min': 'offline'
+    };
     
-    if (!switching.downgradeOnQuota) {
-      console.log('[SmartAutoMode] Downgrades disabled in config');
-      return {
-        mode: currentMode,
-        downgraded: false,
-        reasoning: 'Mode downgrades disabled'
-      };
-    }
+    const newMode = downgradePath[currentMode];
     
-    // Downgrade to Eco
-    console.log('[SmartAutoMode] ✅ Downgrading to Eco mode');
+    console.log('[SmartAutoMode] ✅ Downgrading to', newMode, 'mode');
     
     return {
-      mode: 'eco',
+      mode: newMode,
       downgraded: true,
       reasoning: `Downgraded due to: ${reason}`
     };
@@ -339,11 +353,9 @@ class SmartAutoMode {
   }
 }
 
-
 // ========================================
 // EXPORT TO GLOBAL SCOPE (CLASS ONLY!)
 // ========================================
 self.WEB_WEAVER_SMART_AUTO = SmartAutoMode;
 
-
-console.log('[SmartAutoMode] Module loaded successfully');
+console.log('[SmartAutoMode] ✅ Module v3.0 loaded (FIX #3: quota tracking removed)');

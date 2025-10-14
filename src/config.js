@@ -1,234 +1,273 @@
 /**
- * Web Weaver Lightning - Modular Configuration System
- * Version: 2.0.0
- * Author: FAANG-Level Developer Agent
+ * Web Weaver Lightning - Configuration System
+ * Version: 3.0.0 (Day 12 - 5 Modes Edition)
  * 
- * CRITICAL: This config system enables:
- * - Easy mode parameter tuning
- * - Smart Auto Mode decision-making
- * - A/B testing capabilities
- * - Future extensibility
+ * MAJOR CHANGES:
+ * - 5 extraction modes (offline, min, balanced, max, auto)
+ * - Removed daily quota tracking
+ * - Enhanced 429 error handling
+ * - Better confidence scoring
  */
 
 const CONFIG = {
-  // System-wide constants
-  VERSION: '2.0.0-day11',
+  VERSION: '3.0.0-day12',
   API_ENDPOINT: 'https://generativelanguage.googleapis.com/v1beta/models',
   GEMINI_MODEL: 'gemini-2.0-flash-lite',
   GEMINI_LITE_MODEL: 'gemini-2.0-flash-lite',
   
-  // API Quota Management
-  QUOTA: {
-    DAILY_LIMIT: 1500,
-    WARNING_THRESHOLD: 0.80,  // 80% - Show warning
-    CRITICAL_THRESHOLD: 0.90, // 90% - Suggest Eco
-    FORCE_ECO_THRESHOLD: 0.95, // 95% - Force Eco
-    BLOCK_THRESHOLD: 0.99,    // 99% - Block new extractions
-    RESET_TIME_UTC: '00:00',  // Midnight Pacific = 12:30 PM IST
-    RESET_TIME_IST: '12:30'
-  },
-  
   // Extraction Mode Configurations
   MODES: {
-    // ECO MODE: Maximum API efficiency
-    eco: {
-      id: 'eco',
-      name: 'Eco Mode',
-      description: 'Fast & efficient extraction',
-      icon: '🌿',
+    // 🟢 OFFLINE MODE: No AI, DOM extraction only
+    offline: {
+      id: 'offline',
+      name: 'Offline Mode',
+      description: 'DOM extraction only - No AI calls',
+      icon: '🟢',
       
-      // Pipeline Configuration
       pipeline: {
         useDOMAnalysis: true,
-        skipAIVerificationThreshold: 90, // Skip AI if DOM confidence > 90%
+        useAI: false,
+        apiCalls: 0
+      },
+      
+      performance: {
+        targetSpeed: 1,
+        targetConfidence: 60,
+        acceptableRange: [40, 70]
+      },
+      
+      useCases: [
+        'No API key available',
+        'Testing DOM extraction',
+        'Rate limit exceeded',
+        'Offline usage',
+        'Privacy-focused extraction'
+      ]
+    },
+    
+    // 🌿 MIN MODE: Minimal AI usage (1-2 calls)
+    min: {
+      id: 'min',
+      name: 'Min Mode',
+      description: 'Fast extraction with minimal AI',
+      icon: '🌿',
+      
+      pipeline: {
+        useDOMAnalysis: true,
+        skipAIVerificationThreshold: 90,
         alwaysVerifyAI: false,
         dualExtraction: false
       },
       
-      // API Call Strategy
       apiStrategy: {
         maxAPICalls: 2,
-        targetAPICalls: 1.4,  // With caching
-        skipPromptGeneration: false, // Only skip if cached
-        skipTypeDetection: true     // Trust DOM completely
+        targetAPICalls: 1.4,
+        skipPromptGeneration: false,
+        skipTypeDetection: true
       },
       
-      // Retry Logic
       retry: {
-        maxRetries: 0,  // Fail fast
-        retryOnNetworkError: false,
-        retryOn429: false,
-        retryOn500: false,
-        exponentialBackoff: false
+        maxRetries: 0,
+        retryOnNetworkError: false
       },
       
-      // Caching Strategy
       cache: {
         useCache: true,
-        trustCacheThreshold: 0.85,  // 85% reliability = trust cache
+        trustCacheThreshold: 0.85,
         cachePromptTemplates: true,
         cacheTypeDetection: true
       },
       
-      // Performance Targets
       performance: {
-        targetSpeed: 3,        // 3 seconds average
-        targetConfidence: 80,  // 80% minimum
-        acceptableRange: [75, 85]
+        targetSpeed: 3,
+        targetConfidence: 75,
+        acceptableRange: [70, 80]
       },
       
-      // Best Use Cases
       useCases: [
         'High-volume scraping',
         'Known reliable domains',
-        'Non-critical data',
-        'Testing environments',
-        'Quota conservation'
+        'Quota conservation',
+        'Testing environments'
       ]
     },
     
-    // BALANCED MODE: Smart verification when needed
+    // ⚖️ BALANCED MODE: Smart verification (2-3 calls)
     balanced: {
       id: 'balanced',
       name: 'Balanced Mode',
       description: 'Smart extraction with verification',
       icon: '⚖️',
       
-      // Pipeline Configuration
       pipeline: {
         useDOMAnalysis: true,
-        skipAIVerificationThreshold: 80, // Skip AI if DOM confidence > 80%
-        alwaysVerifyAI: false,           // Conditional verification
+        skipAIVerificationThreshold: 80,
+        alwaysVerifyAI: false,
         dualExtraction: false
       },
       
-      // API Call Strategy
       apiStrategy: {
         maxAPICalls: 3,
-        targetAPICalls: 2.4,  // Average with smart skipping
+        targetAPICalls: 2.4,
         skipPromptGeneration: false,
-        skipTypeDetection: false  // Verify when uncertain
+        skipTypeDetection: false
       },
       
-      // Retry Logic
       retry: {
         maxRetries: 1,
         retryOnNetworkError: true,
-        retryOn429: false,  // Handled by backoff system
         retryOn500: true,
         exponentialBackoff: true,
-        backoffDelays: [2000, 4000]  // 2s, 4s
+        backoffDelays: [2000, 4000]
       },
       
-      // Caching Strategy
       cache: {
         useCache: true,
-        trustCacheThreshold: 0.95,  // Higher threshold than Eco
+        trustCacheThreshold: 0.95,
         cachePromptTemplates: true,
         cacheTypeDetection: true
       },
       
-      // Performance Targets
       performance: {
-        targetSpeed: 5,        // 5 seconds average
-        targetConfidence: 85,  // 85% target
-        acceptableRange: [80, 88]
+        targetSpeed: 5,
+        targetConfidence: 85,
+        acceptableRange: [80, 90]
       },
       
-      // Best Use Cases
       useCases: [
         'General web scraping',
         'Production applications',
         'Mixed page types',
-        'First-time domains',
-        'Critical but not mission-critical'
+        'First-time domains'
       ]
     },
     
-    // SMART AUTO MODE: Intelligent mode selection
-    auto: {
-      id: 'auto',
-      name: 'Smart Auto Mode',
-      description: 'Automatically chooses best mode',
-      icon: '🤖',
+    // 🚀 MAX MODE: Maximum accuracy (3-4 calls)
+    max: {
+      id: 'max',
+      name: 'Max Mode',
+      description: 'Maximum accuracy with triple verification',
+      icon: '🚀',
       
-      // Decision Algorithm Weights
-      decisionWeights: {
-        cacheReliability: 0.35,    // 35% weight
-        quotaRemaining: 0.25,      // 25% weight
-        domConfidence: 0.20,       // 20% weight
-        domainHistory: 0.15,       // 15% weight
-        pageComplexity: 0.05       // 5% weight
+      pipeline: {
+        useDOMAnalysis: true,
+        skipAIVerificationThreshold: 0, // Never skip
+        alwaysVerifyAI: true,
+        dualExtraction: true, // Extract twice and compare
+        tripleVerification: true
       },
       
-      // Decision Thresholds
+      apiStrategy: {
+        maxAPICalls: 4,
+        targetAPICalls: 3.8,
+        skipPromptGeneration: false,
+        skipTypeDetection: false,
+        useMultiplePrompts: true
+      },
+      
+      retry: {
+        maxRetries: 2,
+        retryOnNetworkError: true,
+        retryOn500: true,
+        exponentialBackoff: true,
+        backoffDelays: [2000, 4000, 8000]
+      },
+      
+      cache: {
+        useCache: false, // Always fresh extraction
+        trustCacheThreshold: 1.0,
+        cachePromptTemplates: false,
+        cacheTypeDetection: false
+      },
+      
+      performance: {
+        targetSpeed: 10,
+        targetConfidence: 95,
+        acceptableRange: [90, 100]
+      },
+      
+      useCases: [
+        'Critical data extraction',
+        'Financial data',
+        'Legal documents',
+        'Medical information',
+        'Production-critical scraping'
+      ]
+    },
+    
+    // 🤖 SMART AUTO MODE: Intelligent selection
+    auto: {
+      id: 'auto',
+      name: 'Smart Auto',
+      description: 'AI chooses best mode automatically',
+      icon: '🤖',
+      
+      decisionWeights: {
+        cacheReliability: 0.35,
+        domConfidence: 0.30,
+        domainHistory: 0.20,
+        pageComplexity: 0.15
+      },
+      
       thresholds: {
-        forceEco: {
-          quotaRemaining: 0.30,          // < 30% quota
-          cacheReliability: 0.90,        // > 90% reliability
-          domConfidence: 85              // > 85% confidence
+        forceMin: {
+          cacheReliability: 0.90,
+          domConfidence: 85
         },
-        preferEco: {
-          quotaRemaining: 0.50,          // < 50% quota
-          cacheReliability: 0.85,        // > 85% reliability
-          domConfidence: 80              // > 80% confidence
+        preferMin: {
+          cacheReliability: 0.85,
+          domConfidence: 80
         },
         preferBalanced: {
-          domConfidence: 70,             // < 70% confidence
-          newDomain: true,               // First encounter
-          previousFailures: 2            // 2+ recent failures
+          domConfidence: 70,
+          newDomain: true
+        },
+        preferMax: {
+          domConfidence: 50,
+          previousFailures: 2
         }
       },
       
-      // Mode Switching Rules
       switching: {
         allowMidSession: true,
         upgradeOnLowConfidence: true,
-        upgradeThreshold: 70,          // < 70% triggers upgrade
-        downgradeOnQuota: true,
-        downgradeThreshold: 0.95       // > 95% quota triggers downgrade
+        upgradeThreshold: 70
       }
     }
   },
   
-  // 429 Rate Limit Protection
+  // 429 Rate Limit Handling (NO QUOTA TRACKING)
   RATE_LIMIT: {
     enabled: true,
     exponentialBackoff: true,
-    backoffSchedule: [1000, 2000, 4000, 8000, 16000], // 1s, 2s, 4s, 8s, 16s
-    jitterPercent: 0.20,  // ±20% random jitter
+    backoffSchedule: [1000, 2000, 4000, 8000, 16000],
+    jitterPercent: 0.20,
     maxRetries: 5,
-    queueEnabled: true,
-    queueMaxSize: 10
+    userFriendlyMessage: 'You have exhausted your Gemini API quota. This is a limit set by Google. Please wait a few minutes and try again, or check your API usage at https://aistudio.google.com/'
   },
   
   // Domain Cache Configuration
   CACHE: {
     enabled: true,
     maxDomains: 100,
-    ttl: 3600000,  // 1 hour in ms
-    evictionPolicy: 'LRU',  // Least Recently Used
+    ttl: 3600000,
+    evictionPolicy: 'LRU',
     
-    // Learning System
     learning: {
       enabled: true,
-      minExtractionsForLearning: 5,   // Need 5+ extractions to learn
-      confidenceWindowSize: 20,        // Track last 20 extractions
-      reliabilityDecayFactor: 0.95,   // Recent failures weighted more
-      temporalPatternsEnabled: true,
-      temporalWindowHours: 24
+      minExtractionsForLearning: 5,
+      confidenceWindowSize: 20,
+      reliabilityDecayFactor: 0.95
     },
     
-    // Reliability Scoring
     reliability: {
       minScore: 0.0,
       maxScore: 1.0,
       thresholds: {
-        excellent: 0.90,   // > 0.90 = Highly reliable
-        good: 0.80,        // 0.80-0.90 = Reliable
-        moderate: 0.70,    // 0.70-0.80 = Moderate
-        poor: 0.60,        // 0.60-0.70 = Poor
-        unreliable: 0.60   // < 0.60 = Unreliable
+        excellent: 0.90,
+        good: 0.80,
+        moderate: 0.70,
+        poor: 0.60
       }
     }
   },
@@ -239,7 +278,7 @@ const CONFIG = {
     tiers: {
       excellent: {
         threshold: 90,
-        color: '#10B981',  // Green
+        color: '#10B981',
         icon: '🟢',
         label: 'Excellent',
         description: 'Verified AI Consensus',
@@ -247,7 +286,7 @@ const CONFIG = {
       },
       good: {
         threshold: 75,
-        color: '#F59E0B',  // Yellow
+        color: '#F59E0B',
         icon: '🟡',
         label: 'Good',
         description: 'Verified Structure',
@@ -255,7 +294,7 @@ const CONFIG = {
       },
       caution: {
         threshold: 0,
-        color: '#F97316',  // Orange
+        color: '#F97316',
         icon: '🟠',
         label: 'Caution',
         description: 'Manual Review Recommended',
@@ -263,7 +302,7 @@ const CONFIG = {
       }
     },
     showBreakdown: true,
-    showPerFieldConfidence: false,  // Advanced feature
+    showPerFieldConfidence: false,
     showHistoricalTrends: true
   },
   
@@ -277,14 +316,13 @@ const CONFIG = {
       trackModeUsage: true,
       trackConfidenceDistribution: true,
       trackAPICalls: true,
-      trackQuotaUsage: true,
       trackDomainPerformance: true,
       trackErrors: true
     },
     
     reporting: {
-      aggregationInterval: 86400000,  // 24 hours
-      maxHistoryDays: 30
+      aggregationInterval: 86400000,
+      maxHistoryDays: 7 // Only keep 1 week
     }
   },
   
@@ -292,7 +330,7 @@ const CONFIG = {
   UX: {
     animations: {
       enabled: true,
-      transitionDuration: 200,  // ms
+      transitionDuration: 200,
       successAnimation: true,
       loadingStates: true
     },
@@ -300,67 +338,46 @@ const CONFIG = {
     tooltips: {
       enabled: true,
       showModeHints: true,
-      showQuotaWarnings: true,
       showConfidenceExplanations: true
     },
     
     notifications: {
       enabled: true,
-      quotaWarnings: true,
-      queueComplete: true,
+      showInExtension: true, // Always show errors in extension, never browser alerts
       modeSwitch: true,
       confidenceAlerts: true
     }
   },
   
-  // Deferred Queue System
-  QUEUE: {
-    enabled: true,
-    maxQueueSize: 50,
-    autoProcessOnReset: true,
-    notifyOnComplete: true,
-    
-    processing: {
-      sequentialProcessing: true,
-      delayBetweenItems: 1000,  // 1 second delay
-      stopOnFailure: false,
-      retryFailures: true
-    },
-    
-    scheduling: {
-      allowCustomSchedule: true,
-      defaultSchedule: 'quota_reset',  // Options: quota_reset, custom, manual
-      offPeakHours: [0, 1, 2, 3, 4, 5, 6]  // 12am-6am
-    }
-  },
-  
   // Timeouts
   TIMEOUTS: {
-    default: 30000,       // 30 seconds
-    eco: 20000,          // 20 seconds (faster timeout)
-    balanced: 30000,     // 30 seconds
-    domAnalysis: 5000,   // 5 seconds
-    aiRequest: 25000     // 25 seconds
+    default: 30000,
+    offline: 5000,
+    min: 20000,
+    balanced: 30000,
+    max: 45000,
+    domAnalysis: 5000,
+    aiRequest: 25000
+  },
+  
+  // CSV Export Configuration
+  CSV_EXPORT: {
+    useAIForComplexData: true, // Use Gemini to flatten complex JSON
+    complexityThreshold: 3, // If nested depth > 3, use AI
+    maxManualDepth: 2 // Only manually flatten up to 2 levels
   }
 };
 
-// Freeze config to prevent accidental mutations
+// Freeze config
 Object.freeze(CONFIG);
 Object.freeze(CONFIG.MODES);
-Object.freeze(CONFIG.QUOTA);
 Object.freeze(CONFIG.CACHE);
 
-// ========================================
-// EXPORT TO GLOBAL SCOPE (NO const!)
-// ========================================
+// Export to global scope
 self.CONFIG = CONFIG;
 self.WEB_WEAVER_CONFIG = CONFIG;
 
-// Log configuration on load (development only)
-console.log('[Config] Web Weaver Lightning v2.0 Configuration Loaded');
-console.log('[Config] Eco Mode Target API Calls:', CONFIG.MODES.eco.apiStrategy.targetAPICalls);
-console.log('[Config] Balanced Mode Target API Calls:', CONFIG.MODES.balanced.apiStrategy.targetAPICalls);
-console.log('[Config] Daily Quota Limit:', CONFIG.QUOTA.DAILY_LIMIT);
-console.log('[Config] Cache Enabled:', CONFIG.CACHE.enabled);
-console.log('[Config] Learning System Enabled:', CONFIG.CACHE.learning.enabled);
-console.log('[Config] 🚀 SWITCHED TO gemini-2.0-flash-lite (30 RPM, 200 RPD)');
+console.log('[Config] Web Weaver Lightning v3.0 Configuration Loaded');
+console.log('[Config] 5 Modes Available:', Object.keys(CONFIG.MODES));
+console.log('[Config] Using model:', CONFIG.GEMINI_MODEL);
+console.log('[Config] Quota tracking: DISABLED (429 handling only)');

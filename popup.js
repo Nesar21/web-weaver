@@ -1,102 +1,68 @@
 /**
  * Web Weaver Lightning - Popup UI Controller
- * Version: 2.0.0 (Day 11 Enhancement)
- * Author: FAANG-Level Developer Agent
- * 
- * MAJOR CHANGES IN V2.0:
- * - Smart Auto Mode integration
- * - Real-time quota monitoring
- * - Confidence meter with tiers
- * - Auto decision reasoning display
- * - Today's analytics mini-dashboard
- * - Enhanced metadata display
+ * Version: 3.0.0 (Day 12 - 5 Modes Edition)
  */
 
-console.log('[Popup] Web Weaver Lightning v2.0 loading...');
-
 // ========================================
-// STATE MANAGEMENT
+// GLOBAL STATE
 // ========================================
 
-let currentMode = 'auto'; // Default to Smart Auto
-let selectedMode = 'auto';
-let isExtracting = false;
-let lastExtractionData = null;
-
-// ========================================
-// DOM ELEMENTS
-// ========================================
-
-// API Key
-const apiKeyInput = document.getElementById('apiKeyInput');
-const saveKeyBtn = document.getElementById('saveKeyBtn');
-
-// Mode Selector
-const modeBtns = document.querySelectorAll('.mode-btn');
-
-// Quota
-const quotaSection = document.getElementById('quotaSection');
-const quotaValue = document.getElementById('quotaValue');
-const quotaBarFill = document.getElementById('quotaBarFill');
-const quotaReset = document.getElementById('quotaReset');
-
-// Extract Button
-const extractBtn = document.getElementById('extractBtn');
-const extractBtnText = document.getElementById('extractBtnText');
-
-// Auto Decision
-const autoDecision = document.getElementById('autoDecision');
-const autoDecisionMode = document.getElementById('autoDecisionMode');
-const autoDecisionReason = document.getElementById('autoDecisionReason');
-
-// Results
-const resultPlaceholder = document.getElementById('resultPlaceholder');
-const resultContainer = document.getElementById('resultContainer');
-const confidenceValue = document.getElementById('confidenceValue');
-const confidenceBarFill = document.getElementById('confidenceBarFill');
-const confidenceTier = document.getElementById('confidenceTier');
-const confidenceTierIcon = document.getElementById('confidenceTierIcon');
-const confidenceTierText = document.getElementById('confidenceTierText');
-
-// Metadata
-const metadataMode = document.getElementById('metadataMode');
-const metadataApiCalls = document.getElementById('metadataApiCalls');
-const metadataDuration = document.getElementById('metadataDuration');
-const metadataClassification = document.getElementById('metadataClassification');
-const resultData = document.getElementById('resultData');
-
-// Action Buttons
-const copyBtn = document.getElementById('copyBtn');
-const downloadJsonBtn = document.getElementById('downloadJsonBtn');
-const downloadCsvBtn = document.getElementById('downloadCsvBtn');
-
-// Analytics
-const statsTotal = document.getElementById('statsTotal');
-const statsEco = document.getElementById('statsEco');
-const statsConfidence = document.getElementById('statsConfidence');
-const statsSuccess = document.getElementById('statsSuccess');
+let currentData = null;
+let currentMode = 'auto';
+let extractionInProgress = false;
 
 // ========================================
 // INITIALIZATION
 // ========================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[Popup] Initializing UI...');
+  console.log('[Popup] Initializing Web Weaver Lightning v3.0...');
   
-  // Load saved API key
+  // Load API key
   await loadApiKey();
-  
-  // Load quota status
-  await updateQuotaDisplay();
-  
-  // Load analytics
-  await updateAnalytics();
   
   // Setup event listeners
   setupEventListeners();
   
-  console.log('[Popup] UI initialized successfully');
+  // Load extraction history
+  await loadExtractionHistory();
+  
+  // Initialize mode selector
+  initializeModeSelector();
+  
+  console.log('[Popup] Initialization complete');
 });
+
+// ========================================
+// EVENT LISTENERS
+// ========================================
+
+function setupEventListeners() {
+  // API Key save
+  document.getElementById('saveApiKey').addEventListener('click', saveApiKey);
+  
+  // Mode selection
+  document.querySelectorAll('input[name="mode"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      currentMode = e.target.value;
+      updateModeUI();
+    });
+  });
+  
+  // Extract button
+  document.getElementById('extractBtn').addEventListener('click', handleExtract);
+  
+  // Export buttons
+  document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
+  document.getElementById('downloadJsonBtn').addEventListener('click', downloadJSON);
+  document.getElementById('downloadCsvBtn').addEventListener('click', downloadCSV);
+  
+  // Clear cache
+  const clearCacheBtn = document.getElementById('clearCacheBtn');
+  if (clearCacheBtn) {
+    clearCacheBtn.addEventListener('click', clearCache);
+  }
+}
 
 // ========================================
 // API KEY MANAGEMENT
@@ -106,20 +72,24 @@ async function loadApiKey() {
   try {
     const response = await chrome.runtime.sendMessage({ action: 'getApiKey' });
     if (response && response.apiKey) {
-      apiKeyInput.value = response.apiKey;
-      apiKeyInput.type = 'password';
-      console.log('[Popup] API key loaded');
+      document.getElementById('apiKey').value = response.apiKey;
+      showSuccess('API key loaded');
     }
   } catch (error) {
-    console.error('[Popup] Failed to load API key:', error);
+    console.error('[Popup] Error loading API key:', error);
   }
 }
 
 async function saveApiKey() {
-  const apiKey = apiKeyInput.value.trim();
+  const apiKey = document.getElementById('apiKey').value.trim();
   
   if (!apiKey) {
-    alert('Please enter an API key');
+    showError('Please enter an API key');
+    return;
+  }
+  
+  if (!apiKey.startsWith('AIza')) {
+    showError('Invalid API key format. Gemini keys start with "AIza"');
     return;
   }
   
@@ -129,160 +99,137 @@ async function saveApiKey() {
       apiKey 
     });
     
-    apiKeyInput.type = 'password';
-    saveKeyBtn.textContent = '✓ Saved';
-    
-    setTimeout(() => {
-      saveKeyBtn.textContent = 'Save';
-    }, 2000);
-    
-    console.log('[Popup] API key saved');
+    showSuccess('API key saved successfully');
   } catch (error) {
-    console.error('[Popup] Failed to save API key:', error);
-    alert('Failed to save API key. Please try again.');
+    console.error('[Popup] Error saving API key:', error);
+    showError('Failed to save API key');
   }
 }
 
 // ========================================
-// MODE SELECTION
+// MODE SELECTOR UI
 // ========================================
 
-function selectMode(mode) {
-  console.log('[Popup] Mode selected:', mode);
-  
-  selectedMode = mode;
-  
-  // Update UI
-  modeBtns.forEach(btn => {
-    if (btn.dataset.mode === mode) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
+function initializeModeSelector() {
+  // Set default mode
+  document.getElementById('mode-auto').checked = true;
+  currentMode = 'auto';
+  updateModeUI();
+}
+
+function updateModeUI() {
+  // Update mode descriptions
+  const modeDescriptions = {
+    offline: {
+      icon: '🟢',
+      title: 'Offline Mode',
+      desc: 'DOM extraction only - No AI calls',
+      apiCalls: '0 API calls',
+      speed: 'Instant',
+      accuracy: '~60%'
+    },
+    min: {
+      icon: '🌿',
+      title: 'Min Mode',
+      desc: 'Fast extraction with minimal AI',
+      apiCalls: '~1.4 API calls',
+      speed: 'Very Fast',
+      accuracy: '~75%'
+    },
+    balanced: {
+      icon: '⚖️',
+      title: 'Balanced Mode',
+      desc: 'Smart extraction with verification',
+      apiCalls: '~2.4 API calls',
+      speed: 'Fast',
+      accuracy: '~85%'
+    },
+    max: {
+      icon: '🚀',
+      title: 'Max Mode',
+      desc: 'Maximum accuracy with triple verification',
+      apiCalls: '~3.8 API calls',
+      speed: 'Thorough',
+      accuracy: '~95%'
+    },
+    auto: {
+      icon: '🤖',
+      title: 'Smart Auto',
+      desc: 'AI chooses best mode automatically',
+      apiCalls: 'Variable',
+      speed: 'Adaptive',
+      accuracy: 'Optimized'
     }
-  });
+  };
   
-  // Hide auto decision if not in auto mode
-  if (mode !== 'auto') {
-    autoDecision.classList.add('hidden');
-  }
+  const modeInfo = modeDescriptions[currentMode];
+  
+  // Update selected mode display (you can add a visual indicator here)
+  console.log('[Popup] Mode selected:', currentMode);
 }
 
 // ========================================
-// QUOTA MANAGEMENT
+// EXTRACTION HANDLER
 // ========================================
 
-async function updateQuotaDisplay() {
-  try {
-    const response = await chrome.runtime.sendMessage({ 
-      action: 'getQuotaStatus' 
-    });
-    
-    if (response && response.success && response.data) {
-      const quota = response.data;
-      
-      // Update values
-      quotaValue.textContent = `${quota.used || 0} / ${quota.total || 1500}`;
-      const percent = quota.percent || ((quota.used || 0) / (quota.total || 1500));
-      quotaBarFill.style.width = `${percent * 100}%`;
-      
-      // Update reset time
-      if (quota.resetTime) {
-        const resetDate = new Date(quota.resetTime);
-        quotaReset.textContent = `Resets at ${resetDate.toLocaleTimeString('en-US', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        })}`;
-      }
-      
-      // Update status styling
-      quotaSection.className = 'quota-section';
-      
-      if (quota.status === 'critical') {
-        quotaSection.classList.add('critical');
-      } else if (quota.status === 'warning') {
-        quotaSection.classList.add('warning');
-      }
-      
-      console.log('[Popup] Quota updated:', quota.used, '/', quota.total);
-    }
-  } catch (error) {
-    console.error('[Popup] Failed to update quota:', error);
-  }
-}
-
-// ========================================
-// EXTRACTION
-// ========================================
-
-async function extractData() {
-  if (isExtracting) {
-    console.log('[Popup] Extraction already in progress');
+async function handleExtract() {
+  if (extractionInProgress) {
+    showError('Extraction already in progress. Please wait.');
     return;
   }
   
-  isExtracting = true;
+  // Check API key (except for offline mode)
+  if (currentMode !== 'offline') {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    if (!apiKey) {
+      showError('Please add your Gemini API key first');
+      return;
+    }
+  }
   
-  // Update button state
+  extractionInProgress = true;
+  
+  // Update UI
+  const extractBtn = document.getElementById('extractBtn');
   extractBtn.disabled = true;
-  extractBtn.innerHTML = `
-    <div class="spinner"></div>
-    <span>Extracting...</span>
-  `;
+  extractBtn.textContent = '⏳ Extracting...';
   
-  console.log('[Popup] Starting extraction | Mode:', selectedMode);
+  // Hide previous results
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('errorSection').style.display = 'none';
   
   try {
+    console.log('[Popup] Starting extraction | Mode:', currentMode);
+    
+    const startTime = Date.now();
+    
     const response = await chrome.runtime.sendMessage({
       action: 'extractData',
-      mode: selectedMode
+      mode: currentMode
     });
     
-    if (response && response.success) {
-      console.log('[Popup] ✅ Extraction successful');
-      
-      // Store data
-      lastExtractionData = response;
-      
-      // Display results
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+    
+    if (response.success) {
+      currentData = response.data;
       displayResults(response);
+      showSuccess(`Extraction complete in ${duration}s`);
       
-      // Update quota
-      await updateQuotaDisplay();
-      
-      // Update analytics
-      await updateAnalytics();
+      // Update history
+      await loadExtractionHistory();
       
     } else {
-      console.error('[Popup] ❌ Extraction failed:', response.error);
-      
-      // Handle specific errors
-      if (response.suggestQueue) {
-        // Quota exhausted - offer queue option
-        const shouldQueue = confirm(response.message + '\n\nAdd to queue?');
-        if (shouldQueue) {
-          // TODO: Implement queue functionality
-          alert('Queue feature coming soon!');
-        }
-      } else if (response.rateLimitInfo) {
-        // Rate limit hit - show queue info
-        alert(response.message);
-      } else {
-        // Generic error
-        alert(`Extraction failed: ${response.error || 'Unknown error'}`);
-      }
+      // Display error in extension (not browser popup)
+      displayError(response.error, response.errorDetails);
     }
     
   } catch (error) {
-    console.error('[Popup] ❌ Extraction failed:', error);
-    alert(`Extraction failed: ${error.message}`);
+    console.error('[Popup] Extraction error:', error);
+    displayError('Extraction failed', error.message);
   } finally {
-    // Reset button state
-    isExtracting = false;
+    extractionInProgress = false;
     extractBtn.disabled = false;
-    extractBtn.innerHTML = `
-      <span>🚀</span>
-      <span>Extract Data</span>
-    `;
+    extractBtn.textContent = '🚀 Extract Data';
   }
 }
 
@@ -293,273 +240,463 @@ async function extractData() {
 function displayResults(response) {
   const { data, metadata } = response;
   
-  console.log('[Popup] Displaying results | Confidence:', metadata.confidence);
+  // Show results section
+  document.getElementById('resultsSection').style.display = 'block';
+  document.getElementById('errorSection').style.display = 'none';
   
-  // Show results container
-  resultPlaceholder.classList.add('hidden');
-  resultContainer.classList.remove('hidden');
+  // Display confidence score
+  displayConfidenceScore(metadata.confidence);
   
-  // Display Auto Decision (if applicable)
+  // Display metadata
+  document.getElementById('modeUsed').textContent = metadata.mode.toUpperCase() + (metadata.cached ? ' 💾' : '');
+  document.getElementById('apiCalls').textContent = metadata.apiCalls || 0;
+  document.getElementById('duration').textContent = metadata.duration + 'ms';
+  document.getElementById('classification').textContent = metadata.classification || 'Unknown';
+  
+  // Display Smart Auto decision if applicable
   if (metadata.autoDecision) {
-    autoDecision.classList.remove('hidden');
-    autoDecisionMode.textContent = metadata.mode.toUpperCase();
-    autoDecisionReason.textContent = metadata.autoDecision.reasoning;
-  }
-  
-  // Update confidence meter
-  updateConfidenceMeter(metadata.confidence || 0);
-  
-  // Update metadata
-  metadataMode.textContent = (metadata.mode || 'unknown').toUpperCase();
-  metadataApiCalls.textContent = metadata.apiCalls || 0;
-  metadataDuration.textContent = ((metadata.duration || 0) / 1000).toFixed(1) + 's';
-  metadataClassification.textContent = formatClassification(metadata.classification);
-  
-  // Display mode badge styling
-  if (metadata.upgraded) {
-    metadataMode.textContent += ' ⬆️';
-  } else if (metadata.downgraded) {
-    metadataMode.textContent += ' ⬇️';
-  }
-  
-  if (metadata.cached) {
-    metadataMode.textContent += ' 💾';
+    const autoDecisionEl = document.getElementById('autoDecision');
+    if (autoDecisionEl) {
+      autoDecisionEl.style.display = 'block';
+      autoDecisionEl.innerHTML = `
+        <div class="auto-decision">
+          <strong>🤖 Smart Auto Decision:</strong> ${metadata.mode.toUpperCase()}<br>
+          <small>${metadata.autoDecision.reasoning}</small>
+        </div>
+      `;
+    }
   }
   
   // Display extracted data
-  resultData.textContent = JSON.stringify(data, null, 2);
+  const dataPreview = document.getElementById('dataPreview');
+  dataPreview.textContent = JSON.stringify(data, null, 2);
+  
+  // Highlight JSON syntax
+  highlightJSON(dataPreview);
 }
 
-function updateConfidenceMeter(confidence) {
-  confidenceValue.textContent = confidence + '%';
-  confidenceBarFill.style.width = confidence + '%';
+function displayConfidenceScore(confidence) {
+  const scoreEl = document.getElementById('confidenceScore');
+  const badgeEl = document.getElementById('confidenceBadge');
   
-  // Determine tier and color
-  let tier, color, icon, text;
+  scoreEl.textContent = confidence + '%';
+  
+  // Determine tier
+  let tier, color, icon, label;
   
   if (confidence >= 90) {
     tier = 'excellent';
-    color = '#10b981'; // green
+    color = '#10B981';
     icon = '🟢';
-    text = 'Excellent';
+    label = 'Excellent';
   } else if (confidence >= 75) {
     tier = 'good';
-    color = '#f59e0b'; // orange
+    color = '#F59E0B';
     icon = '🟡';
-    text = 'Good';
+    label = 'Good';
   } else {
     tier = 'caution';
-    color = '#ef4444'; // red
+    color = '#F97316';
     icon = '🔴';
-    text = 'Caution';
+    label = 'Caution';
   }
   
-  confidenceBarFill.style.background = color;
-  confidenceTier.className = `confidence-tier ${tier}`;
-  confidenceTierIcon.textContent = icon;
-  confidenceTierText.textContent = text;
-  confidenceTier.classList.remove('hidden');
+  badgeEl.innerHTML = `${icon} ${label}`;
+  badgeEl.style.backgroundColor = color;
+  scoreEl.style.color = color;
 }
 
-function formatClassification(classification) {
-  if (!classification) return 'Unknown';
+function displayError(error, details = null) {
+  // Show error section IN EXTENSION (not browser alert)
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('errorSection').style.display = 'block';
   
-  const map = {
-    'SINGLE_ITEM': '1 Item',
-    'MULTI_ITEM': 'Multiple',
-    'UNCERTAIN': 'Uncertain',
-    'NONE': 'None'
-  };
+  const errorEl = document.getElementById('errorMessage');
   
-  return map[classification] || classification;
-}
-
-// ========================================
-// ANALYTICS
-// ========================================
-
-async function updateAnalytics() {
-  try {
-    const response = await chrome.runtime.sendMessage({ 
-      action: 'getAnalytics' 
-    });
-    
-    // ✅ FIX: Add safety checks for undefined data
-    if (response && response.success && response.data && response.data.today) {
-      const analytics = response.data;
-      const today = analytics.today;
-      
-      // Update stats with fallback values
-      statsTotal.textContent = today.totalExtractions || 0;
-      
-      // Calculate Eco percentage
-      const totalModeUsage = (today.modeUsage?.eco || 0) + 
-                            (today.modeUsage?.balanced || 0) + 
-                            (today.modeUsage?.auto || 0);
-      const ecoPercent = totalModeUsage > 0 
-        ? Math.round((today.modeUsage?.eco || 0) / totalModeUsage * 100)
-        : 0;
-      statsEco.textContent = ecoPercent + '%';
-      
-      // Avg confidence
-      statsConfidence.textContent = Math.round(today.avgConfidence || 0) + '%';
-      
-      // Success rate
-      const successRate = today.successRate || 0;
-      statsSuccess.textContent = Math.round(successRate * 100) + '%';
-      
-      console.log('[Popup] Analytics updated');
-    } else {
-      console.warn('[Popup] Analytics data not available');
-      // Set default values
-      statsTotal.textContent = '0';
-      statsEco.textContent = '0%';
-      statsConfidence.textContent = '0%';
-      statsSuccess.textContent = '0%';
-    }
-  } catch (error) {
-    console.error('[Popup] Failed to update analytics:', error);
+  if (details) {
+    errorEl.innerHTML = `
+      <strong>${error}</strong><br><br>
+      <p>${details}</p>
+    `;
+  } else {
+    errorEl.textContent = error;
   }
+  
+  // Scroll to error
+  errorEl.scrollIntoView({ behavior: 'smooth' });
 }
 
 // ========================================
-// ACTION BUTTONS
+// EXPORT FUNCTIONS
 // ========================================
 
 function copyToClipboard() {
-  if (!lastExtractionData) {
-    alert('No data to copy');
+  if (!currentData) {
+    showError('No data to copy');
     return;
   }
   
-  const text = JSON.stringify(lastExtractionData.data, null, 2);
+  const jsonString = JSON.stringify(currentData, null, 2);
   
-  navigator.clipboard.writeText(text).then(() => {
-    copyBtn.innerHTML = '<span>✓</span><span>Copied!</span>';
-    setTimeout(() => {
-      copyBtn.innerHTML = '<span>📋</span><span>Copy</span>';
-    }, 2000);
+  navigator.clipboard.writeText(jsonString).then(() => {
+    showSuccess('Copied to clipboard');
   }).catch(err => {
-    console.error('[Popup] Copy failed:', err);
-    alert('Failed to copy to clipboard');
+    showError('Failed to copy: ' + err.message);
   });
 }
 
-function downloadJson() {
-  if (!lastExtractionData) {
-    alert('No data to download');
+function downloadJSON() {
+  if (!currentData) {
+    showError('No data to download');
     return;
   }
   
-  const dataStr = JSON.stringify(lastExtractionData.data, null, 2);
-  const blob = new Blob([dataStr], { type: 'application/json' });
+  const jsonString = JSON.stringify(currentData, null, 2);
+  const blob = new Blob([jsonString], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   
   const a = document.createElement('a');
   a.href = url;
   a.download = `web-weaver-${Date.now()}.json`;
-  document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
   
-  console.log('[Popup] JSON downloaded');
+  URL.revokeObjectURL(url);
+  showSuccess('JSON downloaded');
 }
 
-function downloadCsv() {
-  if (!lastExtractionData) {
-    alert('No data to download');
+async function downloadCSV() {
+  if (!currentData) {
+    showError('No data to download');
     return;
   }
   
-  const data = lastExtractionData.data;
-  let csv = '';
-  
-  // Handle array of objects
-  if (Array.isArray(data) && data.length > 0) {
-    // Get headers
-    const headers = Object.keys(data[0]);
-    csv = headers.join(',') + '\n';
+  try {
+    // Check if data is complex (nested objects/arrays)
+    const isComplex = isComplexJSON(currentData);
     
-    // Add rows
-    data.forEach(row => {
-      const values = headers.map(header => {
-        const value = row[header];
-        // Escape commas and quotes
-        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
-          return '"' + value.replace(/"/g, '""') + '"';
-        }
-        return value;
-      });
-      csv += values.join(',') + '\n';
-    });
-  }
-  // Handle single object
-  else if (typeof data === 'object') {
-    csv = 'Field,Value\n';
-    Object.entries(data).forEach(([key, value]) => {
-      if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
-        value = '"' + value.replace(/"/g, '""') + '"';
+    if (isComplex) {
+      // Use AI for complex data
+      showInfo('Converting complex data to CSV with AI...');
+      
+      const apiKey = document.getElementById('apiKey').value.trim();
+      if (!apiKey) {
+        showError('API key required for AI CSV conversion');
+        return;
       }
-      csv += `${key},${value}\n`;
-    });
+      
+      const response = await chrome.runtime.sendMessage({
+        action: 'convertToCSV',
+        data: currentData,
+        apiKey
+      });
+      
+      if (response.success) {
+        downloadCSVFile(response.csv);
+        showSuccess('CSV downloaded (AI-powered)');
+      } else {
+        throw new Error(response.error);
+      }
+      
+    } else {
+      // Simple manual conversion
+      const csv = convertToCSVManual(currentData);
+      downloadCSVFile(csv);
+      showSuccess('CSV downloaded');
+    }
+    
+  } catch (error) {
+    console.error('[Popup] CSV conversion error:', error);
+    showError('CSV conversion failed: ' + error.message);
   }
+}
+
+function isComplexJSON(data) {
+  // Check if JSON has nested objects or arrays beyond depth 2
+  const checkDepth = (obj, depth = 0) => {
+    if (depth > 2) return true;
+    
+    if (Array.isArray(obj)) {
+      return obj.some(item => checkDepth(item, depth + 1));
+    }
+    
+    if (obj !== null && typeof obj === 'object') {
+      return Object.values(obj).some(value => checkDepth(value, depth + 1));
+    }
+    
+    return false;
+  };
   
-  const blob = new Blob([csv], { type: 'text/csv' });
+  return checkDepth(data);
+}
+
+function convertToCSVManual(data) {
+  const items = Array.isArray(data) ? data : [data];
+  
+  if (items.length === 0) return '';
+  
+  // Get all keys
+  const keys = Object.keys(items[0]);
+  
+  // CSV header
+  let csv = keys.join(',') + '\n';
+  
+  // CSV rows
+  items.forEach(item => {
+    const row = keys.map(key => {
+      let value = item[key];
+      
+      // Handle null/undefined
+      if (value === null || value === undefined) return '';
+      
+      // Handle arrays
+      if (Array.isArray(value)) {
+        value = value.join(';');
+      }
+      
+      // Handle objects
+      if (typeof value === 'object') {
+        value = JSON.stringify(value);
+      }
+      
+      // Escape quotes and wrap in quotes
+      value = String(value).replace(/"/g, '""');
+      return `"${value}"`;
+    });
+    
+    csv += row.join(',') + '\n';
+  });
+  
+  return csv;
+}
+
+function downloadCSVFile(csvText) {
+  const blob = new Blob([csvText], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   
   const a = document.createElement('a');
   a.href = url;
   a.download = `web-weaver-${Date.now()}.csv`;
-  document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
+  
   URL.revokeObjectURL(url);
-  
-  console.log('[Popup] CSV downloaded');
 }
 
 // ========================================
-// EVENT LISTENERS
+// EXTRACTION HISTORY
 // ========================================
 
-function setupEventListeners() {
-  // API Key
-  saveKeyBtn.addEventListener('click', saveApiKey);
-  apiKeyInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') saveApiKey();
-  });
-  
-  // Mode Selection
-  modeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectMode(btn.dataset.mode);
+async function loadExtractionHistory() {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'getExtractionHistory'
     });
+    
+    if (response.success && response.history) {
+      displayExtractionHistory(response.history);
+    }
+  } catch (error) {
+    console.error('[Popup] Error loading history:', error);
+  }
+}
+
+function displayExtractionHistory(history) {
+  const historyContainer = document.getElementById('extractionHistory');
+  
+  if (!historyContainer) return;
+  
+  if (history.length === 0) {
+    historyContainer.innerHTML = '<p class="no-history">No extractions yet</p>';
+    return;
+  }
+  
+  // Show last 10
+  const recent = history.slice(0, 10);
+  
+  let html = '<h3>Recent Extractions</h3>';
+  html += '<div class="history-list">';
+  
+  recent.forEach(entry => {
+    const time = new Date(entry.timestamp).toLocaleTimeString();
+    const confColor = entry.confidence >= 90 ? '#10B981' : entry.confidence >= 75 ? '#F59E0B' : '#F97316';
+    
+    html += `
+      <div class="history-item">
+        <div class="history-time">${time}</div>
+        <div class="history-mode">${entry.mode}</div>
+        <div class="history-conf" style="color: ${confColor}">${entry.confidence}%</div>
+        <div class="history-items">${entry.itemCount} item(s)</div>
+      </div>
+    `;
   });
   
-  // Extract Button
-  extractBtn.addEventListener('click', extractData);
+  html += '</div>';
   
-  // Action Buttons
-  copyBtn.addEventListener('click', copyToClipboard);
-  downloadJsonBtn.addEventListener('click', downloadJson);
-  downloadCsvBtn.addEventListener('click', downloadCsv);
+  // Calculate stats
+  const totalExtractions = history.length;
+  const avgConfidence = Math.round(
+    history.reduce((sum, e) => sum + e.confidence, 0) / totalExtractions
+  );
+  const successRate = Math.round(
+    (history.filter(e => e.success).length / totalExtractions) * 100
+  );
   
-  console.log('[Popup] Event listeners registered');
+  html += `
+    <div class="history-stats">
+      <div><strong>Total:</strong> ${totalExtractions}</div>
+      <div><strong>Avg Confidence:</strong> ${avgConfidence}%</div>
+      <div><strong>Success Rate:</strong> ${successRate}%</div>
+    </div>
+  `;
+  
+  historyContainer.innerHTML = html;
 }
 
 // ========================================
-// AUTO-REFRESH QUOTA & ANALYTICS
+// UTILITY FUNCTIONS
 // ========================================
 
-// Refresh quota every 30 seconds
-setInterval(() => {
-  updateQuotaDisplay();
-}, 30000);
+function showSuccess(message) {
+  showNotification(message, 'success');
+}
 
-// Refresh analytics every 60 seconds
-setInterval(() => {
-  updateAnalytics();
-}, 60000);
+function showError(message) {
+  showNotification(message, 'error');
+}
 
-console.log('[Popup] Auto-refresh timers started');
+function showInfo(message) {
+  showNotification(message, 'info');
+}
+
+function showNotification(message, type = 'info') {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+  notification.textContent = message;
+  
+  // Add to page
+  document.body.appendChild(notification);
+  
+  // Animate in
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 10);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
+  }, 3000);
+}
+
+function highlightJSON(element) {
+  // Simple JSON syntax highlighting
+  let html = element.textContent;
+  
+  // Highlight strings
+  html = html.replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:');
+  html = html.replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>');
+  
+  // Highlight numbers
+  html = html.replace(/: (\d+)/g, ': <span class="json-number">$1</span>');
+  
+  // Highlight booleans
+  html = html.replace(/: (true|false)/g, ': <span class="json-boolean">$1</span>');
+  
+  // Highlight null
+  html = html.replace(/: null/g, ': <span class="json-null">null</span>');
+  
+  element.innerHTML = html;
+}
+
+async function clearCache() {
+  try {
+    await chrome.runtime.sendMessage({ action: 'clearCache' });
+    showSuccess('Cache cleared successfully');
+  } catch (error) {
+    showError('Failed to clear cache');
+  }
+}
+
+// ========================================
+// CSS FOR NOTIFICATIONS
+// ========================================
+
+// Add this CSS to your popup.html <style> section
+const notificationStyles = `
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.3s ease;
+  z-index: 10000;
+  max-width: 300px;
+}
+
+.notification.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.notification-success {
+  background: #10B981;
+  color: white;
+}
+
+.notification-error {
+  background: #EF4444;
+  color: white;
+}
+
+.notification-info {
+  background: #3B82F6;
+  color: white;
+}
+
+.history-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 10px 0;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 10px;
+  padding: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 12px;
+}
+
+.history-stats {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.auto-decision {
+  background: #f3f4f6;
+  padding: 10px;
+  border-radius: 6px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+
+.json-key { color: #8B5CF6; }
+.json-string { color: #10B981; }
+.json-number { color: #3B82F6; }
+.json-boolean { color: #F59E0B; }
+.json-null { color: #6B7280; }
+`;
+
+console.log('[Popup] Web Weaver Lightning v3.0 UI loaded');

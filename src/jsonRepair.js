@@ -1,7 +1,8 @@
 // ============================================================================
-// jsonRepair.js - REFACTORED (Day 10 Priority 5)
+// jsonRepair.js - v3.0.0 (Day 12 - FIX #4C APPLIED)
 // ============================================================================
 // Production-grade JSON repair and normalization utilities
+// FIX #4C: Advanced nested confidence structure flattening
 // Duplicates removed - only unique functions remain
 // Used as standalone utility or importable module
 // ============================================================================
@@ -36,12 +37,10 @@ function validateJSON(obj, schema) {
 
 /**
  * Normalize field names (convert snake_case variations)
- * Example: product_price, productPrice, Product_Price → price
  */
 function normalizeFieldNames(obj, fieldMappings = {}) {
   const normalized = {};
   
-  // Default mappings for common variations
   const defaultMappings = {
     'product_name': 'name',
     'product_price': 'price',
@@ -74,13 +73,9 @@ function cleanExtractedData(obj, options = {}) {
   const cleaned = {};
   
   for (const [key, value] of Object.entries(obj)) {
-    // Skip null values if option enabled
     if (removeNull && value === null) continue;
-    
-    // Skip empty strings if option enabled
     if (removeEmptyStrings && value === '') continue;
     
-    // Trim strings if option enabled
     if (trimStrings && typeof value === 'string') {
       cleaned[key] = value.trim();
     } else {
@@ -89,6 +84,98 @@ function cleanExtractedData(obj, options = {}) {
   }
   
   return cleaned;
+}
+
+// ============================================================================
+// FIX #4C: ADVANCED NESTED CONFIDENCE FLATTENING
+// ============================================================================
+
+/**
+ * FIX #4C: Repair complex JSON with nested confidence structures
+ */
+function repairComplexJSON(jsonString) {
+  console.log('[JSONRepair] FIX #4C: Attempting complex JSON repair...');
+  
+  try {
+    let cleaned = jsonString.replace(/``````/g, '').replace(/,(\s*[}\]])/g, '$1').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+    
+    let parsed = JSON.parse(cleaned);
+    
+    if (typeof parsed === 'object' && parsed !== null) {
+      parsed = flattenNestedStructure(parsed);
+    }
+    
+    console.log('[JSONRepair] FIX #4C: Complex JSON repaired successfully');
+    return parsed;
+    
+  } catch (error) {
+    console.error('[JSONRepair] FIX #4C: Complex repair failed:', error.message);
+    throw new Error('JSON repair failed after all attempts');
+  }
+}
+
+/**
+ * FIX #4C: Flatten nested confidence structures recursively
+ */
+function flattenNestedStructure(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(item => flattenNestedStructure(item));
+  }
+  
+  if (typeof obj !== 'object' || obj === null) {
+    return obj;
+  }
+  
+  const flattened = {};
+  let maxConfidence = 0;
+  let bestReasoning = null;
+  
+  for (const [key, value] of Object.entries(obj)) {
+    if (value && typeof value === 'object' && !Array.isArray(value) && 'value' in value && key !== 'confidence_score' && key !== 'confidence_reasoning') {
+      console.log('[JSONRepair] FIX #4C: Flattening nested field:', key);
+      flattened[key] = value.value;
+      if (value.confidence_score && value.confidence_score > maxConfidence) {
+        maxConfidence = value.confidence_score;
+        bestReasoning = value.confidence_reasoning || null;
+      }
+    } else if (Array.isArray(value)) {
+      flattened[key] = value.map(item => flattenNestedStructure(item));
+    } else if (key === 'confidence_score') {
+      maxConfidence = Math.max(maxConfidence, value);
+    } else if (key === 'confidence_reasoning' && !bestReasoning) {
+      bestReasoning = value;
+    } else {
+      flattened[key] = value;
+    }
+  }
+  
+  if (maxConfidence > 0) {
+    flattened.confidence_score = maxConfidence;
+  }
+  if (bestReasoning) {
+    flattened.confidence_reasoning = bestReasoning;
+  }
+  if (!flattened.confidence_score) {
+    flattened.confidence_score = 70;
+    flattened.confidence_reasoning = 'Confidence not provided by AI';
+  }
+  
+  return flattened;
+}
+
+/**
+ * FIX #4C: Detect if JSON has nested confidence pattern
+ */
+function hasNestedConfidencePattern(obj) {
+  if (!obj || typeof obj !== 'object') return false;
+  
+  for (const [key, value] of Object.entries(obj)) {
+    if (value && typeof value === 'object' && !Array.isArray(value) && 'value' in value && key !== 'confidence_score' && key !== 'confidence_reasoning') {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 /**
@@ -131,20 +218,20 @@ const SCHEMAS = {
 
 /**
  * Main utility function: repair + validate + clean
- * Use this as single entry point for post-processing
  */
 function processExtractedData(data, schemaType = 'ecommerce', options = {}) {
   console.log(`[jsonRepair] Processing ${schemaType} data...`);
   
   const schema = SCHEMAS[schemaType] || SCHEMAS.ecommerce;
   
-  // Step 1: Normalize field names
-  let processed = normalizeFieldNames(data, options.fieldMappings);
+  if (hasNestedConfidencePattern(data)) {
+    console.log('[jsonRepair] FIX #4C: Nested confidence pattern detected - flattening...');
+    data = flattenNestedStructure(data);
+  }
   
-  // Step 2: Clean data (remove nulls, trim, etc.)
+  let processed = normalizeFieldNames(data, options.fieldMappings);
   processed = cleanExtractedData(processed, options.cleanOptions);
   
-  // Step 3: Validate against schema
   const validation = validateJSON(processed, schema);
   
   if (!validation.valid) {
@@ -163,26 +250,46 @@ function processExtractedData(data, schemaType = 'ecommerce', options = {}) {
 // EXPORT (for use in background.js or other modules)
 // ============================================================================
 
-// For Chrome extension (no module system)
-if (typeof window !== 'undefined') {
+if (typeof self !== 'undefined' && typeof self.WEB_WEAVER_JSON_REPAIR === 'undefined') {
+  self.WEB_WEAVER_JSON_REPAIR = {
+    validateJSON,
+    normalizeFieldNames,
+    cleanExtractedData,
+    processExtractedData,
+    repairComplexJSON,
+    flattenNestedStructure,
+    hasNestedConfidencePattern,
+    SCHEMAS
+  };
+  console.log('[jsonRepair] Exported to self.WEB_WEAVER_JSON_REPAIR');
+}
+
+if (typeof window !== 'undefined' && typeof window.jsonRepairUtils === 'undefined') {
   window.jsonRepairUtils = {
     validateJSON,
     normalizeFieldNames,
     cleanExtractedData,
     processExtractedData,
+    repairComplexJSON,
+    flattenNestedStructure,
+    hasNestedConfidencePattern,
     SCHEMAS
   };
+  console.log('[jsonRepair] Exported to window.jsonRepairUtils');
 }
 
-// For Node.js / module systems
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     validateJSON,
     normalizeFieldNames,
     cleanExtractedData,
     processExtractedData,
+    repairComplexJSON,
+    flattenNestedStructure,
+    hasNestedConfidencePattern,
     SCHEMAS
   };
+  console.log('[jsonRepair] Exported to module.exports');
 }
 
-console.log('[jsonRepair] ✅ Utility loaded (Refactored - Day 10)');
+console.log('[jsonRepair] v3.0.0 loaded (FIX #4C: Nested confidence flattening)');

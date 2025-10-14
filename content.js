@@ -1,11 +1,13 @@
 // ═════════════════════════════════════════════════════════════════
-// CONTENT SCRIPT - ENHANCED WITH DAY 10 HYBRID CLASSIFIER
+// CONTENT SCRIPT - ENHANCED WITH DAY 12 FIX #2
+// Version: 3.0.0 (FIX #2: Medium Single-Article Detection)
 // ═════════════════════════════════════════════════════════════════
 
-console.log('[Content] 🚀 Content script with Day 10 Hybrid Classifier loading...');
+console.log('[Content] 🚀 Content script v3.0 with FIX #2 loading...');
 
 // ═══════════════════════════════════════════════════════════════
-// PRIORITY 2: ENHANCED CLASSIFIER WITH AMAZON DETECTION
+// 🔧 FIX #2: ENHANCED CLASSIFIER WITH MAIN CONTENT DETECTION
+// Prioritizes main <article> content over sidebar noise
 // ═══════════════════════════════════════════════════════════════
 
 function classifyPageLayout() {
@@ -26,25 +28,76 @@ function classifyPageLayout() {
     const bodyText = document.body?.textContent?.trim() || '';
     signals.wordCount = bodyText.split(/\s+/).length;
 
-    // ✅ PRIORITY 2: Added Amazon-specific selectors + inline block detection
+    // ========================================
+    // 🔧 FIX #2: DETECT MAIN CONTENT AREA FIRST (NEW!)
+    // This runs BEFORE repeated block detection to prioritize main content
+    // ========================================
+    
+    // Check for main content container (article, main, [role="main"])
+    const mainContent = document.querySelector('article, main, [role="main"], [data-testid="storyContent"], [data-testid="article-body"]');
+    const sidebar = document.querySelector('aside, [class*="sidebar"], [class*="recommend"], [data-testid="aside"]');
+    
+    // If we have a clear main article with ONE H1, prioritize that
+    if (mainContent) {
+      const mainH1s = mainContent.querySelectorAll('h1');
+      const mainWordCount = (mainContent.textContent || '').trim().split(/\s+/).length;
+      
+      if (mainH1s.length === 1 && mainWordCount > 300) {
+        console.log('[Content] ✅ FIX #2: Detected SINGLE article in main content area');
+        console.log('[Content] Main content word count:', mainWordCount);
+        console.log('[Content] Ignoring sidebar recommendations');
+        
+        // Log sidebar blocks if present (for debugging)
+        if (sidebar) {
+          const sidebarBlocks = sidebar.querySelectorAll('[class*="card"], [class*="item"], article');
+          console.log('[Content] Found', sidebarBlocks.length, 'blocks in sidebar (ignored)');
+        }
+        
+        const duration = performance.now() - startTime;
+        
+        // Return early with SINGLE_ITEM classification
+        return {
+          classification: 'SINGLE_ITEM',
+          confidence: 95,
+          signals: {
+            ...signals,
+            mainContentDetected: true,
+            sidebarIgnored: sidebar ? true : false,
+            mainContentWordCount: mainWordCount
+          },
+          reasoning: 'Main article content detected (1 H1, 300+ words) - sidebar ignored',
+          method: 'dom-heuristic-enhanced',
+          duration: Math.round(duration),
+          detectedBlocksCount: 0,  // Sidebar blocks don't count
+          detectedElements: []
+        };
+      }
+    }
+
+    // ========================================
+    // ORIGINAL LOGIC: Repeated Block Detection
+    // (Only runs if main content check didn't trigger)
+    // ========================================
+    
+    // Amazon-specific selectors + generic selectors
     const repeatingSelectors = [
       // Generic selectors
       '.product-card', '.product-item', '.post-card', '.post-preview',
       '.listing-item', '.search-result', '.grid-item',
       '[data-component="product-card"]', '[data-testid="product-tile"]',
       
-      // ✅ NEW: Amazon-specific selectors (Day 10 Priority 2 fix)
-      'div.s-main-slot div.s-result-item',  // Amazon search results
-      'div[data-component-type="s-search-result"]',  // Amazon product tiles
-      'div.sg-col-inner',  // Amazon grid items
-      '.s-result-item',  // Amazon result items
-      'div[data-asin]',  // Amazon ASIN containers
+      // Amazon-specific selectors
+      'div.s-main-slot div.s-result-item',
+      'div[data-component-type="s-search-result"]',
+      'div.sg-col-inner',
+      '.s-result-item',
+      'div[data-asin]',
       
       // eBay, Walmart, Target patterns
       '.s-item', '.product-tile', '[data-product-id]'
     ];
 
-    // ✅ PRIORITY 2: Inline repeated block detection (runs during classification)
+    // Inline repeated block detection
     let maxRepeatingBlocks = 0;
     const detectedBlocks = [];
 
@@ -83,13 +136,12 @@ function classifyPageLayout() {
     let confidence = 50;
     let reasoning = '';
 
-    // ✅ PRIORITY 2: Prioritize repeated block detection (runs FIRST now)
+    // Classification logic
     if (signals.hasLoginIndicators) {
       classification = 'NONE';
       confidence = 100;
       reasoning = 'Login/error page or too few words';
     } 
-    // ✅ PRIORITY 2: Early detection for product grids (Amazon fix)
     else if (maxRepeatingBlocks > 10) {
       classification = 'MULTI_ITEM';
       confidence = 98;
@@ -120,9 +172,7 @@ function classifyPageLayout() {
       confidence = 95;
       reasoning = 'Single main content area with one H1';
     } 
-    // ✅ PRIORITY 2: Lower confidence when repeating blocks exist
     else if (signals.articleCount === 0 && signals.h1Count === 1 && signals.wordCount > 200) {
-      // Check if repeating blocks were found (indicates possible MULTI_ITEM misclassification)
       if (maxRepeatingBlocks > 3) {
         classification = 'UNCERTAIN';
         confidence = 60;
@@ -152,15 +202,13 @@ function classifyPageLayout() {
       reasoning,
       method: 'dom-heuristic',
       duration: Math.round(duration),
-      // ✅ PRIORITY 2: Store detected blocks count for downstream use
       detectedBlocksCount: maxRepeatingBlocks,
-      detectedElements: detectedBlocks // Store for product extraction
+      detectedElements: detectedBlocks
     };
 
     console.log(`[Classifier] ✅ DOM: ${classification} (${confidence}%) in ${duration.toFixed(2)}ms`);
     console.log(`[Classifier] 💭 ${reasoning}`);
     
-    // ✅ PRIORITY 2: Log block detection details
     if (maxRepeatingBlocks > 0) {
       console.log(`[Classifier] 🔢 Detected ${maxRepeatingBlocks} repeated blocks`);
     }
@@ -189,7 +237,7 @@ function extractPageData() {
   try {
     console.log('[Content] Extracting page data...');
 
-    // DAY 10: Add classification to extracted data
+    // Run classification with FIX #2
     const classification = classifyPageLayout();
 
     const pageData = {
@@ -197,6 +245,7 @@ function extractPageData() {
       domain: window.location.hostname,
       title: document.title,
       mainText: document.body.innerText.substring(0, 5000),
+      metaDescription: document.querySelector('meta[name="description"]')?.content || '',
       headings: Array.from(document.querySelectorAll('h1, h2, h3'))
         .map(h => h.textContent.trim())
         .filter(Boolean)
@@ -214,23 +263,29 @@ function extractPageData() {
         author: document.querySelector('meta[name="author"]')?.content || ''
       },
 
-      // DAY 10: Add classification data
+      // Classification data (includes FIX #2 enhancements)
       pageLayout: classification.classification,
       classificationConfidence: classification.confidence,
       classificationSignals: classification.signals,
       classificationReasoning: classification.reasoning,
       classificationDuration: classification.duration,
       
-      // ✅ PRIORITY 2: Use inline block detection results
+      // DOM details
       domDetails: {
         repeatedBlocksCount: classification.detectedBlocksCount,
-        productGridFound: classification.detectedBlocksCount > 3
+        productGridFound: classification.detectedBlocksCount > 3,
+        mainContentDetected: classification.signals.mainContentDetected || false,
+        sidebarIgnored: classification.signals.sidebarIgnored || false
       }
     };
 
-    console.log('[Content] ✅ Page data extracted with classification');
+    console.log('[Content] ✅ Page data extracted with FIX #2 classification');
     console.log(`[Content] 📊 Page classified as: ${classification.classification}`);
     console.log(`[Content] 🔢 Repeated blocks: ${classification.detectedBlocksCount}`);
+    
+    if (classification.signals.mainContentDetected) {
+      console.log('[Content] 🎯 FIX #2: Main content prioritized over sidebar');
+    }
 
     return pageData;
   } catch (error) {
@@ -254,14 +309,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     else if (request.action === 'getPageData') {
-      // ✅ NEW: v2.0 compatibility (same as extractPageData)
+      // v3.0 compatibility (same as extractPageData)
       console.log('[Content] getPageData requested');
       const data = extractPageData();
       sendResponse({ success: true, data });
     }
 
     else if (request.action === 'extractWithHybrid') {
-      // DAY 10: Hybrid extraction
+      // Hybrid extraction
       console.log('[Content] 🔥 Hybrid extraction requested');
       const data = extractPageData();
       sendResponse({ success: true, data });
@@ -291,13 +346,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // ═══════════════════════════════════════════════════════════════
 // HEURISTIC TO DETECT REPEATED BLOCKS (E.G. PRODUCTS)
 // Returns array of DOM elements detected as product blocks
-// ✅ PRIORITY 2: Now includes Amazon-specific selectors
 // ═══════════════════════════════════════════════════════════════
 
 function detectRepeatedProductBlocks() {
   const candidates = [];
   const potentialProductSelectors = [
-    // ✅ PRIORITY 2: Amazon selectors (highest priority)
+    // Amazon selectors (highest priority)
     'div.s-main-slot div.s-result-item',
     'div[data-component-type="s-search-result"]',
     'div[data-asin]',
@@ -315,7 +369,7 @@ function detectRepeatedProductBlocks() {
   potentialProductSelectors.forEach(selector => {
     const elems = [...document.querySelectorAll(selector)];
     elems.forEach(el => {
-      if (el.innerText && el.innerText.length > 50) { // filter empty or too-small blocks
+      if (el.innerText && el.innerText.length > 50) {
         candidates.push(el);
       }
     });
@@ -325,4 +379,5 @@ function detectRepeatedProductBlocks() {
   return candidates;
 }
 
-console.log('[Content] ✅ Content script with Hybrid Classifier ready!');
+console.log('[Content] ✅ Content script v3.0 with FIX #2 ready!');
+console.log('[Content] 🔧 FIX #2: Enhanced Medium single-article detection enabled');
