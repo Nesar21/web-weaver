@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Web Weaver Lightning v3.0</title>
+  <title>Web Weaver Lightning v3.1</title>
   <style>
     * {
       margin: 0;
@@ -45,6 +45,12 @@
       color: #9ca3af;
       text-transform: uppercase;
       letter-spacing: 1px;
+    }
+
+    /* 🆕 v3.1: Enhanced version badge */
+    .header .version::after {
+      content: " 🆕";
+      color: #10B981;
     }
 
     /* API Key Section */
@@ -191,6 +197,7 @@
       margin-bottom: 15px;
     }
 
+    /* 🆕 v3.1: Enhanced Confidence Display */
     .confidence-display {
       background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
       padding: 15px;
@@ -211,6 +218,7 @@
       font-size: 32px;
       font-weight: 700;
       margin-bottom: 5px;
+      transition: color 0.3s ease;
     }
 
     .confidence-badge {
@@ -220,6 +228,16 @@
       font-size: 11px;
       font-weight: 600;
       color: white;
+      transition: all 0.3s ease;
+      margin-bottom: 6px;
+    }
+
+    /* 🆕 v3.1: Tier description */
+    #confidenceTierDesc {
+      font-size: 11px;
+      color: #6b7280;
+      font-style: italic;
+      margin-top: 6px;
     }
 
     .metadata-grid {
@@ -247,6 +265,26 @@
       font-size: 14px;
       font-weight: 600;
       color: #1f2937;
+    }
+
+    /* 🆕 v3.1: Domain Adjustment Display */
+    #domainAdjustment {
+      display: none;
+      background: #f0f9ff;
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 4px solid #0ea5e9;
+      margin: 15px 0;
+      font-size: 12px;
+      animation: slideIn 0.3s ease;
+    }
+
+    #domainAdjustment strong {
+      color: #0c4a6e;
+    }
+
+    .domain-adjustment {
+      line-height: 1.6;
     }
 
     .auto-decision {
@@ -353,9 +391,10 @@
       overflow-y: auto;
     }
 
+    /* 🆕 v3.1: Enhanced history item with tier icons */
     .history-item {
       display: grid;
-      grid-template-columns: 70px 70px 50px 1fr;
+      grid-template-columns: 70px 70px 70px 1fr;
       gap: 8px;
       padding: 8px;
       background: white;
@@ -363,6 +402,12 @@
       margin-bottom: 6px;
       font-size: 11px;
       align-items: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .history-item:hover {
+      transform: translateX(2px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
     .history-time {
@@ -383,6 +428,9 @@
 
     .history-conf {
       font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .history-items {
@@ -467,6 +515,20 @@
       animation: slideIn 0.3s ease;
     }
 
+    /* 🆕 v3.1: Pulse animation for confidence badge */
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    .confidence-badge.animate {
+      animation: pulse 0.5s ease;
+    }
+
     /* Notification Styles (from popup.js) */
     .notification {
       position: fixed;
@@ -509,7 +571,7 @@
     <!-- Header -->
     <div class="header">
       <h1>⚡ Web Weaver Lightning</h1>
-      <div class="version">v3.0.0 - 5 Modes Edition</div>
+      <div class="version">v3.1.0 - Universal Confidence Edition</div>
     </div>
 
     <!-- API Key Section -->
@@ -602,10 +664,12 @@
     <div id="resultsSection">
       <!-- Confidence & Metadata -->
       <div class="results-header">
+        <!-- 🆕 v3.1: Enhanced Confidence Display -->
         <div class="confidence-display">
           <div class="confidence-label">Confidence Score</div>
           <div id="confidenceScore" class="confidence-score-large">0%</div>
           <span id="confidenceBadge" class="confidence-badge">Unknown</span>
+          <div id="confidenceTierDesc"></div>
         </div>
 
         <div class="metadata-grid">
@@ -627,6 +691,9 @@
           </div>
         </div>
       </div>
+
+      <!-- 🆕 v3.1: Domain Adjustment Display -->
+      <div id="domainAdjustment" style="display: none;"></div>
 
       <!-- Smart Auto Decision -->
       <div id="autoDecision" style="display: none;"></div>

@@ -1,21 +1,20 @@
 /**
  * Web Weaver Lightning - Background Service Worker
- * Version: 3.0.0 (Day 12 - ALL FIXES APPLIED)
+ * Version: 3.1.0 (UNIVERSAL MULTI-ITEM EXTRACTION)
  * 
- * ✅ FIX #1: Confidence calculation uses AI average for multi-item
- * ✅ FIX #2: Medium single-article detection (in content.js)
- * ✅ FIX #3: SmartAuto crash fix (in smartAuto.js)
- * ✅ FIX #4: Nested confidence JSON flattening (3-layer defense)
- * 
- * MAJOR CHANGES FROM V2.0:
- * - 5 extraction modes: offline, min, balanced, max, auto
- * - Removed daily quota tracking (429 handling only)
- * - Enhanced error handling (all errors in extension)
- * - AI-powered CSV export for complex data
+ * ✅ ALL V3.0 FIXES PRESERVED + 🆕 MULTI-ITEM EXTRACTION
+ * - FIX #1: Confidence calculation (AI average for multi-item)
+ * - FIX #2: Medium single-article detection (content.js)
+ * - FIX #3: SmartAuto crash fix (smartAuto.js)
+ * - FIX #4: Nested confidence JSON flattening (3-layer defense)
+ * - 🆕 FIX #5: Universal Multi-Item Extraction (ANY SITE!)
+ * - 🆕 #5: Universal AI confidence prompt (v10) - NO HARDCODED SCHEMAS
+ * - #4: Visual confidence feedback system (color-coded badges)
+ * - #2: Historical learning with domain reliability tracking
  */
 
 // ========================================
-// LOAD V3.0 MODULES
+// LOAD V3.1 MODULES
 // ========================================
 
 try {
@@ -24,7 +23,7 @@ try {
     importScripts('src/cache.js');
     importScripts('src/smartAuto.js');
     importScripts('src/analytics.js');
-    console.log('[Background] ✅ All v3.0 modules loaded');
+    console.log('[Background] ✅ All v3.1 modules loaded');
   } else {
     console.warn('[Background] importScripts not available');
   }
@@ -45,7 +44,7 @@ let extractionHistory = [];
 
 // Initialize on startup
 (async function initializeV3Systems() {
-  console.log('[Background] 🚀 Initializing Web Weaver Lightning v3.0...');
+  console.log('[Background] 🚀 Initializing Web Weaver Lightning v3.1...');
   
   try {
     if (self.WEB_WEAVER_CACHE) {
@@ -70,7 +69,7 @@ let extractionHistory = [];
       extractionHistory = historyData.extractionHistory.slice(-50);
     }
     
-    console.log('[Background] 🎉 All v3.0 systems initialized!');
+    console.log('[Background] 🎉 All v3.1 systems initialized!');
   } catch (error) {
     console.error('[Background] Initialization error:', error);
   }
@@ -85,7 +84,7 @@ chrome.storage.local.get(['geminiApiKey'], (result) => {
 });
 
 // ========================================
-// MESSAGE HANDLER (V3.0 ENHANCED)
+// MESSAGE HANDLER (V3.1 ENHANCED)
 // ========================================
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -155,11 +154,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // ========================================
-// V3.0 ENHANCED EXTRACTION HANDLER
+// V3.1 ENHANCED EXTRACTION HANDLER
 // ========================================
 
 async function handleExtractionV3(requestedMode = 'auto', tabId = null, url = null) {
-  console.log('[Background] 🚀 Starting v3.0 extraction | Mode:', requestedMode);
+  console.log('[Background] 🚀 Starting v3.1 extraction | Mode:', requestedMode);
   
   const startTime = Date.now();
   let chosenMode = requestedMode;
@@ -176,7 +175,7 @@ async function handleExtractionV3(requestedMode = 'auto', tabId = null, url = nu
       url = url || tabs[0].url;
     }
     
-    // Step 2: Get page content
+    // Step 2: Get page content (🆕 NOW WITH extractedItems!)
     const response = await chrome.tabs.sendMessage(tabId, { action: 'getPageData' });
     
     if (!response || !response.success || !response.data) {
@@ -186,9 +185,30 @@ async function handleExtractionV3(requestedMode = 'auto', tabId = null, url = nu
     const pageData = response.data;
     console.log('[Background] Page data received | URL:', pageData.url);
     
+    // 🆕 FIX #5: Check if multi-item with extracted items
+    if (pageData.extractedItems && pageData.extractedItems.length >= 2) {
+      console.log(`[Background] 🆕 FIX #5: Detected ${pageData.extractedItems.length} individual items from content.js`);
+    }
+    
     // Step 3: DOM Analysis
     const domAnalysis = analyzeDOMStructure(pageData);
     console.log('[Background] DOM Analysis | Type:', domAnalysis.classification, '| Confidence:', domAnalysis.confidence + '%');
+    
+    // #2: Check historical domain performance
+    let domainAdjustment = 0;
+    if (smartCache) {
+      const domainStats = await smartCache.getDomainStats(url);
+      if (domainStats && domainStats.avgConfidence) {
+        console.log('[Background] #2: Domain history | Avg confidence:', domainStats.avgConfidence + '%');
+        if (domainStats.avgConfidence > 85 && domainStats.extractionCount > 5) {
+          domainAdjustment = +5;
+          console.log('[Background] #2: High-reliability domain → +5% confidence boost');
+        } else if (domainStats.avgConfidence < 60 && domainStats.extractionCount > 3) {
+          domainAdjustment = -5;
+          console.log('[Background] #2: Low-reliability domain → -5% confidence penalty');
+        }
+      }
+    }
     
     // Step 4: Smart Auto Mode Decision
     if (requestedMode === 'auto' && smartAutoMode) {
@@ -220,29 +240,6 @@ async function handleExtractionV3(requestedMode = 'auto', tabId = null, url = nu
         extractionResult = await runBalancedMode(pageData, domAnalysis, url);
     }
     
-    // Step 6: Update cache learning
-    if (smartCache && chosenMode !== 'offline') {
-      await smartCache.updateLearning(url, {
-        success: true,
-        confidence: extractionResult.confidence,
-        mode: chosenMode,
-        apiCalls: extractionResult.apiCalls || 0,
-        duration: Date.now() - startTime
-      });
-    }
-    
-    // Step 7: Track analytics
-    if (analytics) {
-      await analytics.trackExtraction({
-        mode: chosenMode,
-        success: true,
-        confidence: extractionResult.confidence,
-        apiCalls: extractionResult.apiCalls || 0,
-        duration: Date.now() - startTime,
-        cached: extractionResult.cached || false
-      });
-    }
-    
     // ========================================
     // 🔧 FIX #1: CALCULATE FINAL CONFIDENCE
     // ========================================
@@ -266,11 +263,47 @@ async function handleExtractionV3(requestedMode = 'auto', tabId = null, url = nu
       console.log('[Background] ✅ FIX #1: Using single item confidence:', finalConfidence + '%');
     }
     
+    // #2: Apply domain-based adjustment
+    if (domainAdjustment !== 0) {
+      const before = finalConfidence;
+      finalConfidence = Math.max(0, Math.min(100, finalConfidence + domainAdjustment));
+      console.log('[Background] #2: Domain adjustment applied:', before, '→', finalConfidence);
+    }
+    
+    // #4: Calculate visual confidence tier
+    const confidenceTier = getConfidenceTier(finalConfidence);
+    console.log('[Background] #4: Confidence tier:', confidenceTier.label, confidenceTier.icon);
+    
+    // #2: Update cache with confidence tracking
+    if (smartCache && chosenMode !== 'offline') {
+      await smartCache.updateLearning(url, {
+        success: true,
+        confidence: finalConfidence,
+        mode: chosenMode,
+        apiCalls: extractionResult.apiCalls || 0,
+        duration: Date.now() - startTime
+      });
+      console.log('[Background] #2: Domain learning updated');
+    }
+    
+    // Step 7: Track analytics
+    if (analytics) {
+      await analytics.trackExtraction({
+        mode: chosenMode,
+        success: true,
+        confidence: finalConfidence,
+        apiCalls: extractionResult.apiCalls || 0,
+        duration: Date.now() - startTime,
+        cached: extractionResult.cached || false
+      });
+    }
+    
     // Step 8: Add to history
     const historyEntry = {
       timestamp: Date.now(),
       mode: chosenMode,
-      confidence: finalConfidence,  // ✅ NOW CORRECT!
+      confidence: finalConfidence,
+      confidenceTier: confidenceTier.label,
       success: true,
       url: url,
       itemCount: Array.isArray(extractionResult.data) ? extractionResult.data.length : 1
@@ -289,11 +322,13 @@ async function handleExtractionV3(requestedMode = 'auto', tabId = null, url = nu
       metadata: {
         mode: chosenMode,
         requestedMode,
-        confidence: finalConfidence,  // ✅ FIX #1 APPLIED!
+        confidence: finalConfidence,
+        confidenceTier,
         apiCalls: extractionResult.apiCalls || 0,
         duration: Date.now() - startTime,
         cached: extractionResult.cached || false,
         classification: domAnalysis.classification,
+        domainAdjustment,
         autoDecision: autoDecision ? {
           reasoning: autoDecision.reasoning,
           confidence: (autoDecision.confidence * 100).toFixed(0) + '%'
@@ -301,7 +336,7 @@ async function handleExtractionV3(requestedMode = 'auto', tabId = null, url = nu
       }
     };
     
-    console.log('[Background] ✅ Extraction complete | Final Confidence:', finalConfidence + '%');
+    console.log('[Background] ✅ Extraction complete | Final Confidence:', finalConfidence + '%', confidenceTier.icon);
     return responseObj;
     
   } catch (error) {
@@ -329,6 +364,47 @@ async function handleExtractionV3(requestedMode = 'auto', tabId = null, url = nu
 }
 
 // ========================================
+// #4: CONFIDENCE TIER CALCULATOR
+// ========================================
+
+function getConfidenceTier(score) {
+  if (score >= 90) {
+    return {
+      level: 'high',
+      label: 'High',
+      icon: '🔵',
+      color: '#0066FF',
+      description: 'Excellent extraction quality'
+    };
+  }
+  if (score >= 80) {
+    return {
+      level: 'good',
+      label: 'Good',
+      icon: '🟢',
+      color: '#00CC66',
+      description: 'Strong extraction quality'
+    };
+  }
+  if (score >= 65) {
+    return {
+      level: 'medium',
+      label: 'Medium',
+      icon: '🟡',
+      color: '#FFAA00',
+      description: 'Acceptable extraction quality'
+    };
+  }
+  return {
+    level: 'low',
+    label: 'Low',
+    icon: '🔴',
+    color: '#FF3333',
+    description: 'Poor extraction quality - verify data'
+  };
+}
+
+// ========================================
 // OFFLINE MODE PIPELINE
 // ========================================
 
@@ -346,7 +422,7 @@ async function runOfflineMode(pageData, domAnalysis, url) {
 }
 
 // ========================================
-// MIN MODE PIPELINE
+// 🆕 FIX #5: MIN MODE WITH MULTI-ITEM SUPPORT
 // ========================================
 
 async function runMinMode(pageData, domAnalysis, url) {
@@ -359,6 +435,53 @@ async function runMinMode(pageData, domAnalysis, url) {
     throw new Error('API key required for Min mode. Please add your Gemini API key in settings.');
   }
   
+  const classification = domAnalysis.classification;
+  
+  // 🆕 FIX #5: Handle MULTI_ITEM extraction
+  if (classification === 'MULTI_ITEM' && pageData.extractedItems && pageData.extractedItems.length >= 2) {
+    console.log(`[Background] 🆕 FIX #5: MULTI_ITEM detected with ${pageData.extractedItems.length} items - extracting each individually`);
+    
+    const allResults = [];
+    const maxItems = Math.min(pageData.extractedItems.length, 10); // Limit to 10
+    
+    // Generate universal prompt once
+    const customPrompt = await generateUniversalPromptV10('SINGLE_ITEM', domAnalysis);
+    apiCalls++;
+    
+    // Extract each item
+    for (let i = 0; i < maxItems; i++) {
+      const item = pageData.extractedItems[i];
+      console.log(`[Background] Extracting item ${i + 1}/${maxItems}...`);
+      
+      try {
+        const extractionResult = await extractWithAI(item.text, customPrompt, 'SINGLE_ITEM');
+        apiCalls++;
+        
+        allResults.push({
+          ...extractionResult,
+          itemIndex: item.index,
+          selector: item.selector
+        });
+      } catch (error) {
+        console.warn(`[Background] Failed to extract item ${i + 1}:`, error.message);
+        continue;
+      }
+    }
+    
+    console.log(`[Background] ✅ Successfully extracted ${allResults.length} items`);
+    
+    return {
+      data: allResults,
+      confidence: allResults.length > 0 
+        ? Math.round(allResults.reduce((sum, r) => sum + (r.confidence_score || 75), 0) / allResults.length)
+        : 50,
+      apiCalls,
+      cached: false,
+      duration: Date.now() - startTime
+    };
+  }
+  
+  // SINGLE_ITEM logic (existing code)
   if (smartCache) {
     const cacheEntry = await smartCache.get(url);
     const shouldUseCache = await smartCache.shouldUseCache(url, 'min');
@@ -376,8 +499,7 @@ async function runMinMode(pageData, domAnalysis, url) {
     }
   }
   
-  const classification = domAnalysis.classification;
-  const customPrompt = await generateCustomPrompt(classification, domAnalysis);
+  const customPrompt = await generateUniversalPromptV10(classification, domAnalysis);
   apiCalls++;
   
   const extractionResult = await extractWithAI(pageData.mainText, customPrompt, classification);
@@ -401,7 +523,7 @@ async function runMinMode(pageData, domAnalysis, url) {
 }
 
 // ========================================
-// BALANCED MODE PIPELINE
+// 🆕 FIX #5: BALANCED MODE WITH MULTI-ITEM SUPPORT
 // ========================================
 
 async function runBalancedMode(pageData, domAnalysis, url) {
@@ -434,7 +556,41 @@ async function runBalancedMode(pageData, domAnalysis, url) {
     apiCalls++;
   }
   
-  const customPrompt = await generateCustomPrompt(classification, domAnalysis);
+  // 🆕 FIX #5: Handle MULTI_ITEM extraction
+  if (classification === 'MULTI_ITEM' && pageData.extractedItems && pageData.extractedItems.length >= 2) {
+    console.log(`[Background] 🆕 FIX #5: MULTI_ITEM with ${pageData.extractedItems.length} items`);
+    
+    const allResults = [];
+    const maxItems = Math.min(pageData.extractedItems.length, 10);
+    
+    const customPrompt = await generateUniversalPromptV10('SINGLE_ITEM', domAnalysis);
+    apiCalls++;
+    
+    for (let i = 0; i < maxItems; i++) {
+      const item = pageData.extractedItems[i];
+      try {
+        const extractionResult = await extractWithAI(item.text, customPrompt, 'SINGLE_ITEM');
+        apiCalls++;
+        allResults.push({ ...extractionResult, itemIndex: item.index });
+      } catch (error) {
+        console.warn(`[Background] Item ${i + 1} extraction failed:`, error.message);
+        continue;
+      }
+    }
+    
+    return {
+      data: allResults,
+      confidence: allResults.length > 0 
+        ? Math.round(allResults.reduce((sum, r) => sum + (r.confidence_score || 85), 0) / allResults.length)
+        : 50,
+      apiCalls,
+      cached,
+      duration: Date.now() - startTime
+    };
+  }
+  
+  // SINGLE_ITEM logic
+  const customPrompt = await generateUniversalPromptV10(classification, domAnalysis);
   apiCalls++;
   
   const extractionResult = await extractWithAI(pageData.mainText, customPrompt, classification);
@@ -458,7 +614,7 @@ async function runBalancedMode(pageData, domAnalysis, url) {
 }
 
 // ========================================
-// MAX MODE PIPELINE
+// 🆕 FIX #5: MAX MODE WITH MULTI-ITEM SUPPORT
 // ========================================
 
 async function runMaxMode(pageData, domAnalysis, url) {
@@ -475,8 +631,60 @@ async function runMaxMode(pageData, domAnalysis, url) {
   const classification = aiClassification.type || domAnalysis.classification;
   apiCalls++;
   
-  console.log('[Background] Step 2: Generate Custom Prompt');
-  const customPrompt = await generateCustomPrompt(classification, domAnalysis);
+  // 🆕 FIX #5: Handle MULTI_ITEM extraction
+  if (classification === 'MULTI_ITEM' && pageData.extractedItems && pageData.extractedItems.length >= 2) {
+    console.log(`[Background] 🆕 FIX #5: MAX MODE MULTI_ITEM with ${pageData.extractedItems.length} items`);
+    
+    const allResults = [];
+    const maxItems = Math.min(pageData.extractedItems.length, 10);
+    
+    console.log('[Background] Step 2: Generate Universal Prompt v10');
+    const customPrompt = await generateUniversalPromptV10('SINGLE_ITEM', domAnalysis);
+    apiCalls++;
+    
+    console.log('[Background] Step 3: Extract each item with verification');
+    for (let i = 0; i < maxItems; i++) {
+      const item = pageData.extractedItems[i];
+      
+      try {
+        // Primary extraction
+        const extraction1 = await extractWithAI(item.text, customPrompt, 'SINGLE_ITEM');
+        apiCalls++;
+        
+        // Verification extraction
+        const extraction2 = await extractWithAI(item.text, customPrompt, 'SINGLE_ITEM');
+        apiCalls++;
+        
+        // Use best result
+        const confidence1 = extraction1.confidence_score || 0;
+        const confidence2 = extraction2.confidence_score || 0;
+        const bestExtraction = confidence1 >= confidence2 ? extraction1 : extraction2;
+        
+        allResults.push({
+          ...bestExtraction,
+          itemIndex: item.index,
+          verificationScore: Math.round((confidence1 + confidence2) / 2)
+        });
+      } catch (error) {
+        console.warn(`[Background] Item ${i + 1} extraction failed:`, error.message);
+        continue;
+      }
+    }
+    
+    return {
+      data: allResults,
+      confidence: allResults.length > 0 
+        ? Math.round(allResults.reduce((sum, r) => sum + (r.confidence_score || 95), 0) / allResults.length)
+        : 50,
+      apiCalls,
+      cached: false,
+      duration: Date.now() - startTime
+    };
+  }
+  
+  // SINGLE_ITEM logic (existing code)
+  console.log('[Background] Step 2: Generate Universal Prompt v10');
+  const customPrompt = await generateUniversalPromptV10(classification, domAnalysis);
   apiCalls++;
   
   console.log('[Background] Step 3: Primary Extraction');
@@ -627,34 +835,105 @@ Return ONLY JSON:
 }
 
 // ========================================
-// 🔧 FIX #4A: ENHANCED PROMPT GENERATION
+// #5: UNIVERSAL PROMPT GENERATOR V10
 // ========================================
 
-async function generateCustomPrompt(classification, domAnalysis) {
-  console.log('[Background] Generating custom prompt...');
+async function generateUniversalPromptV10(classification, domAnalysis) {
+  console.log('[Background] #5: Generating universal prompt v10...');
   
-  try {
-    if (!apiKey) throw new Error('No API key');
-    
-    const websiteType = domAnalysis.type || 'general-content';
-    const isMultiItem = classification === 'MULTI_ITEM';
-    
-    // 🔧 FIX #4A: Enhanced meta-prompt with explicit anti-nesting instructions
-    const metaPrompt = `Create extraction prompt for ${websiteType} ${isMultiItem ? 'listing (MULTIPLE items)' : 'page (ONE item)'}.
+  const websiteType = domAnalysis.type || 'unknown';
+  const isMultiItem = classification === 'MULTI_ITEM';
+  
+  // #5: Universal prompt template (NO SITE-SPECIFIC LOGIC)
+  const universalPrompt = `You are a universal web data extraction AI. Extract structured data from the HTML content provided.
 
-Requirements:
-1. Extract ALL relevant fields
-2. Return ${isMultiItem ? 'JSON array of objects' : 'JSON object'}
-3. Include ONE global confidence_score (0-100) field at the root level
-4. Include ONE global confidence_reasoning field at the root level
-5. Use null for missing data
-6. ${isMultiItem ? 'Extract TOP 10 items max' : 'Focus on completeness'}
+=== PAGE TYPE ===
+Content classification: ${classification}
+Website category: ${websiteType}
+Extraction mode: ${isMultiItem ? 'MULTIPLE items' : 'SINGLE item'}
 
-CRITICAL FORMAT RULES:
-- DO NOT nest objects with "value", "confidence_score" properties
+=== EXTRACTION INSTRUCTIONS ===
+
+1. ANALYZE the content and identify ALL relevant data fields
+2. EXTRACT using the most reliable method available per field
+3. ASSESS your confidence per field based on extraction method
+4. PROVIDE detailed reasoning for your overall confidence score
+
+=== CONFIDENCE SCORING (0-100) ===
+
+Calculate confidence based on 4 factors:
+
+**EXTRACTION METHOD (40 points max):**
+- Rate each field 0-10 based on method:
+  * Structured data (JSON-LD, Schema.org, microdata): 10pts
+  * Semantic HTML (<article>, <time>, <price>, <h1>): 8pts
+  * CSS selectors with clear naming (class="product-title"): 6pts
+  * Text pattern matching (regex, parsing): 4pts
+  * Contextual inference (guessing from nearby text): 2pts
+  * Assumed/placeholder: 0pts
+- Average across all extracted fields = 40% weight
+
+**DATA COMPLETENESS (30 points max):**
+- % of relevant fields found and extracted cleanly
+- Values complete (not truncated with "..." or "Loading...")
+- Missing optional fields: minor penalty
+- Missing critical fields: major penalty
+- Weight: 30% of total score
+
+**DATA QUALITY (20 points max):**
+- Values realistic? (price > 0, valid dates, working URLs)
+- Text coherent? (not garbled, not error messages)
+- Formats valid? (URLs, numbers, dates match expected patterns)
+- No contradictions between fields?
+- Weight: 20% of total score
+
+**CONTEXTUAL APPROPRIATENESS (10 points max):**
+- Data makes sense for this page type?
+- Field relationships logical? (sale_price < original_price)
+- Supporting evidence exists in DOM structure?
+- Weight: 10% of total score
+
+=== OUTPUT FORMAT ===
+
+Return ONLY valid JSON ${isMultiItem ? 'array of objects' : 'object'}. Each item MUST include:
+
+{
+  "field_name": "extracted value or null",
+  "another_field": "value",
+  "confidence_score": 85,
+  "confidence_reasoning": "<100 words max explaining: which fields are most/least confident, extraction methods used, any issues encountered, why this score>"
+}
+
+${isMultiItem ? 'Extract TOP 10 items maximum.' : ''}
+
+=== REASONING REQUIREMENTS ===
+
+Your reasoning MUST:
+- Be concise (<100 words)
+- Mention specific fields and their confidence levels
+- State extraction methods used per field
+- Explain any uncertainties or missing data
+- Justify the final score honestly
+
+BANNED phrases (too generic):
+- "good extraction"
+- "high quality"
+- "successful extraction"
+- "data extracted successfully"
+
+REQUIRED specifics:
+- "Title from semantic <h1> (9/10)"
+- "Price missing from DOM (0/10)"
+- "Category inferred from breadcrumb (6/10)"
+
+=== CRITICAL FORMAT RULES ===
+
+- DO NOT nest objects with "value", "confidence_score" properties per field
 - DO NOT add confidence scores to individual fields
 - Each field should be a SIMPLE value (string, number, null, array)
 - ONLY add confidence_score and confidence_reasoning at the ROOT level
+- VARY confidence scores per item - NEVER return same score for all items
+- BE HONEST about low confidence extractions
 
 WRONG FORMAT (nested - DO NOT USE):
 {
@@ -668,39 +947,24 @@ CORRECT FORMAT (flat - USE THIS):
 {
   "title": "Example",
   "author": "John Doe",
-  "confidence_score": 95,
-  "confidence_reasoning": "All fields extracted successfully"
+  "confidence_score": 92,
+  "confidence_reasoning": "Title from <h1> (10/10). Author from meta tag (9/10). All critical fields present."
 }
 
-Return ONLY the prompt text, no JSON wrapper.`;
-    
-    const url = `${CONFIG.API_ENDPOINT}/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: metaPrompt }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 800 }
-      })
-    });
-    
-    if (!response.ok) {
-      if (response.status === 429) throw new Error('429: Rate limit exceeded');
-      throw new Error(`Prompt generation failed: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    const customPrompt = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!customPrompt) throw new Error('Failed to generate prompt');
-    
-    console.log('[Background] ✅ FIX #4A: Custom prompt generated with anti-nesting rules');
-    return customPrompt;
-    
-  } catch (error) {
-    console.error('[Background] Prompt generation error:', error);
-    throw error;
-  }
+=== IMPORTANT RULES ===
+
+1. NO explanatory text outside JSON
+2. NO markdown code blocks
+3. ONLY return the JSON ${isMultiItem ? 'array' : 'object'}
+4. NULL for missing fields (not "N/A" or "")
+5. VARY confidence scores per item quality
+6. NEVER return same score for all items
+7. BE HONEST about low confidence extractions
+
+Now extract data from the provided HTML content:`;
+  
+  console.log('[Background] #5: Universal prompt v10 generated (NO schemas!)');
+  return universalPrompt;
 }
 
 async function extractWithAI(mainText, customPrompt, classification, retries = 0) {
@@ -772,14 +1036,12 @@ function extractJsonObject(text) {
   
   try {
     let parsed = JSON.parse(jsonCandidate);
-    // 🔧 FIX #4B: Flatten nested confidence structures
     parsed = flattenNestedConfidence(parsed);
     return parsed;
   } catch (directError) {
     try {
       const cleaned = jsonCandidate.replace(/,(\s*[}\]])/g, '$1');
       let parsed = JSON.parse(cleaned);
-      // 🔧 FIX #4B: Flatten nested confidence structures
       parsed = flattenNestedConfidence(parsed);
       return parsed;
     } catch (cleanError) {
@@ -788,26 +1050,18 @@ function extractJsonObject(text) {
   }
 }
 
-/**
- * 🔧 FIX #4B: Flatten nested confidence structures
- * Detects and flattens patterns like:
- * { "title": { "value": "...", "confidence_score": 95 } }
- */
 function flattenNestedConfidence(obj) {
   if (!obj || typeof obj !== 'object') return obj;
   
-  // Handle arrays (multi-item extractions)
   if (Array.isArray(obj)) {
     return obj.map(item => flattenNestedConfidence(item));
   }
   
-  // Flatten object
   const flattened = {};
   let globalConfidence = null;
   let globalReasoning = null;
   
   for (const [key, value] of Object.entries(obj)) {
-    // Check if this is a nested confidence structure
     if (value && typeof value === 'object' && !Array.isArray(value) && 
         'value' in value && key !== 'confidence_score' && key !== 'confidence_reasoning') {
       
@@ -827,7 +1081,6 @@ function flattenNestedConfidence(obj) {
     }
   }
   
-  // Add global confidence if found
   if (globalConfidence && !flattened.confidence_score) {
     flattened.confidence_score = globalConfidence;
   }
@@ -835,7 +1088,6 @@ function flattenNestedConfidence(obj) {
     flattened.confidence_reasoning = globalReasoning;
   }
   
-  // Default confidence if none found
   if (!flattened.confidence_score) {
     flattened.confidence_score = 75;
     flattened.confidence_reasoning = 'AI did not provide confidence score';
@@ -903,12 +1155,16 @@ Return CSV with headers:`;
 // SERVICE WORKER INITIALIZATION
 // ========================================
 
-console.log('[Background] 🚀 Web Weaver Lightning v3.0 loaded');
+console.log('[Background] 🚀 Web Weaver Lightning v3.1 loaded');
 console.log('[Background] Using model:', CONFIG?.GEMINI_MODEL || 'CONFIG not loaded');
 console.log('[Background] Available modes:', Object.keys(CONFIG?.MODES || {}));
 console.log('[Background] Quota tracking: DISABLED (429 handling only)');
-console.log('[Background] ✅ ALL FIXES APPLIED:');
+console.log('[Background] ✅ ALL V3.0 FIXES PRESERVED + 🆕 MULTI-ITEM EXTRACTION:');
 console.log('[Background]   - FIX #1: Confidence calculation (AI average for multi-item)');
 console.log('[Background]   - FIX #2: Medium single-article detection (content.js)');
 console.log('[Background]   - FIX #3: SmartAuto crash fix (smartAuto.js)');
 console.log('[Background]   - FIX #4: Nested confidence JSON flattening (3-layer defense)');
+console.log('[Background]   - 🆕 FIX #5: Universal Multi-Item Extraction (ANY SITE!)');
+console.log('[Background]   - #5: Universal AI confidence prompt (v10) - NO SCHEMAS');
+console.log('[Background]   - #4: Visual confidence feedback (color-coded tiers)');
+console.log('[Background]   - #2: Historical learning with domain confidence tracking');

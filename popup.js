@@ -1,22 +1,31 @@
 /**
  * Web Weaver Lightning - Popup UI Controller
- * Version: 3.0.0 (Day 12 - 5 Modes Edition)
+ * Version: 3.1.0 (Day 13 - VISUAL CONFIDENCE FEEDBACK)
+ * 
+ * 🆕 v3.1 ENHANCEMENTS:
+ * - #4: Color-coded confidence tiers (High/Good/Medium/Low)
+ * - #4: Visual feedback with tier icons
+ * - #2: Domain adjustment display
  */
+
 
 // ========================================
 // GLOBAL STATE
 // ========================================
 
+
 let currentData = null;
 let currentMode = 'auto';
 let extractionInProgress = false;
+
 
 // ========================================
 // INITIALIZATION
 // ========================================
 
+
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[Popup] Initializing Web Weaver Lightning v3.0...');
+  console.log('[Popup] Initializing Web Weaver Lightning v3.1...');
   
   // Load API key
   await loadApiKey();
@@ -33,9 +42,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('[Popup] Initialization complete');
 });
 
+
 // ========================================
 // EVENT LISTENERS
 // ========================================
+
 
 function setupEventListeners() {
   // API Key save
@@ -64,9 +75,11 @@ function setupEventListeners() {
   }
 }
 
+
 // ========================================
 // API KEY MANAGEMENT
 // ========================================
+
 
 async function loadApiKey() {
   try {
@@ -79,6 +92,7 @@ async function loadApiKey() {
     console.error('[Popup] Error loading API key:', error);
   }
 }
+
 
 async function saveApiKey() {
   const apiKey = document.getElementById('apiKey').value.trim();
@@ -106,9 +120,11 @@ async function saveApiKey() {
   }
 }
 
+
 // ========================================
 // MODE SELECTOR UI
 // ========================================
+
 
 function initializeModeSelector() {
   // Set default mode
@@ -116,6 +132,7 @@ function initializeModeSelector() {
   currentMode = 'auto';
   updateModeUI();
 }
+
 
 function updateModeUI() {
   // Update mode descriptions
@@ -168,9 +185,11 @@ function updateModeUI() {
   console.log('[Popup] Mode selected:', currentMode);
 }
 
+
 // ========================================
 // EXTRACTION HANDLER
 // ========================================
+
 
 async function handleExtract() {
   if (extractionInProgress) {
@@ -233,9 +252,11 @@ async function handleExtract() {
   }
 }
 
+
 // ========================================
-// RESULTS DISPLAY
+// 🆕 #4: ENHANCED RESULTS DISPLAY
 // ========================================
+
 
 function displayResults(response) {
   const { data, metadata } = response;
@@ -244,14 +265,30 @@ function displayResults(response) {
   document.getElementById('resultsSection').style.display = 'block';
   document.getElementById('errorSection').style.display = 'none';
   
-  // Display confidence score
-  displayConfidenceScore(metadata.confidence);
+  // 🆕 #4: Display enhanced confidence with tier
+  displayConfidenceTier(metadata.confidence, metadata.confidenceTier);
   
   // Display metadata
   document.getElementById('modeUsed').textContent = metadata.mode.toUpperCase() + (metadata.cached ? ' 💾' : '');
   document.getElementById('apiCalls').textContent = metadata.apiCalls || 0;
   document.getElementById('duration').textContent = metadata.duration + 'ms';
   document.getElementById('classification').textContent = metadata.classification || 'Unknown';
+  
+  // 🆕 #2: Display domain adjustment if present
+  if (metadata.domainAdjustment && metadata.domainAdjustment !== 0) {
+    const domainAdjustEl = document.getElementById('domainAdjustment');
+    if (domainAdjustEl) {
+      domainAdjustEl.style.display = 'block';
+      const sign = metadata.domainAdjustment > 0 ? '+' : '';
+      const color = metadata.domainAdjustment > 0 ? '#10B981' : '#EF4444';
+      domainAdjustEl.innerHTML = `
+        <div class="domain-adjustment" style="color: ${color}">
+          <strong>📊 Domain Adjustment:</strong> ${sign}${metadata.domainAdjustment}%
+          <br><small>Based on historical performance for this domain</small>
+        </div>
+      `;
+    }
+  }
   
   // Display Smart Auto decision if applicable
   if (metadata.autoDecision) {
@@ -275,36 +312,90 @@ function displayResults(response) {
   highlightJSON(dataPreview);
 }
 
-function displayConfidenceScore(confidence) {
+
+// ========================================
+// 🆕 #4: ENHANCED CONFIDENCE DISPLAY
+// ========================================
+
+
+/**
+ * 🆕 v3.1: Display confidence with visual tier feedback
+ */
+function displayConfidenceTier(confidence, confidenceTier) {
   const scoreEl = document.getElementById('confidenceScore');
   const badgeEl = document.getElementById('confidenceBadge');
+  const tierDescEl = document.getElementById('confidenceTierDesc');
   
   scoreEl.textContent = confidence + '%';
   
-  // Determine tier
-  let tier, color, icon, label;
-  
-  if (confidence >= 90) {
-    tier = 'excellent';
-    color = '#10B981';
-    icon = '🟢';
-    label = 'Excellent';
-  } else if (confidence >= 75) {
-    tier = 'good';
-    color = '#F59E0B';
-    icon = '🟡';
-    label = 'Good';
+  // Use tier from background.js if available
+  if (confidenceTier) {
+    // Use server-provided tier
+    badgeEl.innerHTML = `${confidenceTier.icon} ${confidenceTier.label}`;
+    badgeEl.style.backgroundColor = confidenceTier.color;
+    badgeEl.style.color = '#ffffff';
+    badgeEl.style.padding = '4px 12px';
+    badgeEl.style.borderRadius = '12px';
+    badgeEl.style.fontSize = '13px';
+    badgeEl.style.fontWeight = 'bold';
+    
+    scoreEl.style.color = confidenceTier.color;
+    
+    if (tierDescEl) {
+      tierDescEl.textContent = confidenceTier.description;
+      tierDescEl.style.color = '#6B7280';
+      tierDescEl.style.fontSize = '12px';
+    }
   } else {
-    tier = 'caution';
-    color = '#F97316';
-    icon = '🔴';
-    label = 'Caution';
+    // Fallback: Calculate tier client-side
+    let tier, color, icon, label, description;
+    
+    if (confidence >= 90) {
+      tier = 'high';
+      color = '#0066FF';
+      icon = '🔵';
+      label = 'High';
+      description = 'Excellent extraction quality';
+    } else if (confidence >= 80) {
+      tier = 'good';
+      color = '#00CC66';
+      icon = '🟢';
+      label = 'Good';
+      description = 'Strong extraction quality';
+    } else if (confidence >= 65) {
+      tier = 'medium';
+      color = '#FFAA00';
+      icon = '🟡';
+      label = 'Medium';
+      description = 'Acceptable extraction quality';
+    } else {
+      tier = 'low';
+      color = '#FF3333';
+      icon = '🔴';
+      label = 'Low';
+      description = 'Poor extraction quality - verify data';
+    }
+    
+    badgeEl.innerHTML = `${icon} ${label}`;
+    badgeEl.style.backgroundColor = color;
+    badgeEl.style.color = '#ffffff';
+    badgeEl.style.padding = '4px 12px';
+    badgeEl.style.borderRadius = '12px';
+    badgeEl.style.fontSize = '13px';
+    badgeEl.style.fontWeight = 'bold';
+    
+    scoreEl.style.color = color;
+    
+    if (tierDescEl) {
+      tierDescEl.textContent = description;
+      tierDescEl.style.color = '#6B7280';
+      tierDescEl.style.fontSize = '12px';
+    }
   }
   
-  badgeEl.innerHTML = `${icon} ${label}`;
-  badgeEl.style.backgroundColor = color;
-  scoreEl.style.color = color;
+  console.log('[Popup] 🆕 #4: Confidence tier displayed:', confidence + '%', confidenceTier?.label || 'calculated');
 }
+
 
 function displayError(error, details = null) {
   // Show error section IN EXTENSION (not browser alert)
@@ -326,9 +417,11 @@ function displayError(error, details = null) {
   errorEl.scrollIntoView({ behavior: 'smooth' });
 }
 
+
 // ========================================
 // EXPORT FUNCTIONS
 // ========================================
+
 
 function copyToClipboard() {
   if (!currentData) {
@@ -344,6 +437,7 @@ function copyToClipboard() {
     showError('Failed to copy: ' + err.message);
   });
 }
+
 
 function downloadJSON() {
   if (!currentData) {
@@ -363,6 +457,7 @@ function downloadJSON() {
   URL.revokeObjectURL(url);
   showSuccess('JSON downloaded');
 }
+
 
 async function downloadCSV() {
   if (!currentData) {
@@ -410,6 +505,7 @@ async function downloadCSV() {
   }
 }
 
+
 function isComplexJSON(data) {
   // Check if JSON has nested objects or arrays beyond depth 2
   const checkDepth = (obj, depth = 0) => {
@@ -428,6 +524,7 @@ function isComplexJSON(data) {
   
   return checkDepth(data);
 }
+
 
 function convertToCSVManual(data) {
   const items = Array.isArray(data) ? data : [data];
@@ -469,6 +566,7 @@ function convertToCSVManual(data) {
   return csv;
 }
 
+
 function downloadCSVFile(csvText) {
   const blob = new Blob([csvText], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
@@ -481,9 +579,11 @@ function downloadCSVFile(csvText) {
   URL.revokeObjectURL(url);
 }
 
+
 // ========================================
-// EXTRACTION HISTORY
+// 🆕 #4: ENHANCED EXTRACTION HISTORY
 // ========================================
+
 
 async function loadExtractionHistory() {
   try {
@@ -499,6 +599,10 @@ async function loadExtractionHistory() {
   }
 }
 
+
+/**
+ * 🆕 v3.1: Enhanced history display with confidence tiers
+ */
 function displayExtractionHistory(history) {
   const historyContainer = document.getElementById('extractionHistory');
   
@@ -517,13 +621,35 @@ function displayExtractionHistory(history) {
   
   recent.forEach(entry => {
     const time = new Date(entry.timestamp).toLocaleTimeString();
-    const confColor = entry.confidence >= 90 ? '#10B981' : entry.confidence >= 75 ? '#F59E0B' : '#F97316';
+    
+    // 🆕 #4: Use tier-based coloring
+    let tierIcon, tierColor;
+    if (entry.confidenceTier) {
+      // v3.1: Use stored tier
+      tierIcon = getTierIcon(entry.confidenceTier);
+      tierColor = getTierColor(entry.confidenceTier);
+    } else {
+      // Fallback: Calculate from score
+      if (entry.confidence >= 90) {
+        tierIcon = '🔵';
+        tierColor = '#0066FF';
+      } else if (entry.confidence >= 80) {
+        tierIcon = '🟢';
+        tierColor = '#00CC66';
+      } else if (entry.confidence >= 65) {
+        tierIcon = '🟡';
+        tierColor = '#FFAA00';
+      } else {
+        tierIcon = '🔴';
+        tierColor = '#FF3333';
+      }
+    }
     
     html += `
       <div class="history-item">
         <div class="history-time">${time}</div>
         <div class="history-mode">${entry.mode}</div>
-        <div class="history-conf" style="color: ${confColor}">${entry.confidence}%</div>
+        <div class="history-conf" style="color: ${tierColor}">${tierIcon} ${entry.confidence}%</div>
         <div class="history-items">${entry.itemCount} item(s)</div>
       </div>
     `;
@@ -551,21 +677,54 @@ function displayExtractionHistory(history) {
   historyContainer.innerHTML = html;
 }
 
+
+/**
+ * 🆕 v3.1: Helper to get tier icon from label
+ */
+function getTierIcon(tierLabel) {
+  const icons = {
+    'High': '🔵',
+    'Good': '🟢',
+    'Medium': '🟡',
+    'Low': '🔴'
+  };
+  return icons[tierLabel] || '⚪';
+}
+
+
+/**
+ * 🆕 v3.1: Helper to get tier color from label
+ */
+function getTierColor(tierLabel) {
+  const colors = {
+    'High': '#0066FF',
+    'Good': '#00CC66',
+    'Medium': '#FFAA00',
+    'Low': '#FF3333'
+  };
+  return colors[tierLabel] || '#6B7280';
+}
+
+
 // ========================================
 // UTILITY FUNCTIONS
 // ========================================
+
 
 function showSuccess(message) {
   showNotification(message, 'success');
 }
 
+
 function showError(message) {
   showNotification(message, 'error');
 }
 
+
 function showInfo(message) {
   showNotification(message, 'info');
 }
+
 
 function showNotification(message, type = 'info') {
   // Create notification element
@@ -590,6 +749,7 @@ function showNotification(message, type = 'info') {
   }, 3000);
 }
 
+
 function highlightJSON(element) {
   // Simple JSON syntax highlighting
   let html = element.textContent;
@@ -610,6 +770,7 @@ function highlightJSON(element) {
   element.innerHTML = html;
 }
 
+
 async function clearCache() {
   try {
     await chrome.runtime.sendMessage({ action: 'clearCache' });
@@ -619,9 +780,11 @@ async function clearCache() {
   }
 }
 
+
 // ========================================
-// CSS FOR NOTIFICATIONS
+// 🆕 #4: ENHANCED CSS FOR CONFIDENCE TIERS
 // ========================================
+
 
 // Add this CSS to your popup.html <style> section
 const notificationStyles = `
@@ -659,6 +822,27 @@ const notificationStyles = `
   color: white;
 }
 
+/* 🆕 #4: Confidence tier styling */
+#confidenceBadge {
+  display: inline-block;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+#confidenceTierDesc {
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* 🆕 #2: Domain adjustment styling */
+.domain-adjustment {
+  background: #f3f4f6;
+  padding: 10px;
+  border-radius: 6px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+
 .history-list {
   max-height: 200px;
   overflow-y: auto;
@@ -667,7 +851,7 @@ const notificationStyles = `
 
 .history-item {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1.2fr 1fr;
   gap: 10px;
   padding: 8px;
   border-bottom: 1px solid #e5e7eb;
@@ -699,4 +883,7 @@ const notificationStyles = `
 .json-null { color: #6B7280; }
 `;
 
-console.log('[Popup] Web Weaver Lightning v3.0 UI loaded');
+
+console.log('[Popup] 🚀 Web Weaver Lightning v3.1 UI loaded');
+console.log('[Popup] 🆕 v3.1: Visual confidence feedback enabled');
+console.log('[Popup] 🆕 v3.1: Domain adjustment display enabled');

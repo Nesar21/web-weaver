@@ -1,315 +1,402 @@
 /**
- * Web Weaver Lightning - Smart Cache System
- * Version: 2.0.0
- * Author: FAANG-Level Developer Agent
+ * Web Weaver Smart Cache System (v3.1 Enhanced)
+ * 🆕 v3.1: Domain-level confidence tracking & historical learning
  * 
- * Self-learning domain cache that improves extraction efficiency over time
+ * Features:
+ * - Smart caching with TTL
+ * - Learning metrics (success rate, reliability score)
+ * - Mode-specific cache decisions
+ * 🆕 Domain confidence tracking (#2)
+ * 🆕 Historical performance analysis
  */
 
+const WEB_WEAVER_CACHE = (function() {
+  'use strict';
 
-class SmartCache {
-  constructor() {
-    this.storageKey = 'web_weaver_cache';
-    this.cache = new Map();
-    
-    console.log('[SmartCache] Initializing...');
-  }
-  
+  const CACHE_KEY = 'webWeaverCache_v3';
+  const DEFAULT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+  const MAX_CACHE_SIZE = 1000;
+
+  let cacheData = {};
+  let isInitialized = false;
+
+  // 🆕 v3.1: Domain-level tracking
+  const DOMAIN_STATS_KEY = 'webWeaverDomainStats_v3';
+  let domainStats = {};
+
   /**
    * Initialize cache from storage
    */
-  async initialize() {
+  async function initialize() {
     try {
-      const result = await chrome.storage.local.get(this.storageKey);
-      const cacheData = result[this.storageKey] || {};
+      const result = await chrome.storage.local.get([CACHE_KEY, DOMAIN_STATS_KEY]);
       
-      // Restore cache entries
-      for (const [domain, entry] of Object.entries(cacheData)) {
-        this.cache.set(domain, entry);
+      if (result[CACHE_KEY]) {
+        cacheData = result[CACHE_KEY];
+        cleanExpiredEntries();
+        console.log('[Cache] Loaded', Object.keys(cacheData).length, 'entries');
       }
-      
-      console.log('[SmartCache] Loaded', this.cache.size, 'domain entries from storage');
-      
-      // Clean expired entries
-      await this.cleanExpired();
-      
+
+      // 🆕 v3.1: Load domain stats
+      if (result[DOMAIN_STATS_KEY]) {
+        domainStats = result[DOMAIN_STATS_KEY];
+        console.log('[Cache] 🆕 Loaded domain stats for', Object.keys(domainStats).length, 'domains');
+      }
+
+      isInitialized = true;
+      return true;
     } catch (error) {
-      console.error('[SmartCache] Initialization error:', error);
-    }
-  }
-  
-  /**
-   * Get cache entry for URL
-   */
-  async get(url) {
-    const domain = this.extractDomain(url);
-    return this.cache.get(domain) || null;
-  }
-  
-  /**
-   * Set cache entry for URL
-   */
-  async set(url, data) {
-    const domain = this.extractDomain(url);
-    
-    const entry = {
-      domain,
-      websiteType: data.websiteType || 'unknown',
-      classification: data.classification || 'SINGLE_ITEM',
-      promptTemplate: data.promptTemplate || null,
-      timestamp: Date.now(),
-      lastAccessed: Date.now(),
-      
-      // Learning metrics
-      learningMetrics: {
-        extractionCount: 1,
-        successCount: 1,
-        avgConfidence: 0,
-        reliabilityScore: 0.5,  // Start neutral
-        confidenceHistory: [],
-        lastExtractions: []
-      }
-    };
-    
-    // If entry exists, merge learning data
-    const existing = this.cache.get(domain);
-    if (existing) {
-      entry.learningMetrics = existing.learningMetrics;
-      entry.learningMetrics.extractionCount++;
-      entry.learningMetrics.lastAccessed = Date.now();
-    }
-    
-    this.cache.set(domain, entry);
-    
-    await this.save();
-    
-    console.log('[SmartCache] Cached entry for domain:', domain);
-  }
-  
-  /**
-   * Update learning metrics after extraction
-   */
-  async updateLearning(url, extractionResult) {
-    const domain = this.extractDomain(url);
-    const entry = this.cache.get(domain);
-    
-    if (!entry) {
-      console.warn('[SmartCache] No entry to update for domain:', domain);
-      return;
-    }
-    
-    const metrics = entry.learningMetrics;
-    
-    // Update success count
-    if (extractionResult.success) {
-      metrics.successCount++;
-    }
-    
-    // Update confidence tracking
-    const confidence = extractionResult.confidence || 0;
-    metrics.confidenceHistory.push(confidence);
-    
-    // Keep only last N confidence scores (sliding window)
-    const windowSize = CONFIG.CACHE.learning.confidenceWindowSize || 20;
-    if (metrics.confidenceHistory.length > windowSize) {
-      metrics.confidenceHistory.shift();
-    }
-    
-    // Calculate average confidence
-    metrics.avgConfidence = 
-      metrics.confidenceHistory.reduce((a, b) => a + b, 0) / metrics.confidenceHistory.length;
-    
-    // Calculate reliability score
-    metrics.reliabilityScore = this.calculateReliability(metrics);
-    
-    // Track last extraction
-    metrics.lastExtractions.push({
-      timestamp: Date.now(),
-      success: extractionResult.success,
-      confidence,
-      mode: extractionResult.mode,
-      apiCalls: extractionResult.apiCalls
-    });
-    
-    // Keep only last 10 extractions
-    if (metrics.lastExtractions.length > 10) {
-      metrics.lastExtractions.shift();
-    }
-    
-    entry.lastAccessed = Date.now();
-    
-    await this.save();
-    
-    console.log('[SmartCache] Updated learning for', domain, 
-                '| Reliability:', metrics.reliabilityScore.toFixed(2),
-                '| Avg Confidence:', metrics.avgConfidence.toFixed(0) + '%');
-  }
-  
-  /**
-   * Calculate reliability score for domain
-   */
-  calculateReliability(metrics) {
-    const successRate = metrics.successCount / metrics.extractionCount;
-    const avgConfidence = metrics.avgConfidence / 100;  // Normalize to 0-1
-    
-    // Weighted calculation
-    const reliability = (successRate * 0.6) + (avgConfidence * 0.4);
-    
-    // Apply decay factor for recent failures
-    const recentExtractions = metrics.lastExtractions.slice(-5);  // Last 5
-    const recentFailures = recentExtractions.filter(e => !e.success).length;
-    
-    if (recentFailures > 2) {
-      // Penalize heavily for recent failures
-      return Math.max(0, reliability - (recentFailures * 0.1));
-    }
-    
-    return Math.min(1.0, reliability);
-  }
-  
-  /**
-   * Check if cache should be used for this domain
-   */
-  async shouldUseCache(url, mode) {
-    const domain = this.extractDomain(url);
-    const entry = this.cache.get(domain);
-    
-    if (!entry) return false;
-    
-    // Check if cache is stale (using CONFIG)
-    const ttl = CONFIG.CACHE.ttl || 3600000;  // 1 hour default
-    const age = Date.now() - entry.timestamp;
-    
-    if (age > ttl) {
-      console.log('[SmartCache] Cache expired for domain:', domain);
+      console.error('[Cache] Initialization error:', error);
       return false;
     }
-    
-    // Check learning threshold (from CONFIG)
-    const minExtractions = CONFIG.CACHE.learning.minExtractionsForLearning || 5;
-    if (entry.learningMetrics.extractionCount < minExtractions) {
-      console.log('[SmartCache] Not enough learning data for domain:', domain);
-      return false;
-    }
-    
-    // Check reliability threshold based on mode
-    const threshold = mode === 'eco' 
-      ? CONFIG.MODES.eco.cache.trustCacheThreshold 
-      : CONFIG.MODES.balanced.cache.trustCacheThreshold;
-    
-    const reliable = entry.learningMetrics.reliabilityScore >= threshold;
-    
-    console.log('[SmartCache] Cache decision for', domain, 
-                '| Reliable:', reliable,
-                '| Score:', entry.learningMetrics.reliabilityScore.toFixed(2),
-                '| Threshold:', threshold);
-    
-    return reliable;
   }
-  
+
   /**
-   * Get domain reliability metrics
+   * Get domain from URL
    */
-  getDomainMetrics(url) {
-    const domain = this.extractDomain(url);
-    const entry = this.cache.get(domain);
-    
-    if (!entry) return null;
-    
-    return {
-      domain,
-      reliabilityScore: entry.learningMetrics.reliabilityScore,
-      avgConfidence: entry.learningMetrics.avgConfidence,
-      extractionCount: entry.learningMetrics.extractionCount,
-      successRate: entry.learningMetrics.successCount / entry.learningMetrics.extractionCount,
-      lastAccessed: entry.lastAccessed,
-      age: Date.now() - entry.timestamp
-    };
-  }
-  
-  /**
-   * Clear expired cache entries
-   */
-  async cleanExpired() {
-    const ttl = CONFIG.CACHE.ttl || 3600000;
-    const now = Date.now();
-    let cleaned = 0;
-    
-    for (const [domain, entry] of this.cache.entries()) {
-      const age = now - entry.timestamp;
-      if (age > ttl) {
-        this.cache.delete(domain);
-        cleaned++;
-      }
-    }
-    
-    if (cleaned > 0) {
-      console.log('[SmartCache] Cleaned', cleaned, 'expired entries');
-      await this.save();
-    }
-  }
-  
-  /**
-   * Clear all cache
-   */
-  async clear() {
-    this.cache.clear();
-    await chrome.storage.local.remove(this.storageKey);
-    console.log('[SmartCache] All cache cleared');
-  }
-  
-  /**
-   * Save cache to storage
-   */
-  async save() {
-    try {
-      // Convert Map to plain object for storage
-      const cacheObj = {};
-      for (const [domain, entry] of this.cache.entries()) {
-        cacheObj[domain] = entry;
-      }
-      
-      await chrome.storage.local.set({ [this.storageKey]: cacheObj });
-      
-    } catch (error) {
-      console.error('[SmartCache] Save error:', error);
-    }
-  }
-  
-  /**
-   * Extract domain from URL
-   */
-  extractDomain(url) {
+  function extractDomain(url) {
     try {
       const urlObj = new URL(url);
       return urlObj.hostname;
-    } catch (error) {
-      console.error('[SmartCache] Invalid URL:', url);
-      return url;  // Fallback to raw URL
+    } catch (e) {
+      return null;
     }
   }
-  
+
+  /**
+   * 🆕 v3.1: Get domain-level statistics
+   * Returns historical confidence data for a domain
+   */
+  async function getDomainStats(url) {
+    const domain = extractDomain(url);
+    if (!domain) return null;
+
+    const stats = domainStats[domain];
+    if (!stats) return null;
+
+    // Calculate average confidence from history
+    const confidenceHistory = stats.confidenceHistory || [];
+    const avgConfidence = confidenceHistory.length > 0
+      ? Math.round(confidenceHistory.reduce((sum, c) => sum + c, 0) / confidenceHistory.length)
+      : 0;
+
+    return {
+      domain,
+      avgConfidence,
+      extractionCount: stats.extractionCount || 0,
+      successRate: stats.successRate || 0,
+      lastUpdated: stats.lastUpdated || null,
+      reliabilityScore: calculateReliabilityScore(stats)
+    };
+  }
+
+  /**
+   * 🆕 v3.1: Calculate domain reliability score (0-1)
+   */
+  function calculateReliabilityScore(stats) {
+    if (!stats || !stats.extractionCount) return 0;
+
+    const count = stats.extractionCount;
+    const successRate = stats.successRate || 0;
+    const avgConfidence = stats.confidenceHistory?.length > 0
+      ? stats.confidenceHistory.reduce((sum, c) => sum + c, 0) / stats.confidenceHistory.length
+      : 0;
+
+    // Factors:
+    // 1. Success rate (40%)
+    // 2. Average confidence (40%)
+    // 3. Sample size confidence (20%)
+    const sampleConfidence = Math.min(1, count / 10); // Max confidence at 10+ extractions
+
+    const reliability = (
+      (successRate * 0.4) +
+      ((avgConfidence / 100) * 0.4) +
+      (sampleConfidence * 0.2)
+    );
+
+    return Math.max(0, Math.min(1, reliability));
+  }
+
+  /**
+   * 🆕 v3.1: Update domain-level learning metrics
+   */
+  async function updateDomainStats(url, extractionData) {
+    const domain = extractDomain(url);
+    if (!domain) return;
+
+    if (!domainStats[domain]) {
+      domainStats[domain] = {
+        domain,
+        extractionCount: 0,
+        successCount: 0,
+        successRate: 0,
+        confidenceHistory: [],
+        lastUpdated: null
+      };
+    }
+
+    const stats = domainStats[domain];
+
+    // Update counts
+    stats.extractionCount++;
+    if (extractionData.success) {
+      stats.successCount++;
+    }
+    stats.successRate = stats.successCount / stats.extractionCount;
+
+    // Update confidence history (keep last 20)
+    if (extractionData.confidence) {
+      stats.confidenceHistory.push(extractionData.confidence);
+      if (stats.confidenceHistory.length > 20) {
+        stats.confidenceHistory = stats.confidenceHistory.slice(-20);
+      }
+    }
+
+    stats.lastUpdated = Date.now();
+
+    // Save to storage
+    try {
+      await chrome.storage.local.set({ [DOMAIN_STATS_KEY]: domainStats });
+      console.log('[Cache] 🆕 #2: Domain stats updated for', domain, '| Avg confidence:', Math.round(stats.confidenceHistory.reduce((s, c) => s + c, 0) / stats.confidenceHistory.length) + '%');
+    } catch (error) {
+      console.error('[Cache] Failed to save domain stats:', error);
+    }
+  }
+
+  /**
+   * Get cached entry for URL
+   */
+  async function get(url) {
+    if (!isInitialized) {
+      await initialize();
+    }
+
+    const entry = cacheData[url];
+    if (!entry) return null;
+
+    // Check if expired
+    if (Date.now() > entry.expiresAt) {
+      await remove(url);
+      return null;
+    }
+
+    return entry;
+  }
+
+  /**
+   * Set cache entry
+   */
+  async function set(url, data, ttl = DEFAULT_TTL_MS) {
+    if (!isInitialized) {
+      await initialize();
+    }
+
+    cacheData[url] = {
+      ...data,
+      url,
+      cachedAt: Date.now(),
+      expiresAt: Date.now() + ttl,
+      learningMetrics: data.learningMetrics || {
+        successCount: 0,
+        totalCount: 0,
+        reliabilityScore: 0
+      }
+    };
+
+    await enforceMaxSize();
+    await save();
+  }
+
+  /**
+   * Update learning metrics for a URL
+   */
+  async function updateLearning(url, extractionData) {
+    const entry = await get(url);
+    if (!entry) return;
+
+    const metrics = entry.learningMetrics || {
+      successCount: 0,
+      totalCount: 0,
+      reliabilityScore: 0
+    };
+
+    metrics.totalCount++;
+    if (extractionData.success) {
+      metrics.successCount++;
+    }
+
+    const successRate = metrics.successCount / metrics.totalCount;
+    const confidence = extractionData.confidence || 0;
+    
+    // Calculate reliability score (0-1)
+    metrics.reliabilityScore = (successRate * 0.5) + ((confidence / 100) * 0.5);
+
+    entry.learningMetrics = metrics;
+    entry.lastUsed = Date.now();
+
+    cacheData[url] = entry;
+    await save();
+
+    // 🆕 v3.1: Also update domain-level stats
+    await updateDomainStats(url, extractionData);
+  }
+
+  /**
+   * Decide if cache should be used based on mode
+   */
+  async function shouldUseCache(url, mode) {
+    const entry = await get(url);
+    if (!entry) return false;
+
+    const metrics = entry.learningMetrics;
+    if (!metrics) return true; // Use cache if no metrics yet
+
+    switch (mode) {
+      case 'offline':
+        return true; // Always use cache in offline mode
+      case 'min':
+        return metrics.reliabilityScore > 0.7; // Use if reliable
+      case 'balanced':
+        return metrics.reliabilityScore > 0.85; // Use if highly reliable
+      case 'max':
+        return false; // Never use cache in max mode
+      default:
+        return metrics.reliabilityScore > 0.8;
+    }
+  }
+
+  /**
+   * Remove entry
+   */
+  async function remove(url) {
+    delete cacheData[url];
+    await save();
+  }
+
+  /**
+   * Clear all cache
+   */
+  async function clear() {
+    cacheData = {};
+    domainStats = {}; // 🆕 v3.1: Also clear domain stats
+    await chrome.storage.local.remove([CACHE_KEY, DOMAIN_STATS_KEY]);
+    console.log('[Cache] Cleared all cache and domain stats');
+  }
+
+  /**
+   * Clean expired entries
+   */
+  function cleanExpiredEntries() {
+    const now = Date.now();
+    let cleaned = 0;
+
+    for (const url in cacheData) {
+      if (cacheData[url].expiresAt < now) {
+        delete cacheData[url];
+        cleaned++;
+      }
+    }
+
+    if (cleaned > 0) {
+      console.log('[Cache] Cleaned', cleaned, 'expired entries');
+    }
+  }
+
+  /**
+   * Enforce maximum cache size
+   */
+  async function enforceMaxSize() {
+    const entries = Object.entries(cacheData);
+    if (entries.length <= MAX_CACHE_SIZE) return;
+
+    // Sort by last used (oldest first)
+    entries.sort((a, b) => {
+      const timeA = a[1].lastUsed || a[1].cachedAt;
+      const timeB = b[1].lastUsed || b[1].cachedAt;
+      return timeA - timeB;
+    });
+
+    // Remove oldest entries
+    const toRemove = entries.length - MAX_CACHE_SIZE;
+    for (let i = 0; i < toRemove; i++) {
+      delete cacheData[entries[i][0]];
+    }
+
+    console.log('[Cache] Removed', toRemove, 'oldest entries to enforce max size');
+  }
+
+  /**
+   * Save cache to storage
+   */
+  async function save() {
+    try {
+      await chrome.storage.local.set({ [CACHE_KEY]: cacheData });
+    } catch (error) {
+      console.error('[Cache] Save error:', error);
+    }
+  }
+
   /**
    * Get cache statistics
    */
-  getStats() {
-    const entries = Array.from(this.cache.values());
-    
+  function getStats() {
+    const entries = Object.values(cacheData);
+    const totalEntries = entries.length;
+    const avgReliability = entries.length > 0
+      ? entries.reduce((sum, e) => sum + (e.learningMetrics?.reliabilityScore || 0), 0) / entries.length
+      : 0;
+
+    // 🆕 v3.1: Domain stats
+    const totalDomains = Object.keys(domainStats).length;
+    const avgDomainConfidence = totalDomains > 0
+      ? Object.values(domainStats).reduce((sum, d) => {
+          const avgConf = d.confidenceHistory?.length > 0
+            ? d.confidenceHistory.reduce((s, c) => s + c, 0) / d.confidenceHistory.length
+            : 0;
+          return sum + avgConf;
+        }, 0) / totalDomains
+      : 0;
+
     return {
-      totalDomains: this.cache.size,
-      totalExtractions: entries.reduce((sum, e) => sum + e.learningMetrics.extractionCount, 0),
-      avgReliability: entries.reduce((sum, e) => sum + e.learningMetrics.reliabilityScore, 0) / entries.length || 0,
-      highReliabilityDomains: entries.filter(e => e.learningMetrics.reliabilityScore > 0.90).length,
-      lowReliabilityDomains: entries.filter(e => e.learningMetrics.reliabilityScore < 0.60).length
+      totalEntries,
+      avgReliability: (avgReliability * 100).toFixed(1) + '%',
+      oldestEntry: entries.length > 0
+        ? new Date(Math.min(...entries.map(e => e.cachedAt))).toLocaleDateString()
+        : 'N/A',
+      newestEntry: entries.length > 0
+        ? new Date(Math.max(...entries.map(e => e.cachedAt))).toLocaleDateString()
+        : 'N/A',
+      // 🆕 v3.1: Domain-level stats
+      totalDomains,
+      avgDomainConfidence: Math.round(avgDomainConfidence) + '%',
+      topDomains: Object.values(domainStats)
+        .sort((a, b) => b.extractionCount - a.extractionCount)
+        .slice(0, 5)
+        .map(d => ({
+          domain: d.domain,
+          count: d.extractionCount,
+          avgConf: d.confidenceHistory?.length > 0
+            ? Math.round(d.confidenceHistory.reduce((s, c) => s + c, 0) / d.confidenceHistory.length)
+            : 0
+        }))
     };
   }
+
+  // Public API
+  return {
+    initialize,
+    get,
+    set,
+    remove,
+    clear,
+    updateLearning,
+    shouldUseCache,
+    getStats,
+    getDomainStats  // 🆕 v3.1: Export new method
+  };
+})();
+
+// Export for use in background script
+if (typeof self !== 'undefined') {
+  self.WEB_WEAVER_CACHE = WEB_WEAVER_CACHE;
 }
-
-
-// ========================================
-// EXPORT TO GLOBAL SCOPE (NO const!)
-// ========================================
-self.WEB_WEAVER_CACHE = new SmartCache();
-
-
-console.log('[SmartCache] Module loaded successfully');
