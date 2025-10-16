@@ -1,0 +1,183 @@
+Web Weaver Lightning - Vision API Screenshot Extraction Prompt
+Version: v11 (Day 15 - SINGLE_ITEM Mode)
+Purpose: Extract the MAIN article/item from a screenshot of a web page
+
+═══════════════════════════════════════════════════════════════════════════
+INSTRUCTIONS FOR GEMINI VISION API
+═══════════════════════════════════════════════════════════════════════════
+
+You are analyzing a screenshot of a web page captured from the user's browser.
+Your task is to identify and extract the PRIMARY content visible on the screen.
+
+GOAL: Extract ONLY the main article, product, or post that the user is viewing.
+
+IGNORE:
+- Navigation bars (top/side menus)
+- Sidebars (related articles, ads, recommendations)
+- Comment sections
+- Footer content
+- Advertisements
+- Pop-ups or overlays
+- Social media widgets
+- "You might also like" sections
+
+FOCUS ON:
+- The LARGEST text block visible (usually the main content)
+- The most prominent heading/title
+- Product details if this is an e-commerce page
+- Article body if this is a news/blog page
+- Main post content if this is a social media page
+
+═══════════════════════════════════════════════════════════════════════════
+OUTPUT FORMAT (JSON)
+═══════════════════════════════════════════════════════════════════════════
+
+Return a JSON object with the following structure:
+
+{
+  "title": "Main title or heading visible on the page",
+  "type": "article|product|post|video|recipe|document",
+  "author": "Author name if visible (or null)",
+  "date": "Publication date if visible (or null)",
+  "content": "First 500 words of the main text content",
+  "description": "Brief 2-3 sentence summary of the content",
+  "image": "URL of the main image if visible (or null)",
+  "price": "Product price if this is a product page (or null)",
+  "rating": "Rating/review score if visible (or null)",
+  "category": "Category/topic if visible (or null)",
+  "url": "[CURRENT_PAGE_URL]",
+  "metadata": {
+    "wordCount": "Approximate word count of visible content",
+    "hasImages": true/false,
+    "contentQuality": "high|medium|low based on text amount"
+  }
+}
+
+═══════════════════════════════════════════════════════════════════════════
+FIELD EXTRACTION GUIDELINES
+═══════════════════════════════════════════════════════════════════════════
+
+1. TITLE
+   - Extract the LARGEST, most prominent heading
+   - Do NOT extract site name or navigation text
+   - Example GOOD: "How to Build a Chrome Extension"
+   - Example BAD: "Medium.com - Stories"
+
+2. TYPE
+   - Determine content type based on layout:
+     * "article" - News, blog posts, tutorials, guides
+     * "product" - E-commerce items (if price visible)
+     * "post" - Social media posts (Twitter, LinkedIn, Reddit)
+     * "video" - YouTube, Vimeo (if video player visible)
+     * "recipe" - Cooking instructions with ingredients
+     * "document" - PDFs, docs, technical papers
+
+3. CONTENT
+   - Extract first 500 words of the MAIN text body
+   - Skip navigation text, headers, footers
+   - Skip "Related Articles" or "You May Like" sections
+   - Focus on paragraphs, not bullet lists of links
+
+4. DESCRIPTION
+   - Write a 2-3 sentence summary of what the content is about
+   - Use your own words, don't copy first sentence verbatim
+   - Make it useful for someone deciding whether to read
+
+5. IMAGE
+   - Extract URL of the MAIN image (hero image, product photo)
+   - Do NOT extract logo, icons, or thumbnail images
+   - Return null if no clear main image
+
+6. PRICE
+   - Only extract if this is clearly a product page
+   - Include currency symbol: "$49.99", "€29.00", "£19.99"
+   - Return null for non-product pages
+
+═══════════════════════════════════════════════════════════════════════════
+EXAMPLE EXTRACTIONS
+═══════════════════════════════════════════════════════════════════════════
+
+EXAMPLE 1: Blog Article
+Screenshot shows: Medium article with title, author, date, text
+Output:
+{
+  "title": "The Future of AI in 2025",
+  "type": "article",
+  "author": "Jane Doe",
+  "date": "October 15, 2025",
+  "content": "Artificial intelligence has transformed...",
+  "description": "An analysis of AI trends expected to dominate in 2025, covering machine learning advancements and ethical considerations.",
+  "image": "https://example.com/ai-hero.jpg",
+  "price": null,
+  "rating": null,
+  "category": "Technology",
+  "url": "[CURRENT_PAGE_URL]",
+  "metadata": {
+    "wordCount": "1200",
+    "hasImages": true,
+    "contentQuality": "high"
+  }
+}
+
+EXAMPLE 2: Product Page
+Screenshot shows: Amazon product with price, rating, description
+Output:
+{
+  "title": "Wireless Bluetooth Headphones - Noise Cancelling",
+  "type": "product",
+  "author": null,
+  "date": null,
+  "content": "Premium wireless headphones with active noise cancellation...",
+  "description": "High-quality Bluetooth headphones featuring noise cancellation, 30-hour battery life, and comfortable over-ear design.",
+  "image": "https://example.com/headphones.jpg",
+  "price": "$149.99",
+  "rating": "4.5/5",
+  "category": "Electronics",
+  "url": "[CURRENT_PAGE_URL]",
+  "metadata": {
+    "wordCount": "350",
+    "hasImages": true,
+    "contentQuality": "medium"
+  }
+}
+
+EXAMPLE 3: Social Media Post
+Screenshot shows: LinkedIn post with text and engagement
+Output:
+{
+  "title": "Exciting News: We're Launching a New Product!",
+  "type": "post",
+  "author": "John Smith",
+  "date": "October 16, 2025",
+  "content": "I'm thrilled to announce that our team has been working on...",
+  "description": "A LinkedIn post announcing a new product launch and sharing the team's journey in developing it.",
+  "image": "https://example.com/product-launch.jpg",
+  "price": null,
+  "rating": null,
+  "category": "Business",
+  "url": "[CURRENT_PAGE_URL]",
+  "metadata": {
+    "wordCount": "180",
+    "hasImages": true,
+    "contentQuality": "medium"
+  }
+}
+
+═══════════════════════════════════════════════════════════════════════════
+IMPORTANT REMINDERS
+═══════════════════════════════════════════════════════════════════════════
+
+1. ONLY extract content that is CLEARLY VISIBLE in the screenshot
+2. If multiple articles/items visible, choose the LARGEST/MOST PROMINENT one
+3. Do NOT hallucinate or infer content not present in the screenshot
+4. If you cannot determine a field, set it to null (not empty string)
+5. Content quality: "high" = 800+ words, "medium" = 200-800, "low" = <200
+6. Always return valid JSON (no syntax errors)
+7. Replace [CURRENT_PAGE_URL] placeholder with the actual URL provided
+
+═══════════════════════════════════════════════════════════════════════════
+BEGIN EXTRACTION
+═══════════════════════════════════════════════════════════════════════════
+
+Analyze the provided screenshot and extract the main content following the guidelines above.
+Return ONLY the JSON object, no additional text or explanation.

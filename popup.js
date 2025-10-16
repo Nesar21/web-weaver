@@ -1,55 +1,188 @@
 /**
  * Web Weaver Lightning - Popup UI Controller
- * Version: 3.1.0 (Day 13 - VISUAL CONFIDENCE FEEDBACK)
+ * Version: 3.4.1 (Day 15 - UNLIMITED API USAGE)
  * 
- * 🆕 v3.1 ENHANCEMENTS:
- * - #4: Color-coded confidence tiers (High/Good/Medium/Low)
- * - #4: Visual feedback with tier icons
- * - #2: Domain adjustment display
+ * 🆕 v3.4.1 FIX:
+ * - REMOVED all daily API usage tracking
+ * - REMOVED API limit warnings (95+ calls)
+ * - REMOVED cost estimation displays
+ * - Unlimited API usage enabled
+ * 
+ * ✅ PRESERVED FROM v3.4:
+ * - MULTI extraction type (extract all items - default)
+ * - SINGLE_ITEM extraction type (screenshot-based extraction)
+ * - Dynamic hints based on selected extraction type
+ * - Natural pagination guidance for MULTI mode
+ * 
+ * ✅ PRESERVED FROM v3.3:
+ * - Graceful degradation messages with specific recovery steps
+ * - Detection tier failure context (DOM/Visual/AI)
+ * - User-actionable error suggestions
  */
-
 
 // ========================================
 // GLOBAL STATE
 // ========================================
-
-
 let currentData = null;
 let currentMode = 'auto';
+let currentExtractionType = 'MULTI'; // 🆕 Day 15: Default to MULTI
 let extractionInProgress = false;
 
+// ❌ REMOVED: Daily API usage tracking
+// No more dailyApiUsage variable
+
+// ========================================
+// ERROR MESSAGES (PRESERVED FROM DAY 13)
+// ========================================
+const ERROR_MESSAGES = {
+  // Detection failures
+  'No repeated patterns found': {
+    title: 'No Repeating Patterns Detected',
+    message: 'The page structure doesn\'t show clear repeating elements.',
+    suggestions: [
+      '🚀 Try <strong>Max Mode</strong> for AI-powered deep analysis',
+      '🔄 Refresh the page and try again',
+      '📄 Try <strong>SINGLE_ITEM mode</strong> if viewing one article'
+    ],
+    severity: 'info'
+  },
+  
+  'Visual detection timeout': {
+    title: 'Visual Analysis Timed Out',
+    message: 'The page has complex layout that exceeded analysis time limit.',
+    suggestions: [
+      '🤖 Switch to <strong>Max Mode</strong> for AI fallback',
+      '🟢 Try <strong>Offline Mode</strong> for basic DOM extraction',
+      '⏳ Wait a moment and try again'
+    ],
+    severity: 'warning'
+  },
+  
+  'Site uses heavy JS rendering': {
+    title: 'Dynamic Content Detected',
+    message: 'This site loads content dynamically with JavaScript.',
+    suggestions: [
+      '⏱️ Wait 2-3 seconds after page load before extracting',
+      '🔄 Scroll down first to load more content',
+      '🚀 Use <strong>Max Mode</strong> for better handling'
+    ],
+    severity: 'warning'
+  },
+  
+  // API failures
+  'API error: 429': {
+    title: 'Rate Limit Exceeded',
+    message: 'Gemini API rate limit reached. Too many requests.',
+    suggestions: [
+      '⏳ Wait 60 seconds before trying again',
+      '🟢 Switch to <strong>Offline Mode</strong> (no API calls)',
+      '🌿 Use <strong>Min Mode</strong> to reduce API usage'
+    ],
+    severity: 'error'
+  },
+  
+  'API error: 403': {
+    title: 'API Authentication Failed',
+    message: 'Your API key may be invalid or expired.',
+    suggestions: [
+      '🔑 Check your API key in settings',
+      '🔄 Generate a new key at <a href="https://ai.google.dev" target="_blank">ai.google.dev</a>',
+      '💾 Save the new key and try again'
+    ],
+    severity: 'error'
+  },
+  
+  'API error: 400': {
+    title: 'Invalid Request',
+    message: 'The extraction request was malformed.',
+    suggestions: [
+      '🔄 Refresh the page and try again',
+      '🟢 Try <strong>Offline Mode</strong> as fallback',
+      '📝 Report this issue if it persists'
+    ],
+    severity: 'error'
+  },
+  
+  // Content script failures
+  'Content script deployment failed': {
+    title: 'Extension Load Error',
+    message: 'Could not inject content analyzer into page.',
+    suggestions: [
+      '🔄 Refresh the page (F5)',
+      '🔄 Close and reopen the extension popup',
+      '❌ Some pages (chrome://, file://) are restricted'
+    ],
+    severity: 'error'
+  },
+  
+  'No active tab found': {
+    title: 'No Active Page',
+    message: 'Cannot detect the current page.',
+    suggestions: [
+      '📑 Make sure you have a valid webpage open',
+      '🔄 Click on the page before opening extension',
+      '❌ Some pages cannot be extracted (chrome://, about:)'
+    ],
+    severity: 'error'
+  },
+  
+  // Confidence failures
+  'Extraction confidence too low': {
+    title: 'Low Confidence Result',
+    message: 'The extraction result had very low reliability score.',
+    suggestions: [
+      '🚀 Try <strong>Max Mode</strong> for better accuracy',
+      '🔄 Refresh and try again',
+      '📝 Page structure may be too complex'
+    ],
+    severity: 'warning'
+  },
+  
+  // 🆕 DAY 15: Screenshot-specific errors
+  'SINGLE_ITEM mode requires AI': {
+    title: 'AI Required for Screenshot Extraction',
+    message: 'SINGLE_ITEM mode uses Vision API which requires AI.',
+    suggestions: [
+      '🔑 Add your Gemini API key',
+      '🌿 Switch to <strong>Min/Balanced/Max mode</strong>',
+      '📦 Use <strong>MULTI mode</strong> for DOM-based extraction'
+    ],
+    severity: 'warning'
+  },
+  
+  'Screenshot capture failed': {
+    title: 'Screenshot Failed',
+    message: 'Unable to capture the visible viewport.',
+    suggestions: [
+      '🔄 Refresh the page and try again',
+      '📦 Switch to <strong>MULTI mode</strong> for DOM extraction',
+      '🟢 Try <strong>Offline mode</strong> as fallback'
+    ],
+    severity: 'error'
+  }
+};
 
 // ========================================
 // INITIALIZATION
 // ========================================
-
-
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[Popup] Initializing Web Weaver Lightning v3.1...');
+  console.log('[Popup] Initializing Web Weaver Lightning v3.4.1...');
   
-  // Load API key
   await loadApiKey();
-  
-  // Setup event listeners
   setupEventListeners();
-  
-  // Load extraction history
   await loadExtractionHistory();
-  
-  // Initialize mode selector
   initializeModeSelector();
+  initializeExtractionTypeSelector(); // 🆕 Day 15
   
-  console.log('[Popup] Initialization complete');
+  // ❌ REMOVED: loadDailyApiUsage() call
+  
+  console.log('[Popup] Initialization complete (unlimited API usage)');
 });
-
 
 // ========================================
 // EVENT LISTENERS
 // ========================================
-
-
 function setupEventListeners() {
-  // API Key save
   document.getElementById('saveApiKey').addEventListener('click', saveApiKey);
   
   // Mode selection
@@ -60,27 +193,75 @@ function setupEventListeners() {
     });
   });
   
-  // Extract button
-  document.getElementById('extractBtn').addEventListener('click', handleExtract);
+  // 🆕 DAY 15: Extraction type selection
+  document.querySelectorAll('input[name="extractionType"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      currentExtractionType = e.target.value;
+      updateExtractionTypeUI();
+    });
+  });
   
-  // Export buttons
+  document.getElementById('extractBtn').addEventListener('click', handleExtract);
   document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
   document.getElementById('downloadJsonBtn').addEventListener('click', downloadJSON);
   document.getElementById('downloadCsvBtn').addEventListener('click', downloadCSV);
   
-  // Clear cache
   const clearCacheBtn = document.getElementById('clearCacheBtn');
   if (clearCacheBtn) {
     clearCacheBtn.addEventListener('click', clearCache);
   }
 }
 
+// ========================================
+// 🆕 DAY 15: EXTRACTION TYPE SELECTOR
+// ========================================
+function initializeExtractionTypeSelector() {
+  // Set default to MULTI
+  const multiRadio = document.querySelector('input[name="extractionType"][value="MULTI"]');
+  if (multiRadio) {
+    multiRadio.checked = true;
+  }
+  
+  currentExtractionType = 'MULTI';
+  updateExtractionTypeUI();
+  
+  console.log('[Popup] Extraction type initialized:', currentExtractionType);
+}
+
+function updateExtractionTypeUI() {
+  // Update active visual state
+  document.querySelectorAll('.extraction-type-option').forEach(option => {
+    option.classList.remove('active');
+  });
+  
+  if (currentExtractionType === 'MULTI') {
+    document.getElementById('extractionTypeMulti').classList.add('active');
+  } else {
+    document.getElementById('extractionTypeSingle').classList.add('active');
+  }
+  
+  // Update hint text
+  const hintEl = document.getElementById('extractionTypeHint');
+  if (hintEl) {
+    if (currentExtractionType === 'MULTI') {
+      hintEl.innerHTML = `
+        <span>💡</span>
+        <span><strong>MULTI Mode:</strong> Extracts all items currently visible on the page. To get more items, scroll down or click "Next Page" to load more, then click "Extract Again".</span>
+      `;
+    } else {
+      hintEl.innerHTML = `
+        <span>📄</span>
+        <span><strong>SINGLE_ITEM Mode:</strong> Captures a screenshot of your visible viewport and uses AI Vision to extract the main article or product. Requires API key and AI mode (Min/Balanced/Max).</span>
+      `;
+    }
+  }
+  
+  console.log('[Popup] Extraction type updated:', currentExtractionType);
+}
 
 // ========================================
-// API KEY MANAGEMENT
+// API KEY MANAGEMENT (PRESERVED)
 // ========================================
-
-
 async function loadApiKey() {
   try {
     const response = await chrome.runtime.sendMessage({ action: 'getApiKey' });
@@ -92,7 +273,6 @@ async function loadApiKey() {
     console.error('[Popup] Error loading API key:', error);
   }
 }
-
 
 async function saveApiKey() {
   const apiKey = document.getElementById('apiKey').value.trim();
@@ -108,11 +288,7 @@ async function saveApiKey() {
   }
   
   try {
-    await chrome.runtime.sendMessage({ 
-      action: 'saveApiKey', 
-      apiKey 
-    });
-    
+    await chrome.runtime.sendMessage({ action: 'saveApiKey', apiKey });
     showSuccess('API key saved successfully');
   } catch (error) {
     console.error('[Popup] Error saving API key:', error);
@@ -120,111 +296,80 @@ async function saveApiKey() {
   }
 }
 
+// ========================================
+// ❌ REMOVED: DAILY API USAGE TRACKING
+// No more loadDailyApiUsage, incrementDailyApiUsage functions
+// No more showAiWarningDialog with usage tracking
+// ========================================
 
 // ========================================
-// MODE SELECTOR UI
+// MODE SELECTOR UI (PRESERVED)
 // ========================================
-
-
 function initializeModeSelector() {
-  // Set default mode
   document.getElementById('mode-auto').checked = true;
   currentMode = 'auto';
   updateModeUI();
 }
 
-
 function updateModeUI() {
-  // Update mode descriptions
-  const modeDescriptions = {
-    offline: {
-      icon: '🟢',
-      title: 'Offline Mode',
-      desc: 'DOM extraction only - No AI calls',
-      apiCalls: '0 API calls',
-      speed: 'Instant',
-      accuracy: '~60%'
-    },
-    min: {
-      icon: '🌿',
-      title: 'Min Mode',
-      desc: 'Fast extraction with minimal AI',
-      apiCalls: '~1.4 API calls',
-      speed: 'Very Fast',
-      accuracy: '~75%'
-    },
-    balanced: {
-      icon: '⚖️',
-      title: 'Balanced Mode',
-      desc: 'Smart extraction with verification',
-      apiCalls: '~2.4 API calls',
-      speed: 'Fast',
-      accuracy: '~85%'
-    },
-    max: {
-      icon: '🚀',
-      title: 'Max Mode',
-      desc: 'Maximum accuracy with triple verification',
-      apiCalls: '~3.8 API calls',
-      speed: 'Thorough',
-      accuracy: '~95%'
-    },
-    auto: {
-      icon: '🤖',
-      title: 'Smart Auto',
-      desc: 'AI chooses best mode automatically',
-      apiCalls: 'Variable',
-      speed: 'Adaptive',
-      accuracy: 'Optimized'
-    }
-  };
+  // Update active visual state
+  document.querySelectorAll('.mode-option').forEach(option => {
+    option.classList.remove('active');
+  });
   
-  const modeInfo = modeDescriptions[currentMode];
+  const selectedOption = document.querySelector(`input[name="mode"][value="${currentMode}"]`);
+  if (selectedOption) {
+    selectedOption.closest('.mode-option').classList.add('active');
+  }
   
-  // Update selected mode display (you can add a visual indicator here)
   console.log('[Popup] Mode selected:', currentMode);
 }
 
-
 // ========================================
-// EXTRACTION HANDLER
+// EXTRACTION HANDLER (SIMPLIFIED - NO API LIMITS)
 // ========================================
-
-
 async function handleExtract() {
   if (extractionInProgress) {
     showError('Extraction already in progress. Please wait.');
     return;
   }
   
-  // Check API key (except for offline mode)
+  // 🆕 DAY 15: Check SINGLE_ITEM mode requirements
+  if (currentExtractionType === 'SINGLE_ITEM' && currentMode === 'offline') {
+    showError('SINGLE_ITEM mode requires AI (Min/Balanced/Max). Switch modes or use MULTI extraction.');
+    return;
+  }
+  
+  // Check API key for AI modes
   if (currentMode !== 'offline') {
     const apiKey = document.getElementById('apiKey').value.trim();
     if (!apiKey) {
       showError('Please add your Gemini API key first');
       return;
     }
+    
+    // ❌ REMOVED: Daily API usage check (95+ calls warning)
+    // ❌ REMOVED: AI warning dialog with cost/usage display
   }
   
   extractionInProgress = true;
   
-  // Update UI
   const extractBtn = document.getElementById('extractBtn');
   extractBtn.disabled = true;
   extractBtn.textContent = '⏳ Extracting...';
   
-  // Hide previous results
   document.getElementById('resultsSection').style.display = 'none';
   document.getElementById('errorSection').style.display = 'none';
   
   try {
-    console.log('[Popup] Starting extraction | Mode:', currentMode);
-    
+    console.log('[Popup] Starting extraction | Mode:', currentMode, '| Type:', currentExtractionType);
     const startTime = Date.now();
     
+    // 🆕 DAY 15: Send extraction type to background
     const response = await chrome.runtime.sendMessage({
       action: 'extractData',
-      mode: currentMode
+      mode: currentMode,
+      extractionType: currentExtractionType
     });
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -234,17 +379,18 @@ async function handleExtract() {
       displayResults(response);
       showSuccess(`Extraction complete in ${duration}s`);
       
-      // Update history
+      // ❌ REMOVED: API usage increment
+      // No more tracking of API calls/cost
+      
       await loadExtractionHistory();
       
     } else {
-      // Display error in extension (not browser popup)
-      displayError(response.error, response.errorDetails);
+      displayGracefulError(response.error, response);
     }
     
   } catch (error) {
     console.error('[Popup] Extraction error:', error);
-    displayError('Extraction failed', error.message);
+    displayGracefulError(error.message, { metadata: { detectionTier: 'unknown' } });
   } finally {
     extractionInProgress = false;
     extractBtn.disabled = false;
@@ -252,29 +398,132 @@ async function handleExtract() {
   }
 }
 
+// ========================================
+// GRACEFUL DEGRADATION ERROR DISPLAY (PRESERVED)
+// ========================================
+function displayGracefulError(errorMessage, response = {}) {
+  console.log('[Popup] 🆕 Graceful error handling:', errorMessage);
+  
+  let errorInfo = null;
+  for (const [key, value] of Object.entries(ERROR_MESSAGES)) {
+    if (errorMessage.includes(key)) {
+      errorInfo = value;
+      break;
+    }
+  }
+  
+  if (!errorInfo) {
+    errorInfo = {
+      title: 'Extraction Failed',
+      message: errorMessage,
+      suggestions: [
+        '🔄 Refresh the page and try again',
+        '🚀 Try <strong>Max Mode</strong> for AI-powered extraction',
+        '🟢 Use <strong>Offline Mode</strong> for basic extraction'
+      ],
+      severity: 'error'
+    };
+  }
+  
+  const tier = response.metadata?.detectionTier || 'unknown';
+  const tierLabels = {
+    dom: 'DOM Classification',
+    visual: 'Visual Pattern Detection',
+    ai: 'AI Analysis',
+    uncertain: 'Detection'
+  };
+  
+  const contextMessage = tier !== 'unknown' 
+    ? `Failed at: <strong>${tierLabels[tier] || 'Detection'}</strong> stage` 
+    : '';
+  
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('errorSection').style.display = 'block';
+  
+  const errorEl = document.getElementById('errorMessage');
+  
+  const severityColors = {
+    info: '#3B82F6',
+    warning: '#F59E0B',
+    error: '#EF4444'
+  };
+  
+  const severityIcons = {
+    info: 'ℹ️',
+    warning: '⚠️',
+    error: '❌'
+  };
+  
+  const color = severityColors[errorInfo.severity] || severityColors.error;
+  const icon = severityIcons[errorInfo.severity] || severityIcons.error;
+  
+  errorEl.innerHTML = `
+    <div style="padding: 16px; background: ${color}15; border-left: 4px solid ${color}; border-radius: 8px;">
+      <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px; color: ${color}; display: flex; align-items: center; gap: 8px;">
+        <span>${icon}</span>
+        <span>${errorInfo.title}</span>
+      </div>
+      
+      <div style="font-size: 14px; color: #4B5563; margin-bottom: 12px; line-height: 1.5;">
+        ${errorInfo.message}
+      </div>
+      
+      ${contextMessage ? `
+        <div style="font-size: 12px; color: #6B7280; margin-bottom: 12px; padding: 6px 10px; background: rgba(0,0,0,0.05); border-radius: 4px;">
+          ${contextMessage}
+        </div>
+      ` : ''}
+      
+      <div style="font-size: 13px; color: #374151; margin-top: 12px;">
+        <div style="font-weight: 600; margin-bottom: 6px;">💡 Try these solutions:</div>
+        <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+          ${errorInfo.suggestions.map(s => `<li>${s}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
+  
+  errorEl.scrollIntoView({ behavior: 'smooth' });
+}
 
 // ========================================
-// 🆕 #4: ENHANCED RESULTS DISPLAY
+// RESULTS DISPLAY (ENHANCED FOR DAY 15)
 // ========================================
-
-
 function displayResults(response) {
   const { data, metadata } = response;
   
-  // Show results section
   document.getElementById('resultsSection').style.display = 'block';
   document.getElementById('errorSection').style.display = 'none';
   
-  // 🆕 #4: Display enhanced confidence with tier
   displayConfidenceTier(metadata.confidence, metadata.confidenceTier);
   
-  // Display metadata
-  document.getElementById('modeUsed').textContent = metadata.mode.toUpperCase() + (metadata.cached ? ' 💾' : '');
-  document.getElementById('apiCalls').textContent = metadata.apiCalls || 0;
+  document.getElementById('modeUsed').textContent = 
+    metadata.mode.toUpperCase() + (metadata.cached ? ' 💾' : '');
+  
+  // 🆕 DAY 15: Display extraction type used
+  const extractionTypeEl = document.getElementById('extractionTypeUsed');
+  if (extractionTypeEl) {
+    const typeIcon = metadata.extractionType === 'SINGLE_ITEM' ? '📄' : '📦';
+    const typeLabel = metadata.extractionType === 'SINGLE_ITEM' ? 'Article' : 'All Items';
+    extractionTypeEl.textContent = `${typeIcon} ${typeLabel}`;
+  }
+  
   document.getElementById('duration').textContent = metadata.duration + 'ms';
   document.getElementById('classification').textContent = metadata.classification || 'Unknown';
   
-  // 🆕 #2: Display domain adjustment if present
+  // 🆕 DAY 15: Show pagination hint for MULTI mode
+  if (metadata.extractionType === 'MULTI' && metadata.naturalPagination) {
+    const paginationHintEl = document.getElementById('paginationHint');
+    if (paginationHintEl) {
+      paginationHintEl.style.display = 'block';
+      const valueEl = paginationHintEl.querySelector('.metadata-value');
+      if (valueEl) {
+        valueEl.textContent = metadata.paginationHint || 'Scroll or click "Next Page" to load more, then extract again';
+      }
+    }
+  }
+  
+  // Domain adjustment display (preserved)
   if (metadata.domainAdjustment && metadata.domainAdjustment !== 0) {
     const domainAdjustEl = document.getElementById('domainAdjustment');
     if (domainAdjustEl) {
@@ -282,147 +531,87 @@ function displayResults(response) {
       const sign = metadata.domainAdjustment > 0 ? '+' : '';
       const color = metadata.domainAdjustment > 0 ? '#10B981' : '#EF4444';
       domainAdjustEl.innerHTML = `
-        <div class="domain-adjustment" style="color: ${color}">
-          <strong>📊 Domain Adjustment:</strong> ${sign}${metadata.domainAdjustment}%
-          <br><small>Based on historical performance for this domain</small>
-        </div>
+        <span style="font-weight: 500;">Domain Adjustment:</span> 
+        <span style="color: ${color}; font-weight: 600;">${sign}${metadata.domainAdjustment}%</span>
       `;
     }
   }
   
-  // Display Smart Auto decision if applicable
-  if (metadata.autoDecision) {
-    const autoDecisionEl = document.getElementById('autoDecision');
-    if (autoDecisionEl) {
-      autoDecisionEl.style.display = 'block';
-      autoDecisionEl.innerHTML = `
-        <div class="auto-decision">
-          <strong>🤖 Smart Auto Decision:</strong> ${metadata.mode.toUpperCase()}<br>
-          <small>${metadata.autoDecision.reasoning}</small>
-        </div>
-      `;
-    }
-  }
+  const outputEl = document.getElementById('jsonOutput');
+  outputEl.textContent = JSON.stringify(data, null, 2);
   
-  // Display extracted data
-  const dataPreview = document.getElementById('dataPreview');
-  dataPreview.textContent = JSON.stringify(data, null, 2);
-  
-  // Highlight JSON syntax
-  highlightJSON(dataPreview);
+  highlightJSON(outputEl);
 }
 
-
-// ========================================
-// 🆕 #4: ENHANCED CONFIDENCE DISPLAY
-// ========================================
-
-
-/**
- * 🆕 v3.1: Display confidence with visual tier feedback
- */
-function displayConfidenceTier(confidence, confidenceTier) {
-  const scoreEl = document.getElementById('confidenceScore');
-  const badgeEl = document.getElementById('confidenceBadge');
-  const tierDescEl = document.getElementById('confidenceTierDesc');
+function displayConfidenceTier(confidence, tier) {
+  const confidenceEl = document.getElementById('confidence');
   
-  scoreEl.textContent = confidence + '%';
+  const tierConfig = {
+    HIGH: { color: '#10B981', icon: '🟢', label: 'High', bgColor: 'rgba(16, 185, 129, 0.1)' },
+    GOOD: { color: '#3B82F6', icon: '🔵', label: 'Good', bgColor: 'rgba(59, 130, 246, 0.1)' },
+    MEDIUM: { color: '#F59E0B', icon: '🟡', label: 'Medium', bgColor: 'rgba(245, 158, 11, 0.1)' },
+    LOW: { color: '#EF4444', icon: '🔴', label: 'Low', bgColor: 'rgba(239, 68, 68, 0.1)' }
+  };
   
-  // Use tier from background.js if available
-  if (confidenceTier) {
-    // Use server-provided tier
-    badgeEl.innerHTML = `${confidenceTier.icon} ${confidenceTier.label}`;
-    badgeEl.style.backgroundColor = confidenceTier.color;
-    badgeEl.style.color = '#ffffff';
-    badgeEl.style.padding = '4px 12px';
-    badgeEl.style.borderRadius = '12px';
-    badgeEl.style.fontSize = '13px';
-    badgeEl.style.fontWeight = 'bold';
-    
-    scoreEl.style.color = confidenceTier.color;
-    
-    if (tierDescEl) {
-      tierDescEl.textContent = confidenceTier.description;
-      tierDescEl.style.color = '#6B7280';
-      tierDescEl.style.fontSize = '12px';
-    }
-  } else {
-    // Fallback: Calculate tier client-side
-    let tier, color, icon, label, description;
-    
-    if (confidence >= 90) {
-      tier = 'high';
-      color = '#0066FF';
-      icon = '🔵';
-      label = 'High';
-      description = 'Excellent extraction quality';
-    } else if (confidence >= 80) {
-      tier = 'good';
-      color = '#00CC66';
-      icon = '🟢';
-      label = 'Good';
-      description = 'Strong extraction quality';
-    } else if (confidence >= 65) {
-      tier = 'medium';
-      color = '#FFAA00';
-      icon = '🟡';
-      label = 'Medium';
-      description = 'Acceptable extraction quality';
-    } else {
-      tier = 'low';
-      color = '#FF3333';
-      icon = '🔴';
-      label = 'Low';
-      description = 'Poor extraction quality - verify data';
-    }
-    
-    badgeEl.innerHTML = `${icon} ${label}`;
-    badgeEl.style.backgroundColor = color;
-    badgeEl.style.color = '#ffffff';
-    badgeEl.style.padding = '4px 12px';
-    badgeEl.style.borderRadius = '12px';
-    badgeEl.style.fontSize = '13px';
-    badgeEl.style.fontWeight = 'bold';
-    
-    scoreEl.style.color = color;
-    
-    if (tierDescEl) {
-      tierDescEl.textContent = description;
-      tierDescEl.style.color = '#6B7280';
-      tierDescEl.style.fontSize = '12px';
-    }
-  }
+  const config = tierConfig[tier] || tierConfig.MEDIUM;
   
-  console.log('[Popup] 🆕 #4: Confidence tier displayed:', confidence + '%', confidenceTier?.label || 'calculated');
+  confidenceEl.innerHTML = `
+    <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: ${config.bgColor}; border-radius: 12px;">
+      <span style="font-size: 14px;">${config.icon}</span>
+      <span style="font-weight: 600; color: ${config.color};">${confidence}%</span>
+      <span style="font-size: 11px; color: ${config.color}; opacity: 0.8;">${config.label}</span>
+    </div>
+  `;
 }
 
-
-function displayError(error, details = null) {
-  // Show error section IN EXTENSION (not browser alert)
-  document.getElementById('resultsSection').style.display = 'none';
-  document.getElementById('errorSection').style.display = 'block';
-  
-  const errorEl = document.getElementById('errorMessage');
-  
-  if (details) {
-    errorEl.innerHTML = `
-      <strong>${error}</strong><br><br>
-      <p>${details}</p>
-    `;
-  } else {
-    errorEl.textContent = error;
-  }
-  
-  // Scroll to error
-  errorEl.scrollIntoView({ behavior: 'smooth' });
+// ========================================
+// NOTIFICATION HELPERS (PRESERVED)
+// ========================================
+function showSuccess(message) {
+  showNotification(message, 'success');
 }
 
+function showError(message) {
+  showNotification(message, 'error');
+}
+
+function showWarning(message) {
+  showNotification(message, 'warning');
+}
+
+function showInfo(message) {
+  showNotification(message, 'info');
+}
+
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    padding: 12px 16px;
+    background: ${type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : type === 'warning' ? '#F59E0B' : '#3B82F6'};
+    color: white;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+  `;
+  
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease-in';
+    setTimeout(() => document.body.removeChild(notification), 300);
+  }, 3000);
+}
 
 // ========================================
-// EXPORT FUNCTIONS
+// EXPORT FUNCTIONS (PRESERVED - IDENTICAL)
 // ========================================
-
-
 function copyToClipboard() {
   if (!currentData) {
     showError('No data to copy');
@@ -430,14 +619,12 @@ function copyToClipboard() {
   }
   
   const jsonString = JSON.stringify(currentData, null, 2);
-  
   navigator.clipboard.writeText(jsonString).then(() => {
     showSuccess('Copied to clipboard');
   }).catch(err => {
     showError('Failed to copy: ' + err.message);
   });
 }
-
 
 function downloadJSON() {
   if (!currentData) {
@@ -448,16 +635,13 @@ function downloadJSON() {
   const jsonString = JSON.stringify(currentData, null, 2);
   const blob = new Blob([jsonString], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  
   const a = document.createElement('a');
   a.href = url;
   a.download = `web-weaver-${Date.now()}.json`;
   a.click();
-  
   URL.revokeObjectURL(url);
   showSuccess('JSON downloaded');
 }
-
 
 async function downloadCSV() {
   if (!currentData) {
@@ -466,11 +650,9 @@ async function downloadCSV() {
   }
   
   try {
-    // Check if data is complex (nested objects/arrays)
     const isComplex = isComplexJSON(currentData);
     
     if (isComplex) {
-      // Use AI for complex data
       showInfo('Converting complex data to CSV with AI...');
       
       const apiKey = document.getElementById('apiKey').value.trim();
@@ -491,71 +673,53 @@ async function downloadCSV() {
       } else {
         throw new Error(response.error);
       }
-      
     } else {
-      // Simple manual conversion
       const csv = convertToCSVManual(currentData);
       downloadCSVFile(csv);
       showSuccess('CSV downloaded');
     }
-    
   } catch (error) {
     console.error('[Popup] CSV conversion error:', error);
     showError('CSV conversion failed: ' + error.message);
   }
 }
 
-
 function isComplexJSON(data) {
-  // Check if JSON has nested objects or arrays beyond depth 2
   const checkDepth = (obj, depth = 0) => {
     if (depth > 2) return true;
-    
     if (Array.isArray(obj)) {
       return obj.some(item => checkDepth(item, depth + 1));
     }
-    
     if (obj !== null && typeof obj === 'object') {
       return Object.values(obj).some(value => checkDepth(value, depth + 1));
     }
-    
     return false;
   };
   
   return checkDepth(data);
 }
 
-
 function convertToCSVManual(data) {
   const items = Array.isArray(data) ? data : [data];
-  
   if (items.length === 0) return '';
   
-  // Get all keys
   const keys = Object.keys(items[0]);
-  
-  // CSV header
   let csv = keys.join(',') + '\n';
   
-  // CSV rows
   items.forEach(item => {
     const row = keys.map(key => {
       let value = item[key];
       
-      // Handle null/undefined
       if (value === null || value === undefined) return '';
       
-      // Handle arrays
       if (Array.isArray(value)) {
         value = value.join(';');
       }
       
-      // Handle objects
       if (typeof value === 'object') {
         value = JSON.stringify(value);
       }
       
-      // Escape quotes and wrap in quotes
       value = String(value).replace(/"/g, '""');
       return `"${value}"`;
     });
@@ -566,31 +730,29 @@ function convertToCSVManual(data) {
   return csv;
 }
 
-
 function downloadCSVFile(csvText) {
   const blob = new Blob([csvText], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
-  
   const a = document.createElement('a');
   a.href = url;
   a.download = `web-weaver-${Date.now()}.csv`;
   a.click();
-  
   URL.revokeObjectURL(url);
 }
 
-
-// ========================================
-// 🆕 #4: ENHANCED EXTRACTION HISTORY
-// ========================================
-
+async function clearCache() {
+  try {
+    await chrome.runtime.sendMessage({ action: 'clearCache' });
+    showSuccess('Cache cleared successfully');
+  } catch (error) {
+    console.error('[Popup] Error clearing cache:', error);
+    showError('Failed to clear cache');
+  }
+}
 
 async function loadExtractionHistory() {
   try {
-    const response = await chrome.runtime.sendMessage({
-      action: 'getExtractionHistory'
-    });
-    
+    const response = await chrome.runtime.sendMessage({ action: 'getExtractionHistory' });
     if (response.success && response.history) {
       displayExtractionHistory(response.history);
     }
@@ -599,291 +761,65 @@ async function loadExtractionHistory() {
   }
 }
 
-
-/**
- * 🆕 v3.1: Enhanced history display with confidence tiers
- */
 function displayExtractionHistory(history) {
   const historyContainer = document.getElementById('extractionHistory');
-  
   if (!historyContainer) return;
   
   if (history.length === 0) {
-    historyContainer.innerHTML = '<p class="no-history">No extractions yet</p>';
+    historyContainer.innerHTML = '<div style="text-align: center; padding: 16px; color: #666;">No extractions yet</div>';
     return;
   }
   
-  // Show last 10
   const recent = history.slice(0, 10);
-  
-  let html = '<h3>Recent Extractions</h3>';
-  html += '<div class="history-list">';
+  let html = '<div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Recent Extractions</div>';
   
   recent.forEach(entry => {
-    const time = new Date(entry.timestamp).toLocaleTimeString();
+    const tierConfig = {
+      HIGH: { color: '#10B981', icon: '🟢' },
+      GOOD: { color: '#3B82F6', icon: '🔵' },
+      MEDIUM: { color: '#F59E0B', icon: '🟡' },
+      LOW: { color: '#EF4444', icon: '🔴' }
+    };
     
-    // 🆕 #4: Use tier-based coloring
-    let tierIcon, tierColor;
-    if (entry.confidenceTier) {
-      // v3.1: Use stored tier
-      tierIcon = getTierIcon(entry.confidenceTier);
-      tierColor = getTierColor(entry.confidenceTier);
-    } else {
-      // Fallback: Calculate from score
-      if (entry.confidence >= 90) {
-        tierIcon = '🔵';
-        tierColor = '#0066FF';
-      } else if (entry.confidence >= 80) {
-        tierIcon = '🟢';
-        tierColor = '#00CC66';
-      } else if (entry.confidence >= 65) {
-        tierIcon = '🟡';
-        tierColor = '#FFAA00';
-      } else {
-        tierIcon = '🔴';
-        tierColor = '#FF3333';
-      }
-    }
+    const config = tierConfig[entry.tier] || tierConfig.MEDIUM;
     
     html += `
-      <div class="history-item">
-        <div class="history-time">${time}</div>
-        <div class="history-mode">${entry.mode}</div>
-        <div class="history-conf" style="color: ${tierColor}">${tierIcon} ${entry.confidence}%</div>
-        <div class="history-items">${entry.itemCount} item(s)</div>
+      <div style="padding: 8px; background: rgba(0,0,0,0.03); border-radius: 6px; margin-bottom: 6px; font-size: 12px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span style="font-weight: 500; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${entry.domain}</span>
+          <span style="color: ${config.color};">${config.icon} ${entry.confidence}%</span>
+        </div>
+        <div style="color: #666; font-size: 11px;">
+          ${entry.mode.toUpperCase()} • ${new Date(entry.timestamp).toLocaleTimeString()}
+        </div>
       </div>
     `;
   });
   
-  html += '</div>';
-  
-  // Calculate stats
-  const totalExtractions = history.length;
-  const avgConfidence = Math.round(
-    history.reduce((sum, e) => sum + e.confidence, 0) / totalExtractions
-  );
-  const successRate = Math.round(
-    (history.filter(e => e.success).length / totalExtractions) * 100
-  );
-  
-  html += `
-    <div class="history-stats">
-      <div><strong>Total:</strong> ${totalExtractions}</div>
-      <div><strong>Avg Confidence:</strong> ${avgConfidence}%</div>
-      <div><strong>Success Rate:</strong> ${successRate}%</div>
-    </div>
-  `;
-  
   historyContainer.innerHTML = html;
 }
 
-
-/**
- * 🆕 v3.1: Helper to get tier icon from label
- */
-function getTierIcon(tierLabel) {
-  const icons = {
-    'High': '🔵',
-    'Good': '🟢',
-    'Medium': '🟡',
-    'Low': '🔴'
-  };
-  return icons[tierLabel] || '⚪';
-}
-
-
-/**
- * 🆕 v3.1: Helper to get tier color from label
- */
-function getTierColor(tierLabel) {
-  const colors = {
-    'High': '#0066FF',
-    'Good': '#00CC66',
-    'Medium': '#FFAA00',
-    'Low': '#FF3333'
-  };
-  return colors[tierLabel] || '#6B7280';
-}
-
-
-// ========================================
-// UTILITY FUNCTIONS
-// ========================================
-
-
-function showSuccess(message) {
-  showNotification(message, 'success');
-}
-
-
-function showError(message) {
-  showNotification(message, 'error');
-}
-
-
-function showInfo(message) {
-  showNotification(message, 'info');
-}
-
-
-function showNotification(message, type = 'info') {
-  // Create notification element
-  const notification = document.createElement('div');
-  notification.className = `notification notification-${type}`;
-  notification.textContent = message;
-  
-  // Add to page
-  document.body.appendChild(notification);
-  
-  // Animate in
-  setTimeout(() => {
-    notification.classList.add('show');
-  }, 10);
-  
-  // Remove after 3 seconds
-  setTimeout(() => {
-    notification.classList.remove('show');
-    setTimeout(() => {
-      notification.remove();
-    }, 300);
-  }, 3000);
-}
-
-
 function highlightJSON(element) {
-  // Simple JSON syntax highlighting
-  let html = element.textContent;
+  const json = element.textContent;
   
-  // Highlight strings
-  html = html.replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:');
-  html = html.replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>');
+  const highlighted = json
+    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
+      let cls = 'number';
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) {
+          cls = 'key';
+        } else {
+          cls = 'string';
+        }
+      } else if (/true|false/.test(match)) {
+        cls = 'boolean';
+      } else if (/null/.test(match)) {
+        cls = 'null';
+      }
+      return `<span class="${cls}">${match}</span>`;
+    });
   
-  // Highlight numbers
-  html = html.replace(/: (\d+)/g, ': <span class="json-number">$1</span>');
-  
-  // Highlight booleans
-  html = html.replace(/: (true|false)/g, ': <span class="json-boolean">$1</span>');
-  
-  // Highlight null
-  html = html.replace(/: null/g, ': <span class="json-null">null</span>');
-  
-  element.innerHTML = html;
+  element.innerHTML = highlighted;
 }
 
-
-async function clearCache() {
-  try {
-    await chrome.runtime.sendMessage({ action: 'clearCache' });
-    showSuccess('Cache cleared successfully');
-  } catch (error) {
-    showError('Failed to clear cache');
-  }
-}
-
-
-// ========================================
-// 🆕 #4: ENHANCED CSS FOR CONFIDENCE TIERS
-// ========================================
-
-
-// Add this CSS to your popup.html <style> section
-const notificationStyles = `
-.notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 12px 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  opacity: 0;
-  transform: translateY(-20px);
-  transition: all 0.3s ease;
-  z-index: 10000;
-  max-width: 300px;
-}
-
-.notification.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.notification-success {
-  background: #10B981;
-  color: white;
-}
-
-.notification-error {
-  background: #EF4444;
-  color: white;
-}
-
-.notification-info {
-  background: #3B82F6;
-  color: white;
-}
-
-/* 🆕 #4: Confidence tier styling */
-#confidenceBadge {
-  display: inline-block;
-  font-weight: bold;
-  transition: all 0.3s ease;
-}
-
-#confidenceTierDesc {
-  margin-top: 4px;
-  font-style: italic;
-}
-
-/* 🆕 #2: Domain adjustment styling */
-.domain-adjustment {
-  background: #f3f4f6;
-  padding: 10px;
-  border-radius: 6px;
-  margin: 10px 0;
-  font-size: 13px;
-}
-
-.history-list {
-  max-height: 200px;
-  overflow-y: auto;
-  margin: 10px 0;
-}
-
-.history-item {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1.2fr 1fr;
-  gap: 10px;
-  padding: 8px;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 12px;
-}
-
-.history-stats {
-  display: flex;
-  justify-content: space-around;
-  padding: 10px;
-  background: #f9fafb;
-  border-radius: 8px;
-  margin-top: 10px;
-  font-size: 12px;
-}
-
-.auto-decision {
-  background: #f3f4f6;
-  padding: 10px;
-  border-radius: 6px;
-  margin: 10px 0;
-  font-size: 13px;
-}
-
-.json-key { color: #8B5CF6; }
-.json-string { color: #10B981; }
-.json-number { color: #3B82F6; }
-.json-boolean { color: #F59E0B; }
-.json-null { color: #6B7280; }
-`;
-
-
-console.log('[Popup] 🚀 Web Weaver Lightning v3.1 UI loaded');
-console.log('[Popup] 🆕 v3.1: Visual confidence feedback enabled');
-console.log('[Popup] 🆕 v3.1: Domain adjustment display enabled');
+console.log('[Popup] Web Weaver Lightning v3.4.1 popup controller loaded (UNLIMITED API USAGE)');

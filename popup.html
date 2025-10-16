@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Web Weaver Lightning v3.1</title>
+  <title>Web Weaver Lightning</title>
   <style>
     * {
       margin: 0;
@@ -12,557 +12,489 @@
     }
 
     body {
-      width: 500px;
-      min-height: 600px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #333;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #1f2937;
+      min-width: 420px;
+      min-height: 600px;
+      padding: 0;
     }
 
     .container {
       background: white;
-      border-radius: 12px;
-      margin: 10px;
-      padding: 20px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      border-radius: 0;
+      padding: 0;
+      max-width: 100%;
+      height: 100vh;
+      overflow-y: auto;
     }
 
+    /* Header */
     .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 24px;
       text-align: center;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 2px solid #e5e7eb;
     }
 
     .header h1 {
-      font-size: 20px;
-      color: #667eea;
-      margin-bottom: 5px;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      letter-spacing: -0.5px;
     }
 
     .header .version {
-      font-size: 11px;
-      color: #9ca3af;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      font-size: 12px;
+      opacity: 0.9;
+      font-weight: 500;
     }
 
-    /* 🆕 v3.1: Enhanced version badge */
-    .header .version::after {
-      content: " 🆕";
-      color: #10B981;
+    /* Main Content */
+    .content {
+      padding: 24px;
     }
 
-    /* API Key Section */
+    /* Section */
     .section {
-      margin-bottom: 20px;
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #E5E7EB;
+    }
+
+    .section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
     }
 
     .section-title {
       font-size: 14px;
       font-weight: 600;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      color: #374151;
       display: flex;
       align-items: center;
+      gap: 6px;
+    }
+
+    /* API Key Section */
+    .api-key-section {
+      display: flex;
+      flex-direction: column;
       gap: 8px;
     }
 
     .input-group {
       display: flex;
-      gap: 10px;
+      gap: 8px;
     }
 
-    input[type="password"] {
+    input[type="text"],
+    input[type="password"],
+    input[type="number"] {
       flex: 1;
       padding: 10px 12px;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
       font-size: 13px;
-      transition: border-color 0.2s;
+      transition: all 0.2s;
     }
 
-    input[type="password"]:focus {
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    input[type="number"]:focus {
       outline: none;
       border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
+    /* Buttons */
     button {
       padding: 10px 16px;
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
+      white-space: nowrap;
     }
 
-    .btn-primary {
-      background: #667eea;
+    button.primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
 
-    .btn-primary:hover {
-      background: #5568d3;
+    button.primary:hover:not(:disabled) {
       transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
 
-    .btn-primary:disabled {
-      background: #9ca3af;
+    button.secondary {
+      background: #F3F4F6;
+      color: #374151;
+    }
+
+    button.secondary:hover:not(:disabled) {
+      background: #E5E7EB;
+    }
+
+    button:disabled {
+      opacity: 0.6;
       cursor: not-allowed;
-      transform: none;
     }
 
-    /* Mode Selector */
-    .mode-selector {
+    /* ═══════════════════════════════════════════════════════════ */
+    /* 🆕 DAY 15: EXTRACTION TYPE TOGGLE (MULTI vs SINGLE_ITEM) */
+    /* ═══════════════════════════════════════════════════════════ */
+    .extraction-type-section {
+      background: rgba(99, 102, 241, 0.05);
+      border: 2px solid rgba(99, 102, 241, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .extraction-type-header {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1F2937;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .extraction-type-toggle {
+      display: flex;
+      gap: 8px;
+    }
+
+    .extraction-type-option {
+      flex: 1;
+      position: relative;
+      border: 2px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: white;
+    }
+
+    .extraction-type-option:hover {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.02);
+    }
+
+    .extraction-type-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .extraction-type-option.active {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.08);
+    }
+
+    .extraction-type-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .extraction-type-label {
+      font-weight: 600;
+      font-size: 13px;
+      color: #1F2937;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .extraction-type-icon {
+      font-size: 18px;
+    }
+
+    .extraction-type-desc {
+      font-size: 11px;
+      color: #6B7280;
+      line-height: 1.4;
+    }
+
+    .extraction-type-check {
+      display: none;
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      background: #667eea;
+      border-radius: 50%;
+      color: white;
+      font-size: 12px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .extraction-type-option.active .extraction-type-check {
+      display: flex;
+    }
+
+    .extraction-type-hint {
+      margin-top: 12px;
+      padding: 10px;
+      background: white;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #6B7280;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      line-height: 1.4;
+    }
+
+    /* Mode Selection */
+    .mode-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 15px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
     }
 
     .mode-option {
       position: relative;
+      border: 2px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: white;
+    }
+
+    .mode-option:hover {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.02);
     }
 
     .mode-option input[type="radio"] {
       position: absolute;
       opacity: 0;
+      pointer-events: none;
     }
 
-    .mode-option label {
+    .mode-option input[type="radio"]:checked + .mode-content {
+      color: #667eea;
+    }
+
+    .mode-option input[type="radio"]:checked ~ .mode-check {
       display: block;
-      padding: 12px;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
     }
 
-    .mode-option input[type="radio"]:checked + label {
+    .mode-option.active {
       border-color: #667eea;
-      background: #f3f4f6;
+      background: rgba(102, 126, 234, 0.05);
     }
 
-    .mode-option label:hover {
-      border-color: #667eea;
+    .mode-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      transition: color 0.2s;
     }
 
     .mode-icon {
-      font-size: 20px;
-      margin-bottom: 5px;
-    }
-
-    .mode-title {
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 3px;
+      font-size: 18px;
     }
 
     .mode-desc {
-      font-size: 10px;
-      color: #6b7280;
+      font-size: 11px;
+      color: #6B7280;
+      margin-top: 4px;
+      font-weight: 400;
+      line-height: 1.4;
     }
 
     .mode-stats {
-      font-size: 9px;
-      color: #9ca3af;
-      margin-top: 4px;
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      font-size: 10px;
+      color: #9CA3AF;
+    }
+
+    .mode-check {
+      display: none;
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      background: #667eea;
+      border-radius: 50%;
+      color: white;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* Extract Button */
-    .extract-btn {
-      width: 100%;
-      padding: 14px;
-      font-size: 15px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      margin-bottom: 20px;
-    }
-
-    .extract-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-
-    /* Results Section */
-    #resultsSection {
-      display: none;
-    }
-
-    .results-header {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 15px;
-      margin-bottom: 15px;
-    }
-
-    /* 🆕 v3.1: Enhanced Confidence Display */
-    .confidence-display {
-      background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
-      padding: 15px;
-      border-radius: 10px;
-      border: 2px solid #e5e7eb;
+    .extract-section {
       text-align: center;
     }
 
-    .confidence-label {
-      font-size: 11px;
-      color: #6b7280;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .confidence-score-large {
-      font-size: 32px;
+    #extractBtn {
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
       font-weight: 700;
-      margin-bottom: 5px;
-      transition: color 0.3s ease;
     }
 
-    .confidence-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 600;
-      color: white;
-      transition: all 0.3s ease;
-      margin-bottom: 6px;
+    /* Results Section */
+    .results-section,
+    .error-section {
+      display: none;
+      margin-top: 24px;
+      padding: 16px;
+      border-radius: 8px;
     }
 
-    /* 🆕 v3.1: Tier description */
-    #confidenceTierDesc {
-      font-size: 11px;
-      color: #6b7280;
-      font-style: italic;
-      margin-top: 6px;
+    .results-section {
+      background: #F0FDF4;
+      border: 1px solid #86EFAC;
+    }
+
+    .error-section {
+      background: #FEF2F2;
+      border: 1px solid #FCA5A5;
     }
 
     .metadata-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 12px;
     }
 
     .metadata-item {
-      background: #f9fafb;
+      background: white;
       padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     .metadata-label {
-      font-size: 10px;
-      color: #6b7280;
-      margin-bottom: 4px;
+      font-size: 11px;
+      color: #6B7280;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      margin-bottom: 4px;
     }
 
     .metadata-value {
       font-size: 14px;
       font-weight: 600;
-      color: #1f2937;
+      color: #1F2937;
     }
 
-    /* 🆕 v3.1: Domain Adjustment Display */
-    #domainAdjustment {
-      display: none;
-      background: #f0f9ff;
-      padding: 12px;
+    /* JSON Output */
+    #jsonOutput {
+      background: #1F2937;
+      color: #F9FAFB;
+      padding: 16px;
       border-radius: 8px;
-      border-left: 4px solid #0ea5e9;
-      margin: 15px 0;
+      font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
       font-size: 12px;
-      animation: slideIn 0.3s ease;
-    }
-
-    #domainAdjustment strong {
-      color: #0c4a6e;
-    }
-
-    .domain-adjustment {
       line-height: 1.6;
+      overflow-x: auto;
+      max-height: 400px;
+      margin-top: 12px;
     }
 
-    .auto-decision {
-      background: #eff6ff;
-      padding: 12px;
-      border-radius: 8px;
-      border-left: 4px solid #3b82f6;
-      margin: 15px 0;
-      font-size: 12px;
-    }
-
-    .auto-decision strong {
-      color: #1e40af;
-    }
-
-    /* Data Preview */
-    .data-preview {
-      background: #1f2937;
-      color: #f3f4f6;
-      padding: 15px;
-      border-radius: 8px;
-      max-height: 300px;
-      overflow-y: auto;
-      font-family: 'Courier New', monospace;
-      font-size: 11px;
-      line-height: 1.6;
-      margin-bottom: 15px;
-    }
-
-    .data-preview::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .data-preview::-webkit-scrollbar-track {
-      background: #374151;
-      border-radius: 4px;
-    }
-
-    .data-preview::-webkit-scrollbar-thumb {
-      background: #6b7280;
-      border-radius: 4px;
-    }
+    /* Syntax highlighting */
+    .key { color: #93C5FD; }
+    .string { color: #A5F3FC; }
+    .number { color: #FCD34D; }
+    .boolean { color: #FCA5A5; }
+    .null { color: #9CA3AF; }
 
     /* Export Buttons */
     .export-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 15px;
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
     }
 
-    .btn-secondary {
-      background: #f3f4f6;
-      color: #1f2937;
-      border: 2px solid #e5e7eb;
-      padding: 10px;
-      font-size: 12px;
+    .export-buttons button {
+      flex: 1;
     }
 
-    .btn-secondary:hover {
-      background: #e5e7eb;
-      border-color: #d1d5db;
-    }
-
-    /* Error Section */
-    #errorSection {
-      display: none;
-      background: #fef2f2;
-      border: 2px solid #fecaca;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
-
-    .error-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #991b1b;
-      margin-bottom: 8px;
-    }
-
-    .error-message {
-      font-size: 12px;
-      color: #7f1d1d;
-      line-height: 1.6;
-    }
-
-    /* Extraction History */
-    .history-container {
-      background: #f9fafb;
-      padding: 15px;
-      border-radius: 8px;
-      margin-top: 15px;
-    }
-
-    .history-container h3 {
-      font-size: 13px;
-      margin-bottom: 10px;
-      color: #374151;
-    }
-
-    .history-list {
-      max-height: 150px;
+    /* History */
+    #extractionHistory {
+      max-height: 300px;
       overflow-y: auto;
     }
 
-    /* 🆕 v3.1: Enhanced history item with tier icons */
-    .history-item {
-      display: grid;
-      grid-template-columns: 70px 70px 70px 1fr;
-      gap: 8px;
-      padding: 8px;
-      background: white;
-      border-radius: 6px;
-      margin-bottom: 6px;
-      font-size: 11px;
-      align-items: center;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
     }
 
-    .history-item:hover {
-      transform: translateX(2px);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    ::-webkit-scrollbar-track {
+      background: #F3F4F6;
     }
 
-    .history-time {
-      color: #6b7280;
-      font-weight: 500;
-    }
-
-    .history-mode {
-      background: #eff6ff;
-      padding: 3px 8px;
+    ::-webkit-scrollbar-thumb {
+      background: #D1D5DB;
       border-radius: 4px;
-      color: #1e40af;
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 9px;
-      text-align: center;
     }
 
-    .history-conf {
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .history-items {
-      color: #6b7280;
-      text-align: right;
-    }
-
-    .history-stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid #e5e7eb;
-    }
-
-    .stat-item {
-      text-align: center;
-    }
-
-    .stat-label {
-      font-size: 10px;
-      color: #6b7280;
-      margin-bottom: 4px;
-    }
-
-    .stat-value {
-      font-size: 16px;
-      font-weight: 700;
-      color: #667eea;
-    }
-
-    .no-history {
-      text-align: center;
-      color: #9ca3af;
-      padding: 20px;
-      font-size: 12px;
-    }
-
-    /* JSON Syntax Highlighting */
-    .json-key { color: #a78bfa; font-weight: 600; }
-    .json-string { color: #34d399; }
-    .json-number { color: #60a5fa; }
-    .json-boolean { color: #fbbf24; }
-    .json-null { color: #9ca3af; }
-
-    /* Tooltips */
-    [data-tooltip] {
-      position: relative;
-      cursor: help;
-    }
-
-    [data-tooltip]:hover::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      bottom: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #1f2937;
-      color: white;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      white-space: nowrap;
-      z-index: 1000;
-      margin-bottom: 5px;
+    ::-webkit-scrollbar-thumb:hover {
+      background: #9CA3AF;
     }
 
     /* Animations */
     @keyframes slideIn {
       from {
+        transform: translateX(100%);
         opacity: 0;
-        transform: translateY(10px);
       }
       to {
+        transform: translateX(0);
         opacity: 1;
-        transform: translateY(0);
       }
     }
 
-    #resultsSection {
-      animation: slideIn 0.3s ease;
-    }
-
-    /* 🆕 v3.1: Pulse animation for confidence badge */
-    @keyframes pulse {
-      0%, 100% {
-        transform: scale(1);
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
       }
-      50% {
-        transform: scale(1.05);
+      to {
+        transform: translateX(100%);
+        opacity: 0;
       }
     }
 
-    .confidence-badge.animate {
-      animation: pulse 0.5s ease;
-    }
+    /* Responsive */
+    @media (max-width: 480px) {
+      .mode-grid {
+        grid-template-columns: 1fr;
+      }
 
-    /* Notification Styles (from popup.js) */
-    .notification {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 12px 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      opacity: 0;
-      transform: translateY(-20px);
-      transition: all 0.3s ease;
-      z-index: 10000;
-      max-width: 300px;
-      font-size: 13px;
-    }
+      .metadata-grid {
+        grid-template-columns: 1fr;
+      }
 
-    .notification.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .notification-success {
-      background: #10B981;
-      color: white;
-    }
-
-    .notification-error {
-      background: #EF4444;
-      color: white;
-    }
-
-    .notification-info {
-      background: #3B82F6;
-      color: white;
+      .extraction-type-toggle {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
@@ -571,149 +503,211 @@
     <!-- Header -->
     <div class="header">
       <h1>⚡ Web Weaver Lightning</h1>
-      <div class="version">v3.1.0 - Universal Confidence Edition</div>
+      <div class="version">v3.4.0 - MULTI/SINGLE_ITEM Edition</div>
     </div>
 
-    <!-- API Key Section -->
-    <div class="section">
-      <div class="section-title">
-        🔑 Gemini API Key
-      </div>
-      <div class="input-group">
-        <input type="password" id="apiKey" placeholder="Enter your API key (AIza...)" />
-        <button id="saveApiKey" class="btn-primary">Save</button>
-      </div>
-    </div>
-
-    <!-- Mode Selector -->
-    <div class="section">
-      <div class="section-title">
-        🎯 Extraction Mode
-      </div>
-      
-      <div class="mode-selector">
-        <!-- Offline Mode -->
-        <div class="mode-option">
-          <input type="radio" id="mode-offline" name="mode" value="offline">
-          <label for="mode-offline">
-            <div class="mode-icon">🟢</div>
-            <div class="mode-title">Offline</div>
-            <div class="mode-desc">DOM only</div>
-            <div class="mode-stats">0 API • Instant • ~60%</div>
-          </label>
-        </div>
-
-        <!-- Min Mode -->
-        <div class="mode-option">
-          <input type="radio" id="mode-min" name="mode" value="min">
-          <label for="mode-min">
-            <div class="mode-icon">🌿</div>
-            <div class="mode-title">Min</div>
-            <div class="mode-desc">Fast & Efficient</div>
-            <div class="mode-stats">~1.4 API • Fast • ~75%</div>
-          </label>
-        </div>
-
-        <!-- Balanced Mode -->
-        <div class="mode-option">
-          <input type="radio" id="mode-balanced" name="mode" value="balanced">
-          <label for="mode-balanced">
-            <div class="mode-icon">⚖️</div>
-            <div class="mode-title">Balanced</div>
-            <div class="mode-desc">Smart Verified</div>
-            <div class="mode-stats">~2.4 API • Medium • ~85%</div>
-          </label>
-        </div>
-
-        <!-- Max Mode -->
-        <div class="mode-option">
-          <input type="radio" id="mode-max" name="mode" value="max">
-          <label for="mode-max">
-            <div class="mode-icon">🚀</div>
-            <div class="mode-title">Max</div>
-            <div class="mode-desc">Triple Check</div>
-            <div class="mode-stats">~3.8 API • Slow • ~95%</div>
-          </label>
-        </div>
-
-        <!-- Smart Auto Mode -->
-        <div class="mode-option" style="grid-column: 1 / -1;">
-          <input type="radio" id="mode-auto" name="mode" value="auto" checked>
-          <label for="mode-auto">
-            <div class="mode-icon">🤖</div>
-            <div class="mode-title">Smart Auto</div>
-            <div class="mode-desc">AI chooses best mode automatically</div>
-            <div class="mode-stats">Variable • Adaptive • Optimized</div>
-          </label>
+    <div class="content">
+      <!-- API Key Section -->
+      <div class="section">
+        <div class="section-title">🔑 Gemini API Key</div>
+        <div class="api-key-section">
+          <div class="input-group">
+            <input type="password" id="apiKey" placeholder="Enter your Gemini API key (AIza...)">
+            <button class="primary" id="saveApiKey">Save</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Extract Button -->
-    <button id="extractBtn" class="btn-primary extract-btn">
-      🚀 Extract Data
-    </button>
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- 🆕 DAY 15: EXTRACTION TYPE SELECTION (MULTI vs SINGLE_ITEM) -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div class="section">
+        <div class="extraction-type-section">
+          <div class="extraction-type-header">
+            📦 Extraction Type
+          </div>
+          
+          <div class="extraction-type-toggle">
+            <!-- MULTI: Extract All Items -->
+            <label class="extraction-type-option active" id="extractionTypeMulti">
+              <input type="radio" name="extractionType" value="MULTI" checked>
+              <div class="extraction-type-content">
+                <div class="extraction-type-label">
+                  <span class="extraction-type-icon">📦</span>
+                  <span>Extract All Items</span>
+                </div>
+                <div class="extraction-type-desc">
+                  Extracts all items currently loaded on the page (lists, feeds, grids)
+                </div>
+              </div>
+              <div class="extraction-type-check">✓</div>
+            </label>
 
-    <!-- Error Section -->
-    <div id="errorSection">
-      <div class="error-title">❌ Extraction Failed</div>
-      <div id="errorMessage" class="error-message"></div>
-    </div>
+            <!-- SINGLE_ITEM: Screenshot Extraction -->
+            <label class="extraction-type-option" id="extractionTypeSingle">
+              <input type="radio" name="extractionType" value="SINGLE_ITEM">
+              <div class="extraction-type-content">
+                <div class="extraction-type-label">
+                  <span class="extraction-type-icon">📄</span>
+                  <span>Extract Main Article</span>
+                </div>
+                <div class="extraction-type-desc">
+                  Captures screenshot and extracts the main visible article/item
+                </div>
+              </div>
+              <div class="extraction-type-check">✓</div>
+            </label>
+          </div>
 
-    <!-- Results Section -->
-    <div id="resultsSection">
-      <!-- Confidence & Metadata -->
-      <div class="results-header">
-        <!-- 🆕 v3.1: Enhanced Confidence Display -->
-        <div class="confidence-display">
-          <div class="confidence-label">Confidence Score</div>
-          <div id="confidenceScore" class="confidence-score-large">0%</div>
-          <span id="confidenceBadge" class="confidence-badge">Unknown</span>
-          <div id="confidenceTierDesc"></div>
+          <div class="extraction-type-hint" id="extractionTypeHint">
+            <span>💡</span>
+            <span><strong>MULTI Mode:</strong> Use for search results, product listings, article feeds. Scroll or click "Next Page" to load more, then click "Extract Again" to get more items.</span>
+          </div>
         </div>
+      </div>
 
+      <!-- Mode Selection -->
+      <div class="section">
+        <div class="section-title">⚙️ Extraction Mode</div>
+        <div class="mode-grid">
+          <!-- Offline Mode -->
+          <label class="mode-option">
+            <input type="radio" name="mode" value="offline" id="mode-offline">
+            <div class="mode-content">
+              <span class="mode-icon">🟢</span>
+              <span>Offline</span>
+            </div>
+            <div class="mode-desc">DOM only • No AI</div>
+            <div class="mode-stats">
+              <span>0 API</span>
+              <span>~60% accuracy</span>
+            </div>
+            <div class="mode-check">✓</div>
+          </label>
+
+          <!-- Min Mode -->
+          <label class="mode-option">
+            <input type="radio" name="mode" value="min" id="mode-min">
+            <div class="mode-content">
+              <span class="mode-icon">🌿</span>
+              <span>Min</span>
+            </div>
+            <div class="mode-desc">Fast • Minimal AI</div>
+            <div class="mode-stats">
+              <span>~1.4 API</span>
+              <span>~75% accuracy</span>
+            </div>
+            <div class="mode-check">✓</div>
+          </label>
+
+          <!-- Balanced Mode -->
+          <label class="mode-option">
+            <input type="radio" name="mode" value="balanced" id="mode-balanced">
+            <div class="mode-content">
+              <span class="mode-icon">⚖️</span>
+              <span>Balanced</span>
+            </div>
+            <div class="mode-desc">Smart verification</div>
+            <div class="mode-stats">
+              <span>~2.4 API</span>
+              <span>~85% accuracy</span>
+            </div>
+            <div class="mode-check">✓</div>
+          </label>
+
+          <!-- Max Mode -->
+          <label class="mode-option">
+            <input type="radio" name="mode" value="max" id="mode-max">
+            <div class="mode-content">
+              <span class="mode-icon">🚀</span>
+              <span>Max</span>
+            </div>
+            <div class="mode-desc">Triple verification</div>
+            <div class="mode-stats">
+              <span>~3.8 API</span>
+              <span>~95% accuracy</span>
+            </div>
+            <div class="mode-check">✓</div>
+          </label>
+
+          <!-- Smart Auto -->
+          <label class="mode-option" style="grid-column: 1 / -1;">
+            <input type="radio" name="mode" value="auto" id="mode-auto" checked>
+            <div class="mode-content">
+              <span class="mode-icon">🤖</span>
+              <span>Smart Auto (Recommended)</span>
+            </div>
+            <div class="mode-desc">AI chooses best mode automatically • Natural pagination</div>
+            <div class="mode-stats">
+              <span>Variable API</span>
+              <span>Optimized accuracy</span>
+            </div>
+            <div class="mode-check">✓</div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Extract Button -->
+      <div class="section extract-section">
+        <button class="primary" id="extractBtn">🚀 Extract Data</button>
+      </div>
+
+      <!-- Results -->
+      <div class="results-section" id="resultsSection">
+        <div class="section-title">✅ Extraction Complete</div>
+        
         <div class="metadata-grid">
           <div class="metadata-item">
-            <div class="metadata-label">Mode</div>
-            <div id="modeUsed" class="metadata-value">-</div>
+            <div class="metadata-label">Confidence</div>
+            <div class="metadata-value" id="confidence">--</div>
           </div>
           <div class="metadata-item">
-            <div class="metadata-label">API Calls</div>
-            <div id="apiCalls" class="metadata-value">-</div>
+            <div class="metadata-label">Mode Used</div>
+            <div class="metadata-value" id="modeUsed">--</div>
+          </div>
+          <div class="metadata-item">
+            <div class="metadata-label">Extraction Type</div>
+            <div class="metadata-value" id="extractionTypeUsed">--</div>
           </div>
           <div class="metadata-item">
             <div class="metadata-label">Duration</div>
-            <div id="duration" class="metadata-value">-</div>
+            <div class="metadata-value" id="duration">--</div>
           </div>
-          <div class="metadata-item">
-            <div class="metadata-label">Type</div>
-            <div id="classification" class="metadata-value">-</div>
+          <div class="metadata-item" style="grid-column: 1 / -1;">
+            <div class="metadata-label">Classification</div>
+            <div class="metadata-value" id="classification">--</div>
           </div>
+          <div class="metadata-item" id="paginationHint" style="grid-column: 1 / -1; display: none;">
+            <div class="metadata-label">Pagination Tip</div>
+            <div class="metadata-value" style="font-size: 12px; font-weight: 400; color: #6B7280;"></div>
+          </div>
+        </div>
+
+        <div id="jsonOutput"></div>
+
+        <div class="export-buttons">
+          <button class="secondary" id="copyBtn">📋 Copy</button>
+          <button class="secondary" id="downloadJsonBtn">💾 JSON</button>
+          <button class="secondary" id="downloadCsvBtn">📊 CSV</button>
         </div>
       </div>
 
-      <!-- 🆕 v3.1: Domain Adjustment Display -->
-      <div id="domainAdjustment" style="display: none;"></div>
-
-      <!-- Smart Auto Decision -->
-      <div id="autoDecision" style="display: none;"></div>
-
-      <!-- Data Preview -->
-      <div class="section-title">📊 Extracted Data</div>
-      <pre id="dataPreview" class="data-preview"></pre>
-
-      <!-- Export Buttons -->
-      <div class="export-buttons">
-        <button id="copyBtn" class="btn-secondary">📋 Copy</button>
-        <button id="downloadJsonBtn" class="btn-secondary">💾 JSON</button>
-        <button id="downloadCsvBtn" class="btn-secondary">📊 CSV</button>
+      <!-- Error -->
+      <div class="error-section" id="errorSection">
+        <div class="section-title">❌ Extraction Failed</div>
+        <div id="errorMessage"></div>
       </div>
-    </div>
 
-    <!-- Extraction History -->
-    <div id="extractionHistory" class="history-container">
-      <h3>📈 Recent Extractions</h3>
-      <p class="no-history">No extractions yet</p>
+      <!-- History -->
+      <div class="section">
+        <div class="section-title">📊 Extraction History</div>
+        <div id="extractionHistory"></div>
+      </div>
+
+      <!-- Cache Clear -->
+      <div class="section">
+        <button class="secondary" id="clearCacheBtn" style="width: 100%;">🗑️ Clear Cache & History</button>
+      </div>
     </div>
   </div>
 
