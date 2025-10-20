@@ -1,18 +1,22 @@
 /**
  * Web Weaver Lightning - Background Service Worker
- * Version: 3.4.0 (Day 15 - MULTI/SINGLE_ITEM EXTRACTION TYPES)
+ * Version: 3.5.0 (Day 13 - HYBRID AI INTEGRATION)
  * 
- * 🆕 v3.4 ENHANCEMENTS (DAY 15):
- * - MULTI extraction type (extract all items from DOM)
- * - SINGLE_ITEM extraction type (screenshot + Vision API)
- * - Screenshot capture via chrome.tabs.captureVisibleTab
- * - Vision API integration with prompt_v11_screenshot.txt
- * - Natural pagination guidance messages
- * - Removed infinite scroll auto-trigger
+ * 🆕 v3.5 ENHANCEMENTS (DAY 13 - HYBRID AI):
+ * - Chrome Built-in AI Summarizer API integration
+ * - Chrome Built-in AI Translator API integration
+ * - Hybrid postprocessing (Chrome → Gemini Cloud fallback)
+ * - Source tracking (_source metadata fields)
+ * - Statistics tracking (Chrome vs Cloud usage)
+ * 
+ * ✅ PRESERVED FROM v3.4:
+ * - MULTI/SINGLE_ITEM extraction types
+ * - Screenshot capture + Vision API
+ * - Natural pagination guidance
+ * - prompt_v11_screenshot.txt integration
  * 
  * ✅ PRESERVED FROM v3.2:
  * - Infinite scroll integration (manual trigger)
- * - Scroll progress message forwarding
  * - Visual detection tier tracking
  * - Mode-specific scroll configurations
  * 
@@ -21,16 +25,9 @@
  * - Universal AI confidence prompt (v10)
  * - Visual confidence tiers (HIGH/GOOD/MEDIUM/LOW)
  * - Domain-specific learning and adjustment
- * 
- * ✅ PRESERVED FIXES:
- * - FIX #1: Confidence calculation (AI average for multi-item)
- * - FIX #2: Medium single-article detection
- * - FIX #3: SmartAuto crash fix
- * - FIX #4: Nested confidence JSON flattening
- * - FIX #5: Universal Multi-Item Extraction
  */
 
-console.log('[Background] 🚀 Web Weaver Lightning v3.4 initializing...');
+console.log('[Background] 🚀 Web Weaver Lightning v3.5 initializing (HYBRID AI)...');
 
 // ========================================
 // GLOBAL STATE
@@ -44,10 +41,10 @@ const MAX_HISTORY = 50;
 // CONFIG LOADING
 // ========================================
 const CONFIG = {
-  VERSION: '3.4.0-day15',
+  VERSION: '3.5.0-day13-hybrid',
   API_ENDPOINT: 'https://generativelanguage.googleapis.com/v1beta/models',
   GEMINI_MODEL: 'gemini-2.0-flash-lite',
-  GEMINI_VISION_MODEL: 'gemini-2.0-flash-exp', // 🆕 Vision model for screenshots
+  GEMINI_VISION_MODEL: 'gemini-2.0-flash-exp',
   MODES: {
     offline: { id: 'offline', apiCalls: 0, scrolls: 0 },
     min: { id: 'min', apiCalls: 2, scrolls: 2 },
@@ -63,7 +60,12 @@ const CONFIG = {
 chrome.runtime.onInstalled.addListener(async () => {
   console.log('[Background] Extension installed/updated');
   
-  const result = await chrome.storage.local.get(['apiKey', 'extractionHistory', 'domainConfidenceCache']);
+  const result = await chrome.storage.local.get([
+    'apiKey', 
+    'extractionHistory', 
+    'domainConfidenceCache',
+    'hybridAIStats'
+  ]);
   
   if (result.apiKey) {
     apiKey = result.apiKey;
@@ -80,24 +82,29 @@ chrome.runtime.onInstalled.addListener(async () => {
     console.log('[Background] Domain confidence cache loaded:', domainConfidenceCache.size, 'domains');
   }
   
-  console.log('[Background] ✅ Initialization complete');
+  console.log('[Background] ✅ Initialization complete (HYBRID AI ready)');
 });
 
 chrome.runtime.onStartup.addListener(async () => {
   console.log('[Background] Service worker started');
   
-  const result = await chrome.storage.local.get(['apiKey', 'extractionHistory', 'domainConfidenceCache']);
+  const result = await chrome.storage.local.get([
+    'apiKey', 
+    'extractionHistory', 
+    'domainConfidenceCache'
+  ]);
+  
   if (result.apiKey) apiKey = result.apiKey;
   if (result.extractionHistory) extractionHistory = result.extractionHistory;
   if (result.domainConfidenceCache) {
     domainConfidenceCache = new Map(Object.entries(result.domainConfidenceCache));
   }
   
-  console.log('[Background] ✅ Startup complete');
+  console.log('[Background] ✅ Startup complete (HYBRID AI ready)');
 });
 
 // ========================================
-// MESSAGE LISTENER (ENHANCED FOR DAY 15)
+// MESSAGE LISTENER (ENHANCED FOR HYBRID AI)
 // ========================================
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('[Background] Message received:', request.action);
@@ -114,13 +121,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           sendResponse({ success: true, apiKey });
           break;
         
-        // 🆕 DAY 15: Enhanced extraction with extraction type
+        // 🆕 HYBRID AI: Enhanced extraction with hybrid options
         case 'extractData':
-          const result = await handleExtraction(request.mode, request.extractionType);
+          const result = await handleExtraction(
+            request.mode, 
+            request.extractionType,
+            request.hybridOptions // { summarize: bool, translate: bool, targetLanguage: string }
+          );
           sendResponse(result);
           break;
         
-        // 🆕 DAY 15: Screenshot capture
         case 'captureScreenshot':
           const screenshotResult = await captureVisibleTab();
           sendResponse(screenshotResult);
@@ -136,15 +146,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           break;
         
         case 'clearCache':
-          await chrome.storage.local.remove(['domainConfidenceCache', 'extractionHistory']);
+          await chrome.storage.local.remove([
+            'domainConfidenceCache', 
+            'extractionHistory',
+            'hybridAIStats'
+          ]);
           domainConfidenceCache.clear();
           extractionHistory = [];
-          console.log('[Background] Cache cleared');
+          console.log('[Background] Cache cleared (including hybrid stats)');
           sendResponse({ success: true });
           break;
         
         case 'getExtractionHistory':
           sendResponse({ success: true, history: extractionHistory });
+          break;
+        
+        // 🆕 HYBRID AI: Get hybrid statistics
+        case 'getHybridStats':
+          const stats = await getHybridStats();
+          sendResponse({ success: true, stats });
           break;
         
         case 'convertToCSV':
@@ -175,7 +195,7 @@ async function handleSaveApiKey(key) {
 }
 
 // ========================================
-// 🆕 DAY 15: SCREENSHOT CAPTURE
+// SCREENSHOT CAPTURE
 // ========================================
 async function captureVisibleTab() {
   console.log('[Background] 📸 Capturing visible tab screenshot...');
@@ -184,7 +204,6 @@ async function captureVisibleTab() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) throw new Error('No active tab found');
     
-    // Capture visible tab as data URL
     const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, {
       format: 'png'
     });
@@ -205,12 +224,13 @@ async function captureVisibleTab() {
 }
 
 // ========================================
-// MAIN EXTRACTION HANDLER (ENHANCED FOR DAY 15)
+// MAIN EXTRACTION HANDLER (ENHANCED FOR HYBRID AI)
 // ========================================
-async function handleExtraction(mode = 'auto', extractionType = 'MULTI') {
+async function handleExtraction(mode = 'auto', extractionType = 'MULTI', hybridOptions = {}) {
   console.log('[Background] ═══════════════════════════════════════════════');
-  console.log('[Background] EXTRACTION STARTED');
+  console.log('[Background] EXTRACTION STARTED (HYBRID AI)');
   console.log('[Background] Mode:', mode, '| Type:', extractionType);
+  console.log('[Background] Hybrid Options:', hybridOptions);
   console.log('[Background] ═══════════════════════════════════════════════');
   
   const startTime = Date.now();
@@ -224,13 +244,13 @@ async function handleExtraction(mode = 'auto', extractionType = 'MULTI') {
     
     console.log('[Background] Target:', domain);
     
-    // 🆕 DAY 15: Route based on extraction type
+    // Route based on extraction type
     if (extractionType === 'SINGLE_ITEM') {
       console.log('[Background] 📄 SINGLE_ITEM extraction - using screenshot + Vision API');
-      return await handleSingleItemExtraction(tab, url, domain, mode, startTime);
+      return await handleSingleItemExtraction(tab, url, domain, mode, startTime, hybridOptions);
     } else {
       console.log('[Background] 📦 MULTI extraction - using DOM + AI');
-      return await handleMultiItemExtraction(tab, url, domain, mode, startTime);
+      return await handleMultiItemExtraction(tab, url, domain, mode, startTime, hybridOptions);
     }
     
   } catch (error) {
@@ -244,9 +264,9 @@ async function handleExtraction(mode = 'auto', extractionType = 'MULTI') {
 }
 
 // ========================================
-// 🆕 DAY 15: SINGLE_ITEM EXTRACTION (SCREENSHOT + VISION)
+// SINGLE_ITEM EXTRACTION (WITH HYBRID AI)
 // ========================================
-async function handleSingleItemExtraction(tab, url, domain, mode, startTime) {
+async function handleSingleItemExtraction(tab, url, domain, mode, startTime, hybridOptions) {
   console.log('[Background] 📸 Starting SINGLE_ITEM extraction with Vision API...');
   
   try {
@@ -260,7 +280,13 @@ async function handleSingleItemExtraction(tab, url, domain, mode, startTime) {
     console.log('[Background] ✅ Screenshot captured');
     
     // Extract with Vision API
-    const visionResult = await extractWithVisionAPI(screenshot, domain);
+    let visionResult = await extractWithVisionAPI(screenshot, domain);
+    
+    // 🆕 HYBRID AI: Postprocessing with Chrome Built-in AI
+    if (hybridOptions.summarize || hybridOptions.translate) {
+      console.log('[Background] 🔄 Applying hybrid AI postprocessing...');
+      visionResult = await hybridPostprocess(visionResult, hybridOptions);
+    }
     
     const duration = Date.now() - startTime;
     const confidence = visionResult.confidence_score || 75;
@@ -282,7 +308,12 @@ async function handleSingleItemExtraction(tab, url, domain, mode, startTime) {
       visionUsed: true,
       screenshotUsed: true,
       naturalPagination: false,
-      paginationHint: 'SINGLE_ITEM mode captures one viewport at a time'
+      paginationHint: 'SINGLE_ITEM mode captures one viewport at a time',
+      hybridAI: {
+        summarizeEnabled: hybridOptions.summarize || false,
+        translateEnabled: hybridOptions.translate || false,
+        targetLanguage: hybridOptions.targetLanguage || null
+      }
     };
     
     // Add to history
@@ -314,19 +345,15 @@ async function handleSingleItemExtraction(tab, url, domain, mode, startTime) {
 }
 
 // ========================================
-// 🆕 DAY 15: VISION API EXTRACTION
+// VISION API EXTRACTION
 // ========================================
 async function extractWithVisionAPI(screenshotDataUrl, domain) {
   console.log('[Background] 🤖 Extracting data from screenshot with Vision API...');
   
   try {
-    // Build Vision API prompt (using prompt_v11_screenshot.txt logic)
     const prompt = buildVisionPrompt(domain);
-    
-    // Extract base64 image data
     const base64Image = screenshotDataUrl.split(',')[1];
     
-    // Call Gemini Vision API
     const response = await fetch(
       `${CONFIG.API_ENDPOINT}/${CONFIG.GEMINI_VISION_MODEL}:generateContent?key=${apiKey}`,
       {
@@ -362,7 +389,6 @@ async function extractWithVisionAPI(screenshotDataUrl, domain) {
     
     if (!aiText) throw new Error('Empty Vision API response');
     
-    // Extract JSON from response
     const extracted = extractJsonObject(aiText, 'SINGLE_ITEM');
     const flattened = flattenNestedConfidence(extracted);
     
@@ -375,9 +401,6 @@ async function extractWithVisionAPI(screenshotDataUrl, domain) {
   }
 }
 
-// ========================================
-// 🆕 DAY 15: BUILD VISION PROMPT
-// ========================================
 function buildVisionPrompt(domain) {
   return `
 You are a web data extraction AI analyzing a screenshot of a webpage.
@@ -419,9 +442,9 @@ EXTRACT NOW - RETURN ONLY THE JSON OBJECT:
 }
 
 // ========================================
-// MULTI-ITEM EXTRACTION (PRESERVED FROM DAY 13)
+// MULTI-ITEM EXTRACTION (WITH HYBRID AI)
 // ========================================
-async function handleMultiItemExtraction(tab, url, domain, mode, startTime) {
+async function handleMultiItemExtraction(tab, url, domain, mode, startTime, hybridOptions) {
   console.log('[Background] 📦 Starting MULTI extraction with DOM + AI...');
   
   try {
@@ -438,8 +461,8 @@ async function handleMultiItemExtraction(tab, url, domain, mode, startTime) {
     
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Extract page data (standard DOM extraction - NO AUTO-SCROLL)
-    console.log('[Background] 📄 Extracting DOM data (no auto-scroll)');
+    // Extract page data
+    console.log('[Background] 📄 Extracting DOM data');
     
     const response = await chrome.tabs.sendMessage(tab.id, {
       action: 'extractPageData'
@@ -488,6 +511,12 @@ async function handleMultiItemExtraction(tab, url, domain, mode, startTime) {
       
       console.log('[Background] ✅ AI extraction complete | Confidence:', confidence + '%');
       
+      // 🆕 HYBRID AI: Postprocessing with Chrome Built-in AI
+      if (hybridOptions.summarize || hybridOptions.translate) {
+        console.log('[Background] 🔄 Applying hybrid AI postprocessing...');
+        extractedData = await hybridPostprocess(extractedData, hybridOptions);
+      }
+      
     } else {
       console.log('[Background] 📦 DOM-only extraction');
       
@@ -522,10 +551,15 @@ async function handleMultiItemExtraction(tab, url, domain, mode, startTime) {
       cached: false,
       domConfidence: pageData.classificationConfidence,
       domainAdjustment: getDomainAdjustment(domain),
-      naturalPagination: true, // 🆕 DAY 15: Always true for MULTI mode
+      naturalPagination: true,
       paginationHint: 'Scroll or click "Next Page" to load more items, then extract again',
       detectionTier: pageData.tier || 'dom',
-      visualDetectionUsed: pageData.tier === 'visual'
+      visualDetectionUsed: pageData.tier === 'visual',
+      hybridAI: {
+        summarizeEnabled: hybridOptions.summarize || false,
+        translateEnabled: hybridOptions.translate || false,
+        targetLanguage: hybridOptions.targetLanguage || null
+      }
     };
     
     addToHistory({
@@ -553,6 +587,473 @@ async function handleMultiItemExtraction(tab, url, domain, mode, startTime) {
   } catch (error) {
     console.error('[Background] ❌ MULTI extraction error:', error);
     throw error;
+  }
+}
+
+// ========================================
+// 🆕 HYBRID AI POSTPROCESSING (INLINE)
+// ========================================
+async function hybridPostprocess(extractedData, options = {}) {
+  const startTime = Date.now();
+  
+  console.log('[Background] 🎯 HYBRID POSTPROCESSING STARTED');
+  console.log('[Background] Options:', {
+    summarize: options.summarize,
+    translate: options.translate,
+    targetLanguage: options.targetLanguage,
+  });
+  
+  // Handle both single item and multi-item data
+  const isArray = Array.isArray(extractedData);
+  const items = isArray ? extractedData : [extractedData];
+  
+  const processedItems = [];
+  
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const enhancedItem = { ...item };
+    
+    console.log(`[Background] Processing item ${i + 1}/${items.length}...`);
+    
+    // SUMMARIZATION
+    if (options.summarize) {
+      console.log('[Background] Summarization requested');
+      
+      const fieldsToSummarize = [];
+      
+      for (const [key, value] of Object.entries(item)) {
+        if (typeof value === 'string' && value.length > 200) {
+          if (!key.endsWith('_summary') && !key.endsWith('_translated')) {
+            fieldsToSummarize.push({ key, value });
+          }
+        }
+      }
+      
+      console.log(`[Background] Found ${fieldsToSummarize.length} fields to summarize`);
+      
+      for (const field of fieldsToSummarize) {
+        const summaryResult = await hybridSummarize(field.value, {
+          type: 'key-points',
+          format: 'markdown',
+          length: 'medium',
+        });
+        
+        if (summaryResult.success) {
+          enhancedItem[`${field.key}_summary`] = summaryResult.summary;
+          enhancedItem[`${field.key}_summary_source`] = summaryResult.source;
+          console.log(`[Background] ✅ Summarized '${field.key}' using ${summaryResult.source}`);
+          
+          await updateHybridStats('summarize', summaryResult.source);
+        } else {
+          console.log(`[Background] ⚠️ Failed to summarize '${field.key}': ${summaryResult.error || summaryResult.reason}`);
+        }
+      }
+    }
+    
+    // TRANSLATION
+    if (options.translate && options.targetLanguage) {
+      console.log(`[Background] Translation requested (target: ${options.targetLanguage})`);
+      
+      const fieldsToTranslate = [];
+      
+      for (const [key, value] of Object.entries(item)) {
+        if (typeof value === 'string' && value.length > 0) {
+          if (!key.endsWith('_translated') && 
+              !key.endsWith('_source') && 
+              !key.includes('url') && 
+              !key.includes('link') &&
+              !key.includes('id')) {
+            fieldsToTranslate.push({ key, value });
+          }
+        }
+      }
+      
+      console.log(`[Background] Found ${fieldsToTranslate.length} fields to translate`);
+      
+      for (const field of fieldsToTranslate) {
+        const translationResult = await hybridTranslate(field.value, {
+          sourceLanguage: 'en',
+          targetLanguage: options.targetLanguage,
+        });
+        
+        if (translationResult.success) {
+          enhancedItem[`${field.key}_${options.targetLanguage}`] = translationResult.translatedText;
+          enhancedItem[`${field.key}_${options.targetLanguage}_source`] = translationResult.source;
+          console.log(`[Background] ✅ Translated '${field.key}' using ${translationResult.source}`);
+          
+          await updateHybridStats('translate', translationResult.source);
+        } else {
+          console.log(`[Background] ⚠️ Failed to translate '${field.key}': ${translationResult.error || translationResult.reason}`);
+        }
+      }
+    }
+    
+    processedItems.push(enhancedItem);
+  }
+  
+  const result = isArray ? processedItems : processedItems[0];
+  
+  console.log('[Background] ✅ Hybrid postprocessing complete in', Date.now() - startTime, 'ms');
+  
+  return result;
+}
+
+// ========================================
+// 🆕 HYBRID SUMMARIZATION (TRY CHROME → FALLBACK CLOUD)
+// ========================================
+async function hybridSummarize(text, options = {}) {
+  const startTime = Date.now();
+  
+  console.log('[Background] Starting hybrid summarization...');
+  
+  if (!text || typeof text !== 'string' || text.length < 100) {
+    console.log('[Background] Text too short for summarization, skipping');
+    return {
+      success: false,
+      summary: text,
+      reason: 'TEXT_TOO_SHORT',
+      duration: Date.now() - startTime,
+      source: 'none',
+    };
+  }
+  
+  try {
+    // STEP 1: Try Chrome Built-in Summarizer API
+    if ('Summarizer' in self) {
+      console.log('[Background] Attempting Chrome Built-in Summarizer...');
+      
+      const summarizerAvailability = await Summarizer.availability();
+      
+      if (summarizerAvailability === 'readily' || summarizerAvailability === 'available') {
+        const summarizer = await Summarizer.create({
+          type: options.type || 'key-points',
+          format: options.format || 'markdown',
+          length: options.length || 'medium',
+          sharedContext: options.context || '',
+        });
+        
+        const summary = await summarizer.summarize(text);
+        
+        console.log('[Background] ✅ Chrome Built-in Summarizer succeeded in', Date.now() - startTime, 'ms');
+        
+        return {
+          success: true,
+          summary: summary,
+          originalLength: text.length,
+          summaryLength: summary.length,
+          compressionRatio: (summary.length / text.length * 100).toFixed(1) + '%',
+          duration: Date.now() - startTime,
+          source: 'chrome_builtin',
+          method: 'on-device',
+        };
+      } else {
+        console.log(`[Background] Chrome Summarizer status: ${summarizerAvailability} (not available)`);
+      }
+    } else {
+      console.log('[Background] Chrome Summarizer API not found in browser');
+    }
+    
+  } catch (error) {
+    console.log('[Background] Chrome Built-in Summarizer failed:', error.message);
+  }
+  
+  // STEP 2: Fallback to Gemini Cloud API
+  console.log('[Background] Falling back to Gemini Cloud API for summarization');
+  return await summarizeWithGeminiCloud(text, options);
+}
+
+// ========================================
+// 🆕 GEMINI CLOUD SUMMARIZATION FALLBACK
+// ========================================
+async function summarizeWithGeminiCloud(text, options = {}) {
+  const startTime = Date.now();
+  
+  try {
+    console.log('[Background] Using Gemini Cloud API for summarization (fallback)');
+    
+    const prompt = `Summarize the following text in 2-3 concise key points using markdown formatting:
+
+${text}
+
+Provide ONLY the summary, no explanations.`;
+
+    const response = await fetch(
+      `${CONFIG.API_ENDPOINT}/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 500,
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const summary = data.candidates[0].content.parts[0].text.trim();
+
+    console.log('[Background] ✅ Gemini Cloud summarization complete in', Date.now() - startTime, 'ms');
+
+    return {
+      success: true,
+      summary: summary,
+      originalLength: text.length,
+      summaryLength: summary.length,
+      compressionRatio: (summary.length / text.length * 100).toFixed(1) + '%',
+      duration: Date.now() - startTime,
+      source: 'gemini_cloud_fallback',
+    };
+
+  } catch (error) {
+    console.error('[Background] ❌ Gemini Cloud summarization failed:', error.message);
+    
+    return {
+      success: false,
+      summary: null,
+      error: error.message,
+      duration: Date.now() - startTime,
+      source: 'gemini_cloud_error',
+    };
+  }
+}
+
+// ========================================
+// 🆕 HYBRID TRANSLATION (TRY CHROME → FALLBACK CLOUD)
+// ========================================
+async function hybridTranslate(text, options = {}) {
+  const startTime = Date.now();
+  
+  console.log('[Background] Starting hybrid translation...');
+  
+  if (!text || typeof text !== 'string') {
+    return {
+      success: false,
+      translatedText: null,
+      error: 'Invalid text input',
+      duration: Date.now() - startTime,
+      source: 'none',
+    };
+  }
+  
+  const sourceLanguage = options.sourceLanguage || 'en';
+  const targetLanguage = options.targetLanguage;
+  
+  if (!targetLanguage) {
+    return {
+      success: false,
+      translatedText: null,
+      error: 'Target language required',
+      duration: Date.now() - startTime,
+      source: 'none',
+    };
+  }
+  
+  if (sourceLanguage === targetLanguage) {
+    return {
+      success: false,
+      translatedText: text,
+      reason: 'SAME_LANGUAGE',
+      duration: Date.now() - startTime,
+      source: 'none',
+    };
+  }
+  
+  try {
+    // STEP 1: Try Chrome Built-in Translator API
+    if ('Translator' in self) {
+      console.log(`[Background] Attempting Chrome Built-in Translator (${sourceLanguage} → ${targetLanguage})...`);
+      
+      const translatorAvailability = await Translator.availability({
+        sourceLanguage: sourceLanguage,
+        targetLanguage: targetLanguage,
+      });
+      
+      if (translatorAvailability === 'readily' || translatorAvailability === 'available') {
+        const translator = await Translator.create({
+          sourceLanguage: sourceLanguage,
+          targetLanguage: targetLanguage,
+        });
+        
+        const translatedText = await translator.translate(text);
+        
+        console.log('[Background] ✅ Chrome Built-in Translator succeeded in', Date.now() - startTime, 'ms');
+        
+        return {
+          success: true,
+          translatedText: translatedText,
+          originalText: text,
+          sourceLanguage: sourceLanguage,
+          targetLanguage: targetLanguage,
+          originalLength: text.length,
+          translatedLength: translatedText.length,
+          duration: Date.now() - startTime,
+          source: 'chrome_builtin',
+          method: 'on-device',
+        };
+      } else {
+        console.log(`[Background] Chrome Translator status: ${translatorAvailability} (not available)`);
+      }
+    } else {
+      console.log('[Background] Chrome Translator API not found in browser');
+    }
+    
+  } catch (error) {
+    console.log('[Background] Chrome Built-in Translator failed:', error.message);
+  }
+  
+  // STEP 2: Fallback to Gemini Cloud API
+  console.log('[Background] Falling back to Gemini Cloud API for translation');
+  return await translateWithGeminiCloud(text, options);
+}
+
+// ========================================
+// 🆕 GEMINI CLOUD TRANSLATION FALLBACK
+// ========================================
+async function translateWithGeminiCloud(text, options = {}) {
+  const startTime = Date.now();
+  
+  try {
+    const targetLanguage = options.targetLanguage || 'es';
+    const languageNames = {
+      es: 'Spanish',
+      fr: 'French',
+      de: 'German',
+      it: 'Italian',
+      pt: 'Portuguese',
+      ja: 'Japanese',
+      zh: 'Chinese',
+      ar: 'Arabic',
+      hi: 'Hindi',
+    };
+    
+    const targetLanguageName = languageNames[targetLanguage] || targetLanguage;
+    
+    console.log(`[Background] Using Gemini Cloud API for translation to ${targetLanguageName} (fallback)`);
+    
+    const prompt = `Translate the following text to ${targetLanguageName}. Provide ONLY the translation, no explanations:
+
+${text}`;
+
+    const response = await fetch(
+      `${CONFIG.API_ENDPOINT}/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 2000,
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const translatedText = data.candidates[0].content.parts[0].text.trim();
+
+    console.log('[Background] ✅ Gemini Cloud translation complete in', Date.now() - startTime, 'ms');
+
+    return {
+      success: true,
+      translatedText: translatedText,
+      originalText: text,
+      sourceLanguage: 'en',
+      targetLanguage: targetLanguage,
+      originalLength: text.length,
+      translatedLength: translatedText.length,
+      duration: Date.now() - startTime,
+      source: 'gemini_cloud_fallback',
+    };
+
+  } catch (error) {
+    console.error('[Background] ❌ Gemini Cloud translation failed:', error.message);
+    
+    return {
+      success: false,
+      translatedText: null,
+      error: error.message,
+      duration: Date.now() - startTime,
+      source: 'gemini_cloud_error',
+    };
+  }
+}
+
+// ========================================
+// 🆕 HYBRID AI STATISTICS
+// ========================================
+async function getHybridStats() {
+  try {
+    const stats = await chrome.storage.local.get('hybridAIStats');
+    
+    return stats.hybridAIStats || {
+      totalSummarizations: 0,
+      totalTranslations: 0,
+      chromeBuiltinUsage: {
+        summarizations: 0,
+        translations: 0,
+      },
+      geminiCloudUsage: {
+        summarizations: 0,
+        translations: 0,
+      },
+      lastUsed: null,
+    };
+  } catch (error) {
+    console.error('[Background] Error getting hybrid stats:', error);
+    return null;
+  }
+}
+
+async function updateHybridStats(operation, source) {
+  try {
+    const stats = await getHybridStats();
+    
+    if (operation === 'summarize') {
+      stats.totalSummarizations++;
+      if (source === 'chrome_builtin') {
+        stats.chromeBuiltinUsage.summarizations++;
+      } else if (source === 'gemini_cloud_fallback') {
+        stats.geminiCloudUsage.summarizations++;
+      }
+    } else if (operation === 'translate') {
+      stats.totalTranslations++;
+      if (source === 'chrome_builtin') {
+        stats.chromeBuiltinUsage.translations++;
+      } else if (source === 'gemini_cloud_fallback') {
+        stats.geminiCloudUsage.translations++;
+      }
+    }
+    
+    stats.lastUsed = Date.now();
+    
+    await chrome.storage.local.set({ hybridAIStats: stats });
+    
+  } catch (error) {
+    console.error('[Background] Error updating hybrid stats:', error);
   }
 }
 
@@ -818,7 +1319,7 @@ function repairJSON(text) {
 // NESTED CONFIDENCE FLATTENING (PRESERVED)
 // ========================================
 function flattenNestedConfidence(data) {
-  console.log('[Background] 🔧 FIX #4: Flattening nested confidence (3-layer defense)...');
+  console.log('[Background] 🔧 Flattening nested confidence...');
   
   if (Array.isArray(data)) {
     return data.map(item => flattenNestedConfidenceItem(item));
@@ -844,7 +1345,7 @@ function flattenNestedConfidenceItem(item) {
     const value = getNestedValue(item, path);
     if (value !== undefined && typeof value === 'number') {
       flattened.confidence_score = value;
-      console.log(`[Background] 🔧 FIX #4: Extracted nested confidence from ${path}: ${value}`);
+      console.log(`[Background] 🔧 Extracted nested confidence from ${path}: ${value}`);
       break;
     }
   }
@@ -853,7 +1354,7 @@ function flattenNestedConfidenceItem(item) {
     for (const [key, value] of Object.entries(flattened)) {
       if (key.toLowerCase().includes('confidence') && typeof value === 'number') {
         flattened.confidence_score = value;
-        console.log(`[Background] 🔧 FIX #4: Found confidence in field ${key}: ${value}`);
+        console.log(`[Background] 🔧 Found confidence in field ${key}: ${value}`);
         break;
       }
     }
@@ -861,7 +1362,7 @@ function flattenNestedConfidenceItem(item) {
   
   if (!flattened.confidence_score || typeof flattened.confidence_score !== 'number') {
     flattened.confidence_score = 50;
-    console.log('[Background] 🔧 FIX #4: No confidence found, defaulting to 50');
+    console.log('[Background] 🔧 No confidence found, defaulting to 50');
   }
   
   return flattened;
@@ -949,14 +1450,15 @@ OUTPUT CSV:
 // SERVICE WORKER STATUS
 // ========================================
 console.log('[Background] ═══════════════════════════════════════════════');
-console.log('[Background] 🚀 WEB WEAVER LIGHTNING v3.4.0 (Day 15)');
+console.log('[Background] 🚀 WEB WEAVER LIGHTNING v3.5.0 (HYBRID AI)');
 console.log('[Background] ═══════════════════════════════════════════════');
 console.log('[Background] ✅ Service worker ready');
-console.log('[Background] 🆕 DAY 15: MULTI/SINGLE_ITEM extraction types');
-console.log('[Background] 🆕 DAY 15: Screenshot capture + Vision API');
-console.log('[Background] 🆕 DAY 15: Natural pagination (no auto-scroll)');
-console.log('[Background] 🆕 DAY 15: prompt_v11_screenshot.txt integration');
-console.log('[Background] ✅ PRESERVED: All Day 13 features (infinite scroll, visual detection)');
+console.log('[Background] 🆕 DAY 13: HYBRID AI (Chrome + Cloud)');
+console.log('[Background] 🆕 Chrome Built-in Summarizer API integrated');
+console.log('[Background] 🆕 Chrome Built-in Translator API integrated');
+console.log('[Background] 🆕 Graceful fallback to Gemini Cloud API');
+console.log('[Background] 🆕 Source tracking (_source metadata)');
+console.log('[Background] ✅ PRESERVED: All Day 15 features (MULTI/SINGLE_ITEM)');
 console.log('[Background] ✅ PRESERVED: All fixes (#1-#5)');
 console.log('[Background] ═══════════════════════════════════════════════');
 
@@ -981,5 +1483,5 @@ setInterval(() => {
 }, KEEP_ALIVE_INTERVAL);
 
 // ========================================
-// END OF BACKGROUND.JS
+// END OF BACKGROUND.JS (HYBRID AI v3.5.0)
 // ========================================

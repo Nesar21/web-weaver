@@ -147,9 +147,7 @@
       cursor: not-allowed;
     }
 
-    /* ═══════════════════════════════════════════════════════════ */
-    /* 🆕 DAY 15: EXTRACTION TYPE TOGGLE (MULTI vs SINGLE_ITEM) */
-    /* ═══════════════════════════════════════════════════════════ */
+    /* Extraction Type Toggle */
     .extraction-type-section {
       background: rgba(99, 102, 241, 0.05);
       border: 2px solid rgba(99, 102, 241, 0.2);
@@ -257,6 +255,86 @@
       line-height: 1.4;
     }
 
+    /* ═══════════════════════════════════════════════════════════ */
+    /* 🆕 DAY 13: HYBRID AI CONTROLS (SUMMARIZE + TRANSLATE) */
+    /* ═══════════════════════════════════════════════════════════ */
+    .hybrid-ai-section {
+      background: rgba(16, 185, 129, 0.05);
+      border: 2px solid rgba(16, 185, 129, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .hybrid-ai-header {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1F2937;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hybrid-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      background: white;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .hybrid-control label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      flex: 1;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .hybrid-control input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #10B981;
+    }
+
+    .hybrid-control-desc {
+      font-size: 11px;
+      color: #6B7280;
+      margin-left: 26px;
+      line-height: 1.3;
+    }
+
+    .language-dropdown {
+      margin-left: 26px;
+      padding: 8px 12px;
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: calc(100% - 26px);
+    }
+
+    .language-dropdown:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #F3F4F6;
+    }
+
+    .language-dropdown:focus {
+      outline: none;
+      border-color: #10B981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+
     /* Mode Selection */
     .mode-grid {
       display: grid;
@@ -283,14 +361,6 @@
       position: absolute;
       opacity: 0;
       pointer-events: none;
-    }
-
-    .mode-option input[type="radio"]:checked + .mode-content {
-      color: #667eea;
-    }
-
-    .mode-option input[type="radio"]:checked ~ .mode-check {
-      display: block;
     }
 
     .mode-option.active {
@@ -503,7 +573,7 @@
     <!-- Header -->
     <div class="header">
       <h1>⚡ Web Weaver Lightning</h1>
-      <div class="version">v3.4.0 - MULTI/SINGLE_ITEM Edition</div>
+      <div class="version">v3.5.0 - Hybrid AI Edition</div>
     </div>
 
     <div class="content">
@@ -518,9 +588,7 @@
         </div>
       </div>
 
-      <!-- ═══════════════════════════════════════════════════════════ -->
-      <!-- 🆕 DAY 15: EXTRACTION TYPE SELECTION (MULTI vs SINGLE_ITEM) -->
-      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- Extraction Type Selection -->
       <div class="section">
         <div class="extraction-type-section">
           <div class="extraction-type-header">
@@ -562,6 +630,51 @@
           <div class="extraction-type-hint" id="extractionTypeHint">
             <span>💡</span>
             <span><strong>MULTI Mode:</strong> Use for search results, product listings, article feeds. Scroll or click "Next Page" to load more, then click "Extract Again" to get more items.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- 🆕 DAY 13: HYBRID AI CONTROLS -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div class="section">
+        <div class="hybrid-ai-section">
+          <div class="hybrid-ai-header">
+            🤖 Hybrid AI Enhancements
+          </div>
+
+          <!-- Summarize Checkbox -->
+          <div class="hybrid-control">
+            <label>
+              <input type="checkbox" id="enableSummarize">
+              <span>📝 Summarize Content</span>
+            </label>
+          </div>
+          <div class="hybrid-control-desc">
+            Automatically summarize long text fields using Chrome Built-in AI (fallback to Cloud if unavailable)
+          </div>
+
+          <!-- Translate Checkbox + Language Dropdown -->
+          <div class="hybrid-control" style="margin-top: 12px;">
+            <label>
+              <input type="checkbox" id="enableTranslate">
+              <span>🌐 Translate Content</span>
+            </label>
+          </div>
+          <select class="language-dropdown" id="targetLanguage" disabled>
+            <option value="">Select target language...</option>
+            <option value="es">Spanish (Español)</option>
+            <option value="fr">French (Français)</option>
+            <option value="de">German (Deutsch)</option>
+            <option value="it">Italian (Italiano)</option>
+            <option value="pt">Portuguese (Português)</option>
+            <option value="ja">Japanese (日本語)</option>
+            <option value="zh">Chinese (中文)</option>
+            <option value="ar">Arabic (العربية)</option>
+            <option value="hi">Hindi (हिन्दी)</option>
+          </select>
+          <div class="hybrid-control-desc" style="margin-top: 8px;">
+            Translate all text fields to selected language using Chrome Built-in AI (fallback to Cloud if unavailable)
           </div>
         </div>
       </div>
@@ -677,6 +790,11 @@
             <div class="metadata-label">Classification</div>
             <div class="metadata-value" id="classification">--</div>
           </div>
+          <!-- 🆕 DAY 13: Hybrid AI Status Display -->
+          <div class="metadata-item" id="hybridAIStatus" style="grid-column: 1 / -1; display: none;">
+            <div class="metadata-label">Hybrid AI Features</div>
+            <div class="metadata-value" style="font-size: 12px; font-weight: 400; color: #10B981;"></div>
+          </div>
           <div class="metadata-item" id="paginationHint" style="grid-column: 1 / -1; display: none;">
             <div class="metadata-label">Pagination Tip</div>
             <div class="metadata-value" style="font-size: 12px; font-weight: 400; color: #6B7280;"></div>
@@ -696,6 +814,12 @@
       <div class="error-section" id="errorSection">
         <div class="section-title">❌ Extraction Failed</div>
         <div id="errorMessage"></div>
+      </div>
+
+      <!-- 🆕 DAY 13: Hybrid AI Statistics -->
+      <div class="section">
+        <div class="section-title">🤖 Hybrid AI Stats</div>
+        <div id="hybridStatsContainer"></div>
       </div>
 
       <!-- History -->

@@ -1,22 +1,23 @@
 /**
  * Web Weaver Lightning - Popup UI Controller
- * Version: 3.4.1 (Day 15 - UNLIMITED API USAGE)
+ * Version: 3.5.0 (Day 13 - HYBRID AI UI CONTROLS)
  * 
- * 🆕 v3.4.1 FIX:
- * - REMOVED all daily API usage tracking
- * - REMOVED API limit warnings (95+ calls)
- * - REMOVED cost estimation displays
- * - Unlimited API usage enabled
+ * 🆕 v3.5 ENHANCEMENTS (DAY 13 - HYBRID AI):
+ * - Summarize checkbox (enable/disable content summarization)
+ * - Translate language dropdown (select target language)
+ * - Hybrid options sent to background.js
+ * - AI source display in results (_source metadata)
+ * - Hybrid AI statistics display
  * 
- * ✅ PRESERVED FROM v3.4:
- * - MULTI extraction type (extract all items - default)
- * - SINGLE_ITEM extraction type (screenshot-based extraction)
- * - Dynamic hints based on selected extraction type
- * - Natural pagination guidance for MULTI mode
+ * ✅ PRESERVED FROM v3.4.1:
+ * - Unlimited API usage (no daily limits)
+ * - MULTI/SINGLE_ITEM extraction types
+ * - Natural pagination guidance
+ * - Graceful degradation error messages
  * 
  * ✅ PRESERVED FROM v3.3:
- * - Graceful degradation messages with specific recovery steps
- * - Detection tier failure context (DOM/Visual/AI)
+ * - Graceful error display with recovery steps
+ * - Detection tier failure context
  * - User-actionable error suggestions
  */
 
@@ -25,17 +26,20 @@
 // ========================================
 let currentData = null;
 let currentMode = 'auto';
-let currentExtractionType = 'MULTI'; // 🆕 Day 15: Default to MULTI
+let currentExtractionType = 'MULTI';
 let extractionInProgress = false;
 
-// ❌ REMOVED: Daily API usage tracking
-// No more dailyApiUsage variable
+// 🆕 DAY 13: Hybrid AI options
+let hybridOptions = {
+  summarize: false,
+  translate: false,
+  targetLanguage: null
+};
 
 // ========================================
-// ERROR MESSAGES (PRESERVED FROM DAY 13)
+// ERROR MESSAGES (PRESERVED)
 // ========================================
 const ERROR_MESSAGES = {
-  // Detection failures
   'No repeated patterns found': {
     title: 'No Repeating Patterns Detected',
     message: 'The page structure doesn\'t show clear repeating elements.',
@@ -69,7 +73,6 @@ const ERROR_MESSAGES = {
     severity: 'warning'
   },
   
-  // API failures
   'API error: 429': {
     title: 'Rate Limit Exceeded',
     message: 'Gemini API rate limit reached. Too many requests.',
@@ -103,7 +106,6 @@ const ERROR_MESSAGES = {
     severity: 'error'
   },
   
-  // Content script failures
   'Content script deployment failed': {
     title: 'Extension Load Error',
     message: 'Could not inject content analyzer into page.',
@@ -126,7 +128,6 @@ const ERROR_MESSAGES = {
     severity: 'error'
   },
   
-  // Confidence failures
   'Extraction confidence too low': {
     title: 'Low Confidence Result',
     message: 'The extraction result had very low reliability score.',
@@ -138,7 +139,6 @@ const ERROR_MESSAGES = {
     severity: 'warning'
   },
   
-  // 🆕 DAY 15: Screenshot-specific errors
   'SINGLE_ITEM mode requires AI': {
     title: 'AI Required for Screenshot Extraction',
     message: 'SINGLE_ITEM mode uses Vision API which requires AI.',
@@ -166,17 +166,17 @@ const ERROR_MESSAGES = {
 // INITIALIZATION
 // ========================================
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[Popup] Initializing Web Weaver Lightning v3.4.1...');
+  console.log('[Popup] Initializing Web Weaver Lightning v3.5.0 (HYBRID AI)...');
   
   await loadApiKey();
   setupEventListeners();
   await loadExtractionHistory();
   initializeModeSelector();
-  initializeExtractionTypeSelector(); // 🆕 Day 15
+  initializeExtractionTypeSelector();
+  initializeHybridControls(); // 🆕 DAY 13: Initialize hybrid AI controls
+  await loadHybridStats(); // 🆕 DAY 13: Load hybrid statistics
   
-  // ❌ REMOVED: loadDailyApiUsage() call
-  
-  console.log('[Popup] Initialization complete (unlimited API usage)');
+  console.log('[Popup] Initialization complete (HYBRID AI READY)');
 });
 
 // ========================================
@@ -193,13 +193,47 @@ function setupEventListeners() {
     });
   });
   
-  // 🆕 DAY 15: Extraction type selection
+  // Extraction type selection
   document.querySelectorAll('input[name="extractionType"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
       currentExtractionType = e.target.value;
       updateExtractionTypeUI();
     });
   });
+  
+  // 🆕 DAY 13: Hybrid AI controls
+  const summarizeCheckbox = document.getElementById('enableSummarize');
+  if (summarizeCheckbox) {
+    summarizeCheckbox.addEventListener('change', (e) => {
+      hybridOptions.summarize = e.target.checked;
+      console.log('[Popup] Summarize enabled:', hybridOptions.summarize);
+    });
+  }
+  
+  const translateCheckbox = document.getElementById('enableTranslate');
+  if (translateCheckbox) {
+    translateCheckbox.addEventListener('change', (e) => {
+      hybridOptions.translate = e.target.checked;
+      const langDropdown = document.getElementById('targetLanguage');
+      if (langDropdown) {
+        langDropdown.disabled = !e.target.checked;
+        if (e.target.checked) {
+          hybridOptions.targetLanguage = langDropdown.value || 'es';
+        } else {
+          hybridOptions.targetLanguage = null;
+        }
+      }
+      console.log('[Popup] Translate enabled:', hybridOptions.translate, '| Language:', hybridOptions.targetLanguage);
+    });
+  }
+  
+  const languageDropdown = document.getElementById('targetLanguage');
+  if (languageDropdown) {
+    languageDropdown.addEventListener('change', (e) => {
+      hybridOptions.targetLanguage = e.target.value;
+      console.log('[Popup] Target language changed:', hybridOptions.targetLanguage);
+    });
+  }
   
   document.getElementById('extractBtn').addEventListener('click', handleExtract);
   document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
@@ -213,10 +247,99 @@ function setupEventListeners() {
 }
 
 // ========================================
-// 🆕 DAY 15: EXTRACTION TYPE SELECTOR
+// 🆕 DAY 13: HYBRID AI CONTROLS INITIALIZATION
+// ========================================
+function initializeHybridControls() {
+  // Set default values
+  const summarizeCheckbox = document.getElementById('enableSummarize');
+  if (summarizeCheckbox) {
+    summarizeCheckbox.checked = false;
+    hybridOptions.summarize = false;
+  }
+  
+  const translateCheckbox = document.getElementById('enableTranslate');
+  if (translateCheckbox) {
+    translateCheckbox.checked = false;
+    hybridOptions.translate = false;
+  }
+  
+  const languageDropdown = document.getElementById('targetLanguage');
+  if (languageDropdown) {
+    languageDropdown.disabled = true;
+    languageDropdown.value = 'es'; // Default to Spanish
+  }
+  
+  console.log('[Popup] Hybrid controls initialized');
+}
+
+// ========================================
+// 🆕 DAY 13: LOAD HYBRID AI STATISTICS
+// ========================================
+async function loadHybridStats() {
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'getHybridStats' });
+    if (response.success && response.stats) {
+      displayHybridStats(response.stats);
+    }
+  } catch (error) {
+    console.error('[Popup] Error loading hybrid stats:', error);
+  }
+}
+
+function displayHybridStats(stats) {
+  const statsContainer = document.getElementById('hybridStatsContainer');
+  if (!statsContainer) return;
+  
+  if (stats.totalSummarizations === 0 && stats.totalTranslations === 0) {
+    statsContainer.innerHTML = '<div style="text-align: center; padding: 12px; color: #666; font-size: 12px;">No hybrid AI usage yet</div>';
+    return;
+  }
+  
+  const chromePercent = stats.totalSummarizations + stats.totalTranslations > 0
+    ? Math.round(
+        ((stats.chromeBuiltinUsage.summarizations + stats.chromeBuiltinUsage.translations) /
+          (stats.totalSummarizations + stats.totalTranslations)) * 100
+      )
+    : 0;
+  
+  const cloudPercent = 100 - chromePercent;
+  
+  statsContainer.innerHTML = `
+    <div style="font-size: 12px; padding: 12px; background: rgba(0,0,0,0.03); border-radius: 8px;">
+      <div style="font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+        <span>🤖</span>
+        <span>Hybrid AI Usage</span>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+        <div>
+          <div style="color: #666;">📝 Summarizations</div>
+          <div style="font-weight: 600;">${stats.totalSummarizations}</div>
+        </div>
+        <div>
+          <div style="color: #666;">🌐 Translations</div>
+          <div style="font-weight: 600;">${stats.totalTranslations}</div>
+        </div>
+      </div>
+      
+      <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11px;">
+          <span style="color: #10B981;">🟢 Chrome Built-in</span>
+          <span style="font-weight: 600;">${chromePercent}%</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px;">
+          <span style="color: #3B82F6;">☁️ Cloud Fallback</span>
+          <span style="font-weight: 600;">${cloudPercent}%</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ========================================
+// EXTRACTION TYPE SELECTOR (PRESERVED)
 // ========================================
 function initializeExtractionTypeSelector() {
-  // Set default to MULTI
   const multiRadio = document.querySelector('input[name="extractionType"][value="MULTI"]');
   if (multiRadio) {
     multiRadio.checked = true;
@@ -229,7 +352,6 @@ function initializeExtractionTypeSelector() {
 }
 
 function updateExtractionTypeUI() {
-  // Update active visual state
   document.querySelectorAll('.extraction-type-option').forEach(option => {
     option.classList.remove('active');
   });
@@ -240,7 +362,6 @@ function updateExtractionTypeUI() {
     document.getElementById('extractionTypeSingle').classList.add('active');
   }
   
-  // Update hint text
   const hintEl = document.getElementById('extractionTypeHint');
   if (hintEl) {
     if (currentExtractionType === 'MULTI') {
@@ -297,12 +418,6 @@ async function saveApiKey() {
 }
 
 // ========================================
-// ❌ REMOVED: DAILY API USAGE TRACKING
-// No more loadDailyApiUsage, incrementDailyApiUsage functions
-// No more showAiWarningDialog with usage tracking
-// ========================================
-
-// ========================================
 // MODE SELECTOR UI (PRESERVED)
 // ========================================
 function initializeModeSelector() {
@@ -312,7 +427,6 @@ function initializeModeSelector() {
 }
 
 function updateModeUI() {
-  // Update active visual state
   document.querySelectorAll('.mode-option').forEach(option => {
     option.classList.remove('active');
   });
@@ -326,7 +440,7 @@ function updateModeUI() {
 }
 
 // ========================================
-// EXTRACTION HANDLER (SIMPLIFIED - NO API LIMITS)
+// EXTRACTION HANDLER (ENHANCED WITH HYBRID OPTIONS)
 // ========================================
 async function handleExtract() {
   if (extractionInProgress) {
@@ -334,22 +448,17 @@ async function handleExtract() {
     return;
   }
   
-  // 🆕 DAY 15: Check SINGLE_ITEM mode requirements
   if (currentExtractionType === 'SINGLE_ITEM' && currentMode === 'offline') {
     showError('SINGLE_ITEM mode requires AI (Min/Balanced/Max). Switch modes or use MULTI extraction.');
     return;
   }
   
-  // Check API key for AI modes
   if (currentMode !== 'offline') {
     const apiKey = document.getElementById('apiKey').value.trim();
     if (!apiKey) {
       showError('Please add your Gemini API key first');
       return;
     }
-    
-    // ❌ REMOVED: Daily API usage check (95+ calls warning)
-    // ❌ REMOVED: AI warning dialog with cost/usage display
   }
   
   extractionInProgress = true;
@@ -362,14 +471,15 @@ async function handleExtract() {
   document.getElementById('errorSection').style.display = 'none';
   
   try {
-    console.log('[Popup] Starting extraction | Mode:', currentMode, '| Type:', currentExtractionType);
+    console.log('[Popup] Starting extraction | Mode:', currentMode, '| Type:', currentExtractionType, '| Hybrid:', hybridOptions);
     const startTime = Date.now();
     
-    // 🆕 DAY 15: Send extraction type to background
+    // 🆕 DAY 13: Send hybrid options to background
     const response = await chrome.runtime.sendMessage({
       action: 'extractData',
       mode: currentMode,
-      extractionType: currentExtractionType
+      extractionType: currentExtractionType,
+      hybridOptions: hybridOptions // 🆕 New parameter
     });
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -379,10 +489,8 @@ async function handleExtract() {
       displayResults(response);
       showSuccess(`Extraction complete in ${duration}s`);
       
-      // ❌ REMOVED: API usage increment
-      // No more tracking of API calls/cost
-      
       await loadExtractionHistory();
+      await loadHybridStats(); // 🆕 DAY 13: Refresh hybrid stats
       
     } else {
       displayGracefulError(response.error, response);
@@ -399,10 +507,10 @@ async function handleExtract() {
 }
 
 // ========================================
-// GRACEFUL DEGRADATION ERROR DISPLAY (PRESERVED)
+// GRACEFUL ERROR DISPLAY (PRESERVED)
 // ========================================
 function displayGracefulError(errorMessage, response = {}) {
-  console.log('[Popup] 🆕 Graceful error handling:', errorMessage);
+  console.log('[Popup] Graceful error handling:', errorMessage);
   
   let errorInfo = null;
   for (const [key, value] of Object.entries(ERROR_MESSAGES)) {
@@ -487,7 +595,7 @@ function displayGracefulError(errorMessage, response = {}) {
 }
 
 // ========================================
-// RESULTS DISPLAY (ENHANCED FOR DAY 15)
+// RESULTS DISPLAY (ENHANCED FOR HYBRID AI)
 // ========================================
 function displayResults(response) {
   const { data, metadata } = response;
@@ -500,7 +608,6 @@ function displayResults(response) {
   document.getElementById('modeUsed').textContent = 
     metadata.mode.toUpperCase() + (metadata.cached ? ' 💾' : '');
   
-  // 🆕 DAY 15: Display extraction type used
   const extractionTypeEl = document.getElementById('extractionTypeUsed');
   if (extractionTypeEl) {
     const typeIcon = metadata.extractionType === 'SINGLE_ITEM' ? '📄' : '📦';
@@ -511,7 +618,26 @@ function displayResults(response) {
   document.getElementById('duration').textContent = metadata.duration + 'ms';
   document.getElementById('classification').textContent = metadata.classification || 'Unknown';
   
-  // 🆕 DAY 15: Show pagination hint for MULTI mode
+  // 🆕 DAY 13: Display hybrid AI status
+  if (metadata.hybridAI) {
+    const hybridStatusEl = document.getElementById('hybridAIStatus');
+    if (hybridStatusEl) {
+      const features = [];
+      if (metadata.hybridAI.summarizeEnabled) features.push('📝 Summarize');
+      if (metadata.hybridAI.translateEnabled) features.push(`🌐 Translate (${metadata.hybridAI.targetLanguage || 'N/A'})`);
+      
+      if (features.length > 0) {
+        hybridStatusEl.style.display = 'block';
+        const valueEl = hybridStatusEl.querySelector('.metadata-value');
+        if (valueEl) {
+          valueEl.textContent = features.join(' + ');
+        }
+      } else {
+        hybridStatusEl.style.display = 'none';
+      }
+    }
+  }
+  
   if (metadata.extractionType === 'MULTI' && metadata.naturalPagination) {
     const paginationHintEl = document.getElementById('paginationHint');
     if (paginationHintEl) {
@@ -523,7 +649,6 @@ function displayResults(response) {
     }
   }
   
-  // Domain adjustment display (preserved)
   if (metadata.domainAdjustment && metadata.domainAdjustment !== 0) {
     const domainAdjustEl = document.getElementById('domainAdjustment');
     if (domainAdjustEl) {
@@ -565,7 +690,7 @@ function displayConfidenceTier(confidence, tier) {
 }
 
 // ========================================
-// NOTIFICATION HELPERS (PRESERVED)
+// NOTIFICATION HELPERS (PRESERVED - IDENTICAL)
 // ========================================
 function showSuccess(message) {
   showNotification(message, 'success');
@@ -611,7 +736,9 @@ function showNotification(message, type = 'info') {
 
 // ========================================
 // EXPORT FUNCTIONS (PRESERVED - IDENTICAL)
+// [All export functions remain exactly the same as your existing code]
 // ========================================
+
 function copyToClipboard() {
   if (!currentData) {
     showError('No data to copy');
@@ -744,6 +871,7 @@ async function clearCache() {
   try {
     await chrome.runtime.sendMessage({ action: 'clearCache' });
     showSuccess('Cache cleared successfully');
+    await loadHybridStats(); // 🆕 Refresh stats after clearing
   } catch (error) {
     console.error('[Popup] Error clearing cache:', error);
     showError('Failed to clear cache');
@@ -822,4 +950,4 @@ function highlightJSON(element) {
   element.innerHTML = highlighted;
 }
 
-console.log('[Popup] Web Weaver Lightning v3.4.1 popup controller loaded (UNLIMITED API USAGE)');
+console.log('[Popup] Web Weaver Lightning v3.5.0 popup controller loaded (HYBRID AI CONTROLS)');
