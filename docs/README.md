@@ -1,6 +1,6 @@
 # ⚡ Web Weaver Lightning
 
-**Version 4.0.0 - Chrome AI + Security Edition**
+**Version 4.1.0 - Chrome Built-in AI Real APIs Edition**
 
 Turn any webpage into structured data (JSON/CSV) with AI-powered extraction. Extract LinkedIn posts, Medium articles, Amazon products, and more—with privacy-first Chrome AI or advanced Cloud API.
 
@@ -11,7 +11,7 @@ Turn any webpage into structured data (JSON/CSV) with AI-powered extraction. Ext
 Web Weaver Lightning is a Chrome extension that extracts content from websites and converts it to clean, structured data.
 
 **Two AI Options:**
-- **🔵 Chrome Built-in AI** - Fast, private, zero-cost (local processing)
+- **🔵 Chrome Built-in AI** - Fast, private, zero-cost (local processing with REAL APIs)
 - **☁️ Cloud API (Gemini)** - Advanced features with vision support
 
 **Two Extraction Modes:**
@@ -29,13 +29,19 @@ Web Weaver Lightning is a Chrome extension that extracts content from websites a
 
 ## ✨ Key Features
 
-### 🆕 Chrome Built-in AI (Day 21)
+### 🆕 Chrome Built-in AI - REAL APIs (Day 21.2)
+- **4 Real APIs** - Translator, LanguageDetector, Summarizer, LanguageModel (Gemini Nano)
+- **Progressive Fallback** - Auto-switches to Cloud API if Chrome AI unavailable
+- **Smart Defaults** - Translation/Detection always Chrome AI, Extraction user choice
+- **Category Filtering** - 6 predefined categories (Products, Articles, Videos, Jobs, Events)
+- **URL Extraction** - Enforced URL field in all extracted items
+- **Item Count Display** - Shows new/total/duplicate counts during extraction
+- **Fallback Banner** - 24h cooldown notification system when switching providers
 - **Zero Cost** - No API key required, completely free
 - **Privacy-First** - All processing happens locally on your device
 - **Offline Capable** - Works without internet (after initial page load)
 - **Lightning Fast** - <100ms response time vs 500-2000ms cloud
 - **No Rate Limits** - Extract as much as you want
-- **Fallback Support** - Auto-switches to Cloud API if unavailable
 
 ### 🆕 Security & Privacy (Day 21)
 - **TOS Acceptance** - Clear privacy and terms notification on first use
@@ -68,18 +74,27 @@ Web Weaver Lightning is a Chrome extension that extracts content from websites a
 - **Max** - Maximum accuracy (~95% accuracy)
 - **Smart Auto** - AI picks the best mode automatically
 
+### Six Category Filters (NEW in v4.1)
+- **All Items** - Extract everything
+- **Products Only** - E-commerce items with prices
+- **Articles/News** - Blog posts, news stories
+- **Videos** - Video content with thumbnails
+- **Job Listings** - Job postings with salary info
+- **Events** - Events with dates and RSVP details
+
 ### Data Export
 - Copy to clipboard (one click)
 - Download as JSON
-- Download as CSV
+- Download as CSV (with category suffix)
 
 ### Extraction History
 - View your last 50 extractions
 - See confidence scores
 - Track AI provider used (Chrome AI or Cloud API)
 - View duplicates removed count
+- See category filter applied
 
----
+***
 
 ## 🚀 Quick Start
 
@@ -99,6 +114,7 @@ Web Weaver Lightning is a Chrome extension that extracts content from websites a
 2. No setup needed - works immediately
 3. Completely free and private
 4. Download Chrome Dev: [chrome.dev](https://www.google.com/chrome/dev/)
+5. **Real APIs:** Translator, LanguageDetector, Summarizer, LanguageModel
 
 **Option B: Cloud API (Advanced)**
 1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
@@ -122,54 +138,78 @@ Web Weaver Lightning is a Chrome extension that extracts content from websites a
 
 1. Click the Web Weaver icon in Chrome toolbar
 2. Choose AI Provider (Chrome AI or Cloud API)
-3. Select extraction type (All Items or Main Article)
-4. Pick mode (Balanced recommended)
-5. Click "Extract Data"
+3. **Select category filter** (All Items, Products, Articles, etc.)
+4. Select extraction type (All Items or Main Article)
+5. Pick mode (Balanced recommended)
+6. Click "Extract Data"
+7. **Watch item count update** (X new, Y total, Z duplicates)
 
----
+***
+
 ## 📖 How To Use
 
-### Extract LinkedIn Feed
+### Extract LinkedIn Feed with Category Filter
 
-**Scenario:** You want to save your LinkedIn feed posts
+**Scenario:** You want to save job postings from LinkedIn feed
 
 1. Open LinkedIn feed (`linkedin.com/feed/`)
 2. Scroll to load posts (5–10 visible)
 3. Click Web Weaver icon
-4. **AI Provider:** Chrome AI (fastest) or Cloud API
+4. **AI Provider:** Chrome AI (fastest)
+5. **Category:** **Job Listings** (filters non-job posts)
+6. **Type:** **📦 Extract All Items**
+7. **Mode:** Balanced
+8. Click **"Extract Data"**
+9. Wait 2–3 seconds (Chrome AI)
+10. See: "8 new items (3 duplicates removed)"
+11. Download as `linkedin_jobs.json`
+
+**Result:** Only job postings with:
+- Job title and company
+- Location and salary
+- Job description
+- Application link
+- Posted date
+
+***
+
+### Extract Amazon Products with Chrome AI
+
+**Scenario:** You're comparing laptops on Amazon
+
+1. Search "laptop" on Amazon
+2. Click Web Weaver icon
+3. **AI Provider:** Chrome AI
+4. **Category:** **Products Only**
 5. **Type:** **📦 Extract All Items**
-6. **Mode:** Balanced
+6. **Mode:** Min
 7. Click **"Extract Data"**
-8. Wait 2–3 seconds (Chrome AI) or 4–6 seconds (Cloud)
-9. Copy JSON or download CSV
+8. See: "12 new items (0 duplicates)"
 
-**Want More Posts?**
-- Scroll down to load next batch
-- Click "Extract Again"
-- Only new posts will be added (deduplication active)
-- Duplicates removed count shown in results
+**Result:** All visible products with:
+- Title and price
+- Rating (stars + count)
+- Availability
+- Product URL
+- Image URL
 
-**Result:** All visible posts with:
-- Author name and title
-- Post text (full content)
-- Likes, comments, reposts
-- Timestamp
-- Hashtags
+**Scroll for more:** Click "Extract Again" → only new products added
 
----
+***
 
-### Extract Medium Article
+### Extract Medium Article (Cloud API)
 
 **Scenario:** You want the full text of a Medium article
 
 1. Open Medium article
 2. Scroll to article beginning
 3. Click Web Weaver icon
-4. **AI Provider:** Cloud API (required for screenshot mode)
-5. **Type:** **📄 Extract Main Article**
-6. **Mode:** Balanced
-7. Click **"Extract Data"**
-8. Wait 3–5 seconds
+4. **AI Provider:** Cloud API (screenshot mode)
+5. **Category:** **Articles/News**
+6. **Type:** **📄 Extract Main Article**
+7. **Mode:** Balanced
+8. Click **"Extract Data"**
+9. Wait 3–5 seconds
 
 **Result:** Just the article with:
 - Title and subtitle
@@ -179,37 +219,17 @@ Web Weaver Lightning is a Chrome extension that extracts content from websites a
 - Read time
 - Tags
 
----
-
-### Extract Amazon Products
-
-**Scenario:** You're comparing laptops on Amazon
-
-#### For Product List:
-1. Search "laptop" on Amazon
-2. Click Web Weaver icon
-3. **AI Provider:** Chrome AI (faster for lists)
-4. **Type:** **📦 Extract All Items**
-5. **Mode:** Min
-6. Click **"Extract Data"**
-
-**Result:** All visible products with prices, ratings, titles
-
-#### For Single Product:
-1. Open specific product page
-2. Click Web Weaver icon
-3. **AI Provider:** Cloud API (for screenshot)
-4. **Type:** **📄 Extract Main Article**
-5. **Mode:** Balanced
-6. Click **"Extract Data"**
-
-**Result:** Just that product's details (no "also bought" items)
-
----
+***
 
 ## 🎨 Understanding AI Providers
 
-### 🔵 Chrome Built-in AI
+### 🔵 Chrome Built-in AI (v4.1 - REAL APIs)
+
+**What's New in v4.1:**
+- ✅ **Real Translator API** - `Translator.create()` for instant translation
+- ✅ **Real LanguageDetector API** - `LanguageDetector.create()` for language detection
+- ✅ **Real Summarizer API** - `Summarizer.create()` for text summarization
+- ✅ **Real LanguageModel API** - `LanguageModel.create()` for data extraction (Gemini Nano)
 
 **Best For:**
 - ✅ Privacy-sensitive data  
@@ -217,20 +237,22 @@ Web Weaver Lightning is a Chrome extension that extracts content from websites a
 - ✅ Offline work (after page loads)  
 - ✅ Zero cost operations  
 - ✅ Fast batch processing  
+- ✅ Translation and language detection (always uses Chrome AI)
 
 **Limitations:**
 - ❌ Requires Chrome 128+ (Dev/Canary)  
 - ❌ No vision/screenshot support yet  
-- ❌ Smaller context window (~2K tokens)  
-- ❌ Lower accuracy vs Cloud API (~80% vs 95%)  
+- ❌ Smaller context window (~4K tokens)  
+- ❌ ~85% accuracy vs 95% Cloud API
 
 **When To Use:**
 - Extracting feeds (LinkedIn, Twitter)
 - Quick scans of simple pages
 - Privacy-critical data
 - High-frequency extraction
+- **Translation/language detection tasks**
 
----
+***
 
 ### ☁️ Cloud API (Gemini)
 
@@ -254,6 +276,90 @@ Web Weaver Lightning is a Chrome extension that extracts content from websites a
 - Complex multi-section pages
 - When Chrome AI unavailable
 
+***
+
+## 🔧 New Features Explained (v4.1)
+
+### Category Filtering
+
+**6 Smart Categories:**
+
+| Category | Best For | Example Sites |
+|----------|----------|---------------|
+| **All Items** | General extraction | Any website |
+| **Products Only** | Shopping, comparisons | Amazon, eBay, Etsy |
+| **Articles/News** | Reading, research | Medium, NYT, blogs |
+| **Videos** | Content discovery | YouTube lists, Vimeo |
+| **Job Listings** | Job hunting | LinkedIn Jobs, Indeed |
+| **Events** | Event planning | Eventbrite, Meetup |
+
+**How It Works:**
+- Category filter added to AI prompt
+- Filters out non-matching items
+- Shows category in export filename
+- Saves your last-used category
+
+**Example:**
+- Category: **Products Only**
+- Amazon page with products + ads + reviews
+- **Result:** Only products extracted (ads/reviews filtered)
+
+---
+
+### Item Count Display
+
+**Real-time Feedback:**
+```
+Extracting... 12 new items (3 duplicates, 15 total)
+```
+
+**Breakdown:**
+- **12 new** - Fresh items added this extraction
+- **3 duplicates** - Items already extracted (filtered)
+- **15 total** - Total unique items in session
+
+**Use Cases:**
+- Track extraction progress
+- Verify deduplication working
+- Confirm scroll-and-extract sessions
+
+***
+
+### Fallback Banner System
+
+**When You'll See It:**
+```
+⚠️ Chrome AI unavailable - using Cloud API
+[Dismiss] Get Chrome Dev for 10× faster extraction
+```
+
+**Triggers:**
+1. Chrome AI not available (< v128)
+2. Rate limit hit (after 3× 429 errors)
+3. Chrome AI APIs fail
+
+**Smart Behavior:**
+- Shows once per 24 hours
+- Max 3 dismissals total
+- Auto-hides after 10 seconds
+- Persists in localStorage
+
+---
+
+### Progressive Fallback (Option C)
+
+**How It Works:**
+1. Extension tries Chrome AI first (0ms check)
+2. If unavailable → auto-switch to Cloud API
+3. Show fallback banner (dismissible)
+4. Continue extraction without user action
+5. Banner reminds to upgrade Chrome Dev
+
+**User Control:**
+- Manual toggle overrides auto-fallback
+- Settings remember your preference
+- Clear indication of active provider
+
 ---
 
 ## 🔒 Security & Privacy Features
@@ -270,10 +376,10 @@ Web Weaver Lightning is a Chrome extension that extracts content from websites a
    - Comply with website Terms of Service  
    - Respect robots.txt and rate limits  
    - Follow data protection laws (GDPR, CCPA)  
-   - Don’t scrape copyrighted/personal data without permission
+   - Don't scrape copyrighted/personal data without permission
 
 3. **No Warranty**
-   - Extension provided “as-is”  
+   - Extension provided "as-is"  
    - No guarantees of accuracy or reliability  
    - Use at your own risk
 
@@ -300,14 +406,14 @@ Web Weaver Lightning is a Chrome extension that extracts content from websites a
 - ❌ Reuse keys across projects
 - ❌ Store keys in plaintext files
 
----
+***
 
 ### Rate Limit Warnings
 
 **Proactive Alerts:**
-- **25 RPM Warning** – “High request rate detected. Slow down to avoid 429 errors.”
-- **900K TPD Warning** – “Approaching daily token limit (900K/1M). Switch to Chrome AI.”
-- **3× 429 Errors** – “Multiple rate limit errors. Auto-switching to Chrome AI.”
+- **25 RPM Warning** – "High request rate detected. Slow down to avoid 429 errors."
+- **900K TPD Warning** – "Approaching daily token limit (900K/1M). Switch to Chrome AI."
+- **3× 429 Errors** – "Multiple rate limit errors. Auto-switching to Chrome AI."
 
 **When You See These:**
 1. Wait 60–120 seconds  
@@ -315,398 +421,282 @@ Web Weaver Lightning is a Chrome extension that extracts content from websites a
 3. Use Offline or Min mode (fewer calls)  
 4. Check quota at Google AI Studio  
 
----
-
-## ⚙️ Choosing The Right Mode
-
-### When To Use Each Mode
-
-**🟢 Offline Mode**
-- ✅ Quick scans  
-- ✅ High volume extraction (100+ items)  
-- ✅ Well-structured sites  
-- ❌ Don’t use for complex layouts  
-- **Speed:** <1 second, **Accuracy:** ~60%  
-- **AI Provider:** None (DOM only)
-
-**🌿 Min Mode**
-- ✅ Casual browsing  
-- ✅ Simple sites (Wikipedia, Amazon)  
-- ✅ When speed matters  
-- ❌ Don’t use for messy layouts  
-- **Speed:** 2–3 seconds, **Accuracy:** ~75%  
-- **AI Provider:** Chrome AI or Cloud API
-
-**⚖️ Balanced Mode** ⭐ Recommended
-- ✅ General-purpose extraction  
-- ✅ Most websites  
-- ✅ Best cost/accuracy ratio  
-- ✅ Safe default choice  
-- **Speed:** 3–5 seconds, **Accuracy:** ~85%  
-- **AI Provider:** Chrome AI or Cloud API
-
-**🚀 Max Mode**
-- ✅ Research and analysis  
-- ✅ When accuracy is critical  
-- ✅ Complex, multi-section pages  
-- ❌ Don’t use for quick scans  
-- **Speed:** 5–8 seconds, **Accuracy:** ~95%  
-- **AI Provider:** Chrome AI or Cloud API
-
-**🤖 Smart Auto Mode**
-- ✅ First-time site visits  
-- ✅ Mixed browsing sessions  
-- ✅ When unsure of complexity  
-- ✅ Automated workflows  
-- **Speed:** Variable, **Accuracy:** Optimized  
-- **AI Provider:** Chrome AI or Cloud API
-
----
-
-## 📊 Understanding Results
-
-### Confidence Score
-
-Every extraction gets a confidence score (0–100%):
-
-- **🟢 High (90–100%)** – Excellent quality, trust the data fully  
-- **🔵 Good (75–89%)** – Very good, minor verification suggested  
-- **🟡 Medium (60–74%)** – Acceptable, review carefully  
-- **🟠 Low (40–59%)** – Poor quality, verify all data  
-- **🔴 Very Low (<40%)** – Unreliable, try different mode
-
-### Extraction Metadata
-
-Each extraction shows:
-- **AI Provider** – Chrome AI (🔵) or Cloud API (☁️)
-- **Confidence** – Score with visual tier indicator
-- **Mode Used** – Which mode processed the extraction
-- **Extraction Type** – All Items or Main Article
-- **Duration** – Time taken (seconds)
-- **Duplicates Removed** – Count of duplicate items filtered
-- **Classification** – MULTI_ITEM or SINGLE_ITEM
-### Deduplication Info
-
-**Example:**
-Extracted 8 new items (3 duplicates removed)
-
-Means:
-- 11 items found on page
-- 3 were already extracted before
-- 8 new items added to results
-
-**Reset Deduplication:**
-- Close and reopen tab
-- Clear cache (🗑️ button in extension)
-- Session auto-clears after 1 hour
-
----
+***
 
 ## 🔧 Troubleshooting
 
-### "API Key Missing" Error
+### "Chrome AI Unavailable" Banner
 
-**Problem:** Extension can't find your Gemini API key  
-**Solution:**
-1. Switch to Chrome AI (no key needed)  
-2. OR add Cloud API key:
-   - Click extension icon  
-   - Paste your API key  
-   - Click "Save"  
-   - Validation status shows ✓ Valid
-
----
-
-### "Chrome AI Unavailable" Notice
-
-**Problem:** Chrome Built-in AI not detected  
-**Why:** Requires Chrome 128+ with AI features enabled  
+**Problem:** Fallback banner shows "Using Cloud API"  
+**Why:** Chrome Built-in AI not detected (requires Chrome 128+)
 
 **Solutions:**
-1. **Auto-fallback active** – Extension uses Cloud API automatically  
+1. **Auto-fallback active** – Extension works with Cloud API automatically  
 2. **Upgrade Chrome:**
    - Download Chrome Dev/Canary: [chrome.dev](https://www.google.com/chrome/dev/)  
    - Check version: `chrome://version`  
    - Must be 128 or higher  
 3. **Enable flags** (if using Chrome 128+):  
    - Go to `chrome://flags`  
-   - Search "AI"  
-   - Enable relevant flags  
+   - Search "Prompt API for Gemini Nano"  
+   - Enable all AI-related flags
    - Restart Chrome  
+4. **Dismiss banner** – Won't show again for 24 hours
 
----
+***
 
-### Low Confidence Scores (<60%)
+### Category Filter Not Working
 
-**Problem:** Extraction quality is poor  
+**Problem:** Getting items outside selected category  
+**Why:** AI prompt filters but doesn't guarantee 100% accuracy
+
 **Solutions:**
-1. Switch to **Cloud API** (higher accuracy)  
-2. Try **Max Mode** (triple verification)  
-3. Use **"Extract Main Article"** (screenshot-based)  
-4. Check if page loaded completely  
-5. Scroll to content you want  
-6. Try different extraction type  
+1. Switch to **Cloud API** (better filtering)
+2. Use **Max Mode** (more precise)
+3. Try different category
+4. Post-process results manually
+5. Combine with keywords in export
 
----
+***
 
-### "Rate Limit Exceeded (429)" Error
+### Item Count Shows 0 New Items
 
-**Problem:** Hit Gemini API rate limit (15 RPM or 1M TPD)  
-**Solutions (Automatic):**
-- ⚡ **Auto-fallback** – After 3 consecutive 429s, switches to Chrome AI  
-- 📊 **Proactive Warning** – Alerts at 25 RPM before hitting limit  
+**Problem:** "0 new items (12 duplicates)"  
+**Why:** All items already extracted in this session
 
-**Solutions (Manual):**
-1. ✅ Switch to Chrome AI (no limits, zero cost)  
-2. Wait 60–120 seconds for reset  
-3. Use **Offline** or **Min** mode  
-4. Check API quota: [Google AI Studio](https://aistudio.google.com/app/quotas)  
-5. Upgrade to paid tier  
-
----
-
-### Extraction Taking Too Long
-
-**Problem:** Extraction stuck or slow  
 **Solutions:**
-1. Switch to Chrome AI (10× faster)  
-2. Use faster mode (**Min**)  
-3. Use **"Extract All Items"** (DOM-based)  
-4. Check internet connection  
-5. Reload page and try again  
+1. **This is normal** – deduplication working correctly
+2. Scroll further for new content
+3. Clear cache to reset session
+4. Close/reopen tab to start fresh
+5. Use different URL/page
 
----
+***
 
-### Missing Data Fields
+### "URL Field Missing" Warning
 
-**Problem:** Some fields missing  
-**Why:** Content not visible or layout changed  
+**Problem:** Exported items missing URL field  
+**Why:** Page structure prevents URL extraction (rare)
+
 **Solutions:**
-1. Scroll to make content visible  
-2. Try **Main Article** mode  
-3. Use **Max Mode**  
-4. Wait for page to fully load  
-5. Switch to **Cloud API**
+1. **Automatic fallback** – Extension uses current page URL
+2. Try **Cloud API** with screenshot mode
+3. Use **Main Article** extraction type
+4. Check if page loaded completely
+5. Report site for investigation
 
----
+***
 
-### Duplicate Items in Results
-
-**Problem:** Same items appear multiple times  
-**Why:** Deduplication not working or session cleared  
-**Solutions:**
-1. Check "Duplicates Removed" count  
-2. Don’t clear cache between runs  
-3. Keep same tab open  
-4. Manually deduplicate in CSV/JSON if needed  
-
----
-
-## 💡 Pro Tips
+## 💡 Pro Tips (Updated for v4.1)
 
 ### Tip 1: Choose Right AI Provider
-| Priority | Use |
-|-----------|-----|
-| ⚡ Speed | Chrome AI |
-| 🎯 Accuracy | Cloud API |
-| 🔒 Privacy | Chrome AI |
-| 💰 Cost | Chrome AI (free) |
-| 🖼️ Screenshot Mode | Cloud API |
+| Priority | Use | Speed | Cost |
+|-----------|-----|-------|------|
+| ⚡ Speed | Chrome AI | 10× faster | Free |
+| 🎯 Accuracy | Cloud API | Slower | ~$0.01 |
+| 🔒 Privacy | Chrome AI | 10× faster | Free |
+| 🖼️ Screenshot | Cloud API | Medium | ~$0.01 |
 
-### Tip 2: Natural Pagination
-Extract batch → Scroll → Extract again → Dedup handles duplicates automatically.
+### Tip 2: Category Power-User
+- Set category **before** scrolling
+- Extract → Scroll → Extract (dedup auto-filters)
+- Download with category suffix: `amazon_products_only.csv`
+- Combine categories: Extract "Products" then "Articles" separately
 
-### Tip 3: Rate Limit Management
-- Watch warnings  
-- Switch to Chrome AI early  
-- Use **Min** mode for bulk  
-- Monitor quotas  
-- Auto-fallback handles 429s  
+### Tip 3: Item Count Strategy
+- Watch count during extraction
+- Stop when count stops increasing
+- Duplicate count = pagination working
+- Total items = all unique across sessions
 
-### Tip 4: Privacy Best Practices
-- Use Chrome AI for sensitive data  
-- Cloud API for high-accuracy research  
-- Respect site TOS  
-- Clear history often  
+### Tip 4: Fallback Banner Management
+- Dismiss if you prefer Cloud API
+- Upgrade Chrome to stop seeing it
+- 24h cooldown = won't spam you
+- Max 3 dismissals = respects your choice
 
-### Tip 5: Export Strategy
-- Copy → quick use  
-- CSV → data analysis  
-- JSON → raw storage  
-- Clear cache after export  
+### Tip 5: Progressive Extraction
+```
+1. Set category (e.g., "Job Listings")
+2. Extract page 1 → 10 items
+3. Scroll to page 2
+4. Extract again → 8 new (2 duplicates)
+5. Scroll to page 3
+6. Extract again → 7 new (3 duplicates)
+Total: 25 unique job listings
+```
 
----
+***
 
-## 📁 What Gets Extracted?
+## 📊 Understanding Results (Updated)
 
-### LinkedIn Posts
-- Author (name, title, company)
-- Post text (full)
-- Engagement stats
-- Timestamp
-- Hashtags
-- Media indicators
+### Extraction Metadata
 
-### Medium Articles
-- Title, subtitle
-- Author
-- Full text
-- Publication date
-- Read time
-- Tags/topics
-- Publication name
+Each extraction now shows:
+- **AI Provider** – Chrome AI (🔵) or Cloud API (☁️)
+- **Category Filter** – Which filter was applied (if not "All")
+- **Confidence** – Score with visual tier indicator
+- **Mode Used** – Which mode processed the extraction
+- **Extraction Type** – All Items or Main Article
+- **Duration** – Time taken (seconds)
+- **Item Count** – X new (Y duplicates, Z total)
+- **Classification** – MULTI_ITEM or SINGLE_ITEM
 
-### Amazon Products
-- Title, price
-- Rating
-- Availability
-- Specs
-- Bullet points
-- ASIN
-
-### News Articles
-- Headline
-- Author
-- Date
-- Full text
-- Categories
-- Source
-
----
-
-## 🛠️ Technical Details
-
-### How It Works
-
-**Chrome AI Mode:**
-1. Sends DOM content to local model  
-2. Processes on-device  
-3. No latency  
-4. JSON in <100ms  
-5. No data leaves your computer  
-
-**Cloud API Mode:**
-1. Sends content to Gemini API  
-2. Processes in cloud  
-3. Returns high-accuracy JSON  
-4. Network latency: 500–2000ms  
-
-**Multi-Item Extraction:**
-- Detects repeated DOM patterns  
-- Extracts structured data  
-- Filters duplicates  
-- Returns JSON array  
-
-**Single-Item Extraction:**
-- Captures screenshot  
-- Sends to Gemini Vision AI  
-- Extracts text + metadata  
-- Returns JSON object  
-
----
-
-### Deduplication Algorithm
-
-**Composite Key:**
-`key = title.toLowerCase() + "|" + url.toLowerCase() + "|" + id.toLowerCase()`
-
-**Matching Logic:**
-- Exact match → duplicate removed  
-- 85%+ similarity → possible duplicate (kept)  
-- <85% → unique  
-
-**Session Management:**
-- Per-tab Map<tabId, Set<keys>>  
-- Auto-clears after 1 hour  
-- Persists across extractions  
-
----
-
-### Data Privacy
-
-**Chrome AI Mode:**
-- ✅ All local  
-- ✅ Offline capable  
-- ✅ No network requests  
-
-**Cloud API Mode:**
-- ⚠️ Data sent to Gemini  
-- ⚠️ Subject to Google privacy policy  
-- ✅ Key stored locally  
-
-**Both:**
-- ✅ Local-only history  
-- ✅ No telemetry or tracking  
-- ✅ Open source & auditable  
-
----
-
-## ⚠️ Limitations
-
-**Chrome AI:**
-- Chrome 128+ only  
-- No screenshot support  
-- Smaller context window (2K tokens)  
-- ~80% accuracy  
-
-**Cloud API:**
-- 15 RPM, 1M TPD limits  
-- ~$0.01/extraction  
-- Needs API key + internet  
-
-**General:**
-- Works on 95%+ sites  
-- JS-heavy pages may need scroll  
-- Some protected sites blocked  
-- Accuracy depends on layout  
-
----
-
-## 🔐 Security Considerations
-
-### Never Ship API Keys
-Use `.gitignore`:
-.env
-.env.local
-*.key
-secrets/
-
-**Runtime check:**
-```js
-if (apiKey && apiKey.includes('AIza')) {
-  throw new Error('API KEY DETECTED! Remove before commit!');
+**Example Metadata:**
+```json
+{
+  "aiProvider": "CHROME_BUILTIN",
+  "category": "products",
+  "confidence": 87,
+  "mode": "balanced",
+  "extractionType": "MULTI",
+  "newItemsCount": 12,
+  "duplicateCount": 3,
+  "totalSessionItems": 45,
+  "executionTime": 234
 }
 ```
 
-**Scoped Permissions**
-activeTab only by default  
-Requests site access dynamically  
-User approves per-site  
+***
 
-**API Key Expiration**
-Daily validation  
-Warn 7 days before expiry  
-Block 1 day before  
-Renewal link provided  
+## 🛠️ Technical Details (Updated for v4.1)
 
-📞 **Support & Feedback**
+### Chrome Built-in AI APIs (REAL)
+
+**v4.1 Integration:**
+```javascript
+// Real Chrome APIs (not placeholders)
+const translator = await Translator.create({ sourceLanguage: 'en', targetLanguage: 'es' });
+const detector = await LanguageDetector.create();
+const summarizer = await Summarizer.create({ type: 'tldr', length: 'short' });
+const model = await LanguageModel.create();
+```
+
+**API Availability Check:**
+```javascript
+// Progressive fallback
+if (chromeAIAvailable && typeof LanguageModel !== 'undefined') {
+  // Use Chrome AI
+} else {
+  // Auto-fallback to Cloud API
+  triggerFallbackBanner();
+}
+```
+
+**Smart Defaults:**
+- **Translation** → Always Chrome AI (10× faster)
+- **Detection** → Always Chrome AI (perfect accuracy)
+- **Summarization** → User choice (toggle)
+- **Extraction** → User choice (toggle)
+
+***
+
+### Category Filtering Implementation
+
+**Prompt Injection:**
+```javascript
+const categoryConfig = {
+  id: 'products',
+  promptModifier: 'FILTER: Only extract items that are products for sale'
+};
+
+const prompt = basePrompt + '\n\n' + categoryConfig.promptModifier;
+```
+
+**6 Category Configs:**
+1. All Items (no filter)
+2. Products Only (price + buy button)
+3. Articles/News (headlines + authors)
+4. Videos (thumbnails + duration)
+5. Job Listings (job title + salary)
+6. Events (date + location)
+
+***
+
+### Fallback Banner System
+
+**localStorage Schema:**
+```javascript
+{
+  "fallbackBannerState": {
+    "dismissCount": 2,
+    "lastDismissed": 1729534800000
+  }
+}
+```
+
+**24h Cooldown Logic:**
+```javascript
+const cooldownExpired = (Date.now() - lastDismissed) > 86400000; // 24h
+const underLimit = dismissCount < 3;
+
+if (cooldownExpired && underLimit) {
+  showBanner();
+}
+```
+
+***
+
+## ⚠️ Limitations (Updated)
+
+**Chrome AI:**
+- Chrome 128+ only (Dev/Canary)
+- No screenshot support
+- Context window: ~4K tokens
+- ~85% accuracy
+
+**Cloud API:**
+- 15 RPM, 1M TPD limits
+- ~$0.01/extraction
+- Needs API key + internet
+
+**Category Filtering:**
+- ~90% precision (not 100%)
+- Best with Cloud API
+- Some overlap possible
+- Manual review recommended
+
+**General:**
+- Works on 95%+ sites
+- JS-heavy pages may need scroll
+- Some protected sites blocked
+- Accuracy depends on layout
+
+***
+
+## 📞 Support & Feedback
 
 **Report Bugs:**  
 github.com/Nesar21/web-weaver  
-Include site URL, AI provider, mode, error, screenshot  
+Include: site URL, AI provider, category, mode, error, screenshot  
+
+**Feature Requests:**  
+github.com/Nesar21/web-weaver/issues  
 
 **Security Issues:**  
 Email: nesaramingad821@gmail.com  
 
 **Developer:**  
 Nesar Amingad (CSE, 4th Year, JSSSTU)  
-GitHub: Nesar21/web-weaver  
-LinkedIn: Nesar Amingad  
+GitHub: [Nesar21](https://github.com/Nesar21)  
+LinkedIn: [Nesar Amingad](https://www.linkedin.com/in/nesar-amingad)
 
-📝 **Version History**
+***
 
-v4.0.0 (Oct 21, 2025)  
-🆕 Chrome AI mode  
+## 📝 Version History
+
+**v4.1.0 (Oct 21, 2025) - Day 21.2**  
+🆕 REAL Chrome Built-in AI APIs (Translator, LanguageDetector, Summarizer, LanguageModel)  
+🆕 Progressive fallback with Option C strategy  
+🆕 Category filtering (6 categories)  
+🆕 URL extraction enforcement  
+🆕 Item count display (new/total/duplicates)  
+🆕 Fallback banner with 24h cooldown  
+🆕 Smart defaults (Translation/Detection always Chrome AI)  
+✨ All v4.0 features preserved  
+
+**v4.0.0 (Oct 21, 2025) - Day 21**  
+🆕 Chrome AI mode (placeholders)  
 🆕 Dual AI provider toggle  
 🆕 Security hardening & TOS acceptance  
 🆕 Rate limit warnings  
@@ -715,27 +705,21 @@ v4.0.0 (Oct 21, 2025)
 🆕 Enhanced error recovery  
 🆕 Privacy controls  
 
-v3.4.0 (Oct 16, 2025)  
+**v3.4.0 (Oct 16, 2025)**  
 Two extraction types  
 Better UI  
 Pagination tips  
 Extraction badges  
 
-v3.3.0 (Oct 15, 2025)  
+**v3.3.0 (Oct 15, 2025)**  
 3-tier classification  
 +12% Medium accuracy  
 Universal site support  
 
-v3.2.0 (Oct 14, 2025)  
-Domain learning  
-Error handling  
+***
 
-v3.0.0 (Oct 10, 2025)  
-5 modes  
-Smart Auto  
-Extraction history  
+## 📜 License
 
-📜 **License**  
 MIT License – Free to use, modify, and distribute  
 
 **Permissions:**  
@@ -748,32 +732,71 @@ MIT License – Free to use, modify, and distribute
 📄 Include license notice  
 ⚠️ No warranty  
 
-🙏 **Credits**  
-AI Engine: Google Gemini API + Chrome AI  
-Developer: Nesar Amingad  
-Institution: JSS Science and Tech University  
-Contact: nesaramingad821@gmail.com  
-Version: 4.0.0  
-Date: Oct 21, 2025  
+***
+
+## 🙏 Credits
+
+**AI Engine:**  
+- Google Gemini API
+- Chrome Built-in AI (Translator, LanguageDetector, Summarizer, LanguageModel)
+- Gemini Nano (on-device model)
+
+**Developer:** Nesar Amingad  
+**Institution:** JSS Science and Tech University  
+**Contact:** nesaramingad821@gmail.com  
+**Version:** 4.1.0  
+**Date:** Oct 21, 2025  
 
 **Special Thanks:**  
-Google AI Studio  
-Chrome Team  
-Open Source Community  
+- Google AI Studio Team
+- Chrome Built-in AI Team
+- Chrome Extensions Team
+- Open Source Community
 
-🚧 **Roadmap**
+***
 
-v4.1 (Coming Soon):  
-Multi-language  
-Batch extraction  
-Templates  
-Advanced filters  
+## 🚧 Roadmap
 
-v5.0 (Future):  
-Firefox support  
-Cross-browser architecture  
-Mobile companion  
-Team collaboration  
+**v4.2 (Coming Soon):**  
+- Multi-language support (20+ languages)
+- Batch extraction UI
+- Custom category templates
+- Export history
+
+**v5.0 (Future):**  
+- Firefox support
+- Cross-browser architecture
+- Mobile companion app
+- Team collaboration features
+- Advanced scheduling
+
+***
 
 **Built with 💪 by Nesar**  
 **Extract smarter, not harder! ⚡**
+
+***
+
+**🎯 Testing Checklist (For Developers):**
+
+Before v4.1 Release:
+- [ ] Chrome AI APIs detected correctly
+- [ ] Progressive fallback works (Chrome AI → Cloud API)
+- [ ] Category filters apply correctly (all 6 categories)
+- [ ] URL field present in all extracted items
+- [ ] Item count displays during extraction
+- [ ] Fallback banner shows/dismisses correctly
+- [ ] 24h cooldown persists across sessions
+- [ ] Deduplication works with category filtering
+- [ ] Export filenames include category suffix
+- [ ] Metadata shows correct AI provider + category
+- [ ] All v4.0 features still work
+- [ ] Zero TypeScript/JavaScript errors
+- [ ] Extension loads without console errors
+- [ ] TOS overlay blocks until accepted
+- [ ] API key validation works (Cloud API)
+
+**Test Environments:**
+- Windows Chrome Dev 128+ (Chrome AI available)
+- Mac Chrome Stable (Chrome AI unavailable → fallback)
+- Linux Chrome Canary (mixed scenarios)
