@@ -1,15 +1,19 @@
 {
   "manifest_version": 3,
   "name": "Web Weaver Lightning",
-  "version": "2.0.0",
-  "description": "AI-powered web data extraction with Smart Auto Mode, self-learning cache, and intelligent quota management",
+  "version": "2.1.0",
+  "description": "AI-powered web data extraction with Chrome Built-in AI, Smart Auto Mode, and intelligent privacy-first extraction",
   "permissions": [
     "activeTab",
     "storage",
     "scripting",
     "notifications"
   ],
-  "host_permissions": [
+  "optional_permissions": [
+    "tabs"
+  ],
+  "host_permissions": [],
+  "optional_host_permissions": [
     "http://*/*",
     "https://*/*"
   ],
@@ -50,5 +54,8 @@
       ],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }

@@ -80,6 +80,321 @@
       gap: 6px;
     }
 
+    /* ════════════════════════════════════════════════════════════════ */
+    /* 🆕 DAY 21: TOS/PRIVACY MODAL (Shows on first use)              */
+    /* ════════════════════════════════════════════════════════════════ */
+    .tos-modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tos-modal-overlay.active {
+      display: flex;
+    }
+
+    .tos-modal {
+      background: white;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: modalSlideIn 0.3s ease-out;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .tos-modal-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 24px;
+      text-align: center;
+    }
+
+    .tos-modal-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .tos-modal-header p {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .tos-modal-content {
+      padding: 24px;
+      overflow-y: auto;
+      max-height: calc(80vh - 200px);
+    }
+
+    .tos-section {
+      margin-bottom: 20px;
+    }
+
+    .tos-section h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1F2937;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tos-section p,
+    .tos-section ul {
+      font-size: 13px;
+      color: #6B7280;
+      line-height: 1.6;
+    }
+
+    .tos-section ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .tos-section li {
+      padding-left: 20px;
+      position: relative;
+      margin-bottom: 6px;
+    }
+
+    .tos-section li::before {
+      content: '•';
+      position: absolute;
+      left: 8px;
+      color: #667eea;
+    }
+
+    .tos-modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid #E5E7EB;
+      display: flex;
+      gap: 12px;
+    }
+
+    .tos-modal-footer button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tos-accept-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .tos-accept-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .tos-decline-btn {
+      background: #F3F4F6;
+      color: #6B7280;
+    }
+
+    .tos-decline-btn:hover {
+      background: #E5E7EB;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* 🆕 DAY 21: AI PROVIDER TOGGLE (Chrome Built-in vs Cloud API)   */
+    /* ════════════════════════════════════════════════════════════════ */
+    .ai-provider-section {
+      background: rgba(59, 130, 246, 0.05);
+      border: 2px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .ai-provider-header {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1F2937;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ai-provider-toggle {
+      display: flex;
+      gap: 8px;
+    }
+
+    .ai-provider-option {
+      flex: 1;
+      position: relative;
+      border: 2px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: white;
+    }
+
+    .ai-provider-option:hover {
+      border-color: #3B82F6;
+      background: rgba(59, 130, 246, 0.02);
+    }
+
+    .ai-provider-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .ai-provider-option.active {
+      border-color: #3B82F6;
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .ai-provider-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .ai-provider-label {
+      font-weight: 600;
+      font-size: 13px;
+      color: #1F2937;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ai-provider-icon {
+      font-size: 18px;
+    }
+
+    .ai-provider-desc {
+      font-size: 11px;
+      color: #6B7280;
+      line-height: 1.4;
+    }
+
+    .ai-provider-check {
+      display: none;
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      background: #3B82F6;
+      border-radius: 50%;
+      color: white;
+      font-size: 12px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ai-provider-option.active .ai-provider-check {
+      display: flex;
+    }
+
+    .ai-provider-info {
+      margin-top: 12px;
+      padding: 10px;
+      background: white;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #6B7280;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      line-height: 1.4;
+    }
+
+    .ai-provider-unavailable {
+      background: #FEF2F2;
+      border: 1px solid #FCA5A5;
+      color: #DC2626;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* 🆕 DAY 21: RATE LIMIT WARNING BANNER                           */
+    /* ════════════════════════════════════════════════════════════════ */
+    .rate-limit-warning {
+      display: none;
+      background: #FEF3C7;
+      border: 2px solid #FCD34D;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+      animation: warningPulse 2s ease-in-out infinite;
+    }
+
+    .rate-limit-warning.active {
+      display: flex;
+    }
+
+    @keyframes warningPulse {
+      0%, 100% { border-color: #FCD34D; }
+      50% { border-color: #F59E0B; }
+    }
+
+    .rate-limit-warning-content {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .rate-limit-warning-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .rate-limit-warning-text {
+      flex: 1;
+    }
+
+    .rate-limit-warning-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #92400E;
+      margin-bottom: 4px;
+    }
+
+    .rate-limit-warning-message {
+      font-size: 12px;
+      color: #78350F;
+      line-height: 1.4;
+    }
+
+    .rate-limit-warning-action {
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #92400E;
+    }
+
     /* API Key Section */
     .api-key-section {
       display: flex;
@@ -90,6 +405,7 @@
     .input-group {
       display: flex;
       gap: 8px;
+      position: relative;
     }
 
     input[type="text"],
@@ -109,6 +425,45 @@
       outline: none;
       border-color: #667eea;
       box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    input.error {
+      border-color: #EF4444;
+    }
+
+    input.success {
+      border-color: #10B981;
+    }
+
+    /* 🆕 API Key Validation Indicator */
+    .api-key-status {
+      position: absolute;
+      right: 90px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      display: none;
+    }
+
+    .api-key-status.valid {
+      display: block;
+      background: #D1FAE5;
+      color: #065F46;
+    }
+
+    .api-key-status.invalid {
+      display: block;
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+
+    .api-key-status.checking {
+      display: block;
+      background: #E0E7FF;
+      color: #3730A3;
     }
 
     /* Buttons */
@@ -148,7 +503,7 @@
     }
 
     /* ═══════════════════════════════════════════════════════════ */
-    /* 🆕 DAY 15: EXTRACTION TYPE TOGGLE (MULTI vs SINGLE_ITEM) */
+    /* DAY 15: EXTRACTION TYPE TOGGLE (PRESERVED)                 */
     /* ═══════════════════════════════════════════════════════════ */
     .extraction-type-section {
       background: rgba(99, 102, 241, 0.05);
@@ -257,7 +612,7 @@
       line-height: 1.4;
     }
 
-    /* Mode Selection */
+    /* Mode Selection (PRESERVED) */
     .mode-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -283,14 +638,6 @@
       position: absolute;
       opacity: 0;
       pointer-events: none;
-    }
-
-    .mode-option input[type="radio"]:checked + .mode-content {
-      color: #667eea;
-    }
-
-    .mode-option input[type="radio"]:checked ~ .mode-check {
-      display: block;
     }
 
     .mode-option.active {
@@ -338,9 +685,12 @@
       border-radius: 50%;
       color: white;
       font-size: 12px;
-      display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    .mode-option.active .mode-check {
+      display: flex;
     }
 
     /* Extract Button */
@@ -355,7 +705,7 @@
       font-weight: 700;
     }
 
-    /* Results Section */
+    /* Results Section (PRESERVED) */
     .results-section,
     .error-section {
       display: none;
@@ -402,7 +752,61 @@
       color: #1F2937;
     }
 
-    /* JSON Output */
+    /* 🆕 Enhanced Error Display with Recovery Steps */
+    .error-details {
+      margin-top: 12px;
+      padding: 12px;
+      background: white;
+      border-radius: 6px;
+    }
+
+    .error-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #DC2626;
+      margin-bottom: 6px;
+    }
+
+    .error-message-text {
+      font-size: 13px;
+      color: #6B7280;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .error-recovery-steps {
+      font-size: 12px;
+      color: #374151;
+    }
+
+    .error-recovery-steps h4 {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #1F2937;
+    }
+
+    .error-recovery-steps ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .error-recovery-steps li {
+      padding-left: 20px;
+      position: relative;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    .error-recovery-steps li::before {
+      content: '→';
+      position: absolute;
+      left: 6px;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    /* JSON Output (PRESERVED) */
     #jsonOutput {
       background: #1F2937;
       color: #F9FAFB;
@@ -423,7 +827,7 @@
     .boolean { color: #FCA5A5; }
     .null { color: #9CA3AF; }
 
-    /* Export Buttons */
+    /* Export Buttons (PRESERVED) */
     .export-buttons {
       display: flex;
       gap: 8px;
@@ -434,7 +838,7 @@
       flex: 1;
     }
 
-    /* History */
+    /* History (PRESERVED) */
     #extractionHistory {
       max-height: 300px;
       overflow-y: auto;
@@ -492,34 +896,162 @@
         grid-template-columns: 1fr;
       }
 
-      .extraction-type-toggle {
+      .extraction-type-toggle,
+      .ai-provider-toggle {
         flex-direction: column;
       }
     }
   </style>
 </head>
 <body>
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- 🆕 DAY 21: TOS/PRIVACY MODAL (First Use Only)                   -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <div class="tos-modal-overlay" id="tosModalOverlay">
+    <div class="tos-modal">
+      <div class="tos-modal-header">
+        <h2>⚠️ Privacy & Terms Notice</h2>
+        <p>Please read before using Web Weaver</p>
+      </div>
+
+      <div class="tos-modal-content">
+        <div class="tos-section">
+          <h3>🔒 Data Privacy</h3>
+          <p><strong>Chrome AI Mode:</strong> All processing happens locally on your device. No data leaves your computer.</p>
+          <p><strong>Cloud API Mode:</strong> Extracted content is sent to Google's Gemini API for processing. Review <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a>.</p>
+        </div>
+
+        <div class="tos-section">
+          <h3>⚖️ User Responsibility</h3>
+          <ul>
+            <li>You are responsible for complying with website Terms of Service</li>
+            <li>Respect robots.txt and rate limits</li>
+            <li>Comply with data protection laws (GDPR, CCPA, etc.)</li>
+            <li>Do not scrape copyrighted or personal data without permission</li>
+          </ul>
+        </div>
+
+        <div class="tos-section">
+          <h3>🚫 No Warranty</h3>
+          <p>This extension is provided "as-is" without guarantees of accuracy, reliability, or fitness for any purpose. Use at your own risk.</p>
+        </div>
+
+        <div class="tos-section">
+          <h3>🔑 API Key Security</h3>
+          <ul>
+            <li>You are responsible for securing your API keys</li>
+            <li>Never share keys publicly or commit them to version control</li>
+            <li>Revoke keys immediately if compromised</li>
+          </ul>
+        </div>
+
+        <div class="tos-section">
+          <h3>📊 Anonymous Telemetry (Optional)</h3>
+          <p>We collect anonymous usage statistics to improve the extension. You can opt out in settings. We never collect:</p>
+          <ul>
+            <li>Extracted content</li>
+            <li>Visited URLs</li>
+            <li>API keys</li>
+            <li>Personal information</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="tos-modal-footer">
+        <button class="tos-decline-btn" id="tosDeclineBtn">Decline</button>
+        <button class="tos-accept-btn" id="tosAcceptBtn">I Accept</button>
+      </div>
+    </div>
+  </div>
+
   <div class="container">
     <!-- Header -->
     <div class="header">
       <h1>⚡ Web Weaver Lightning</h1>
-      <div class="version">v3.4.0 - MULTI/SINGLE_ITEM Edition</div>
+      <div class="version">v4.0.0 - Chrome AI + Security Edition</div>
     </div>
 
     <div class="content">
-      <!-- API Key Section -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- 🆕 DAY 21: RATE LIMIT WARNING BANNER (Proactive)               -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <div class="rate-limit-warning" id="rateLimitWarning">
+        <div class="rate-limit-warning-content">
+          <div class="rate-limit-warning-icon">⚠️</div>
+          <div class="rate-limit-warning-text">
+            <div class="rate-limit-warning-title" id="rateLimitWarningTitle">High API Usage Detected</div>
+            <div class="rate-limit-warning-message" id="rateLimitWarningMessage">
+              You're approaching rate limits. Consider switching to Chrome AI.
+            </div>
+            <div class="rate-limit-warning-action">
+              💡 Switch to Chrome Built-in AI (zero cost) or slow down extractions
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- 🆕 DAY 21: AI PROVIDER TOGGLE (Chrome AI vs Cloud API)         -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
       <div class="section">
+        <div class="ai-provider-section">
+          <div class="ai-provider-header">
+            🤖 AI Provider
+          </div>
+          
+          <div class="ai-provider-toggle">
+            <!-- Chrome Built-in AI -->
+            <label class="ai-provider-option active" id="aiProviderChrome">
+              <input type="radio" name="aiProvider" value="CHROME_BUILTIN" checked>
+              <div class="ai-provider-content">
+                <div class="ai-provider-label">
+                  <span class="ai-provider-icon">🔵</span>
+                  <span>Chrome AI</span>
+                </div>
+                <div class="ai-provider-desc">
+                  Fast, private, zero-cost
+                </div>
+              </div>
+              <div class="ai-provider-check">✓</div>
+            </label>
+
+            <!-- Cloud API -->
+            <label class="ai-provider-option" id="aiProviderCloud">
+              <input type="radio" name="aiProvider" value="CLOUD_API">
+              <div class="ai-provider-content">
+                <div class="ai-provider-label">
+                  <span class="ai-provider-icon">☁️</span>
+                  <span>Cloud API</span>
+                </div>
+                <div class="ai-provider-desc">
+                  Advanced, vision support
+                </div>
+              </div>
+              <div class="ai-provider-check">✓</div>
+            </label>
+          </div>
+
+          <div class="ai-provider-info" id="aiProviderInfo">
+            <span>💡</span>
+            <span><strong>Chrome AI:</strong> Requires Chrome 128+. Fast and private with local processing. Fallback to Cloud API if unavailable.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- API Key Section (Conditional: Only show if Cloud API selected) -->
+      <div class="section" id="apiKeySection">
         <div class="section-title">🔑 Gemini API Key</div>
         <div class="api-key-section">
           <div class="input-group">
             <input type="password" id="apiKey" placeholder="Enter your Gemini API key (AIza...)">
+            <span class="api-key-status" id="apiKeyStatus">Checking...</span>
             <button class="primary" id="saveApiKey">Save</button>
           </div>
         </div>
       </div>
 
       <!-- ═══════════════════════════════════════════════════════════ -->
-      <!-- 🆕 DAY 15: EXTRACTION TYPE SELECTION (MULTI vs SINGLE_ITEM) -->
+      <!-- DAY 15: EXTRACTION TYPE SELECTION (PRESERVED)              -->
       <!-- ═══════════════════════════════════════════════════════════ -->
       <div class="section">
         <div class="extraction-type-section">
@@ -566,7 +1098,7 @@
         </div>
       </div>
 
-      <!-- Mode Selection -->
+      <!-- Mode Selection (PRESERVED) -->
       <div class="section">
         <div class="section-title">⚙️ Extraction Mode</div>
         <div class="mode-grid">
@@ -652,11 +1184,15 @@
         <button class="primary" id="extractBtn">🚀 Extract Data</button>
       </div>
 
-      <!-- Results -->
+      <!-- Results (PRESERVED) -->
       <div class="results-section" id="resultsSection">
         <div class="section-title">✅ Extraction Complete</div>
         
         <div class="metadata-grid">
+          <div class="metadata-item">
+            <div class="metadata-label">AI Provider</div>
+            <div class="metadata-value" id="aiProviderUsed">--</div>
+          </div>
           <div class="metadata-item">
             <div class="metadata-label">Confidence</div>
             <div class="metadata-value" id="confidence">--</div>
@@ -672,6 +1208,10 @@
           <div class="metadata-item">
             <div class="metadata-label">Duration</div>
             <div class="metadata-value" id="duration">--</div>
+          </div>
+          <div class="metadata-item">
+            <div class="metadata-label">Duplicates Removed</div>
+            <div class="metadata-value" id="duplicatesRemoved">0</div>
           </div>
           <div class="metadata-item" style="grid-column: 1 / -1;">
             <div class="metadata-label">Classification</div>
@@ -692,19 +1232,26 @@
         </div>
       </div>
 
-      <!-- Error -->
+      <!-- Error (ENHANCED with recovery steps) -->
       <div class="error-section" id="errorSection">
         <div class="section-title">❌ Extraction Failed</div>
-        <div id="errorMessage"></div>
+        <div class="error-details">
+          <div class="error-title" id="errorTitle">Error</div>
+          <div class="error-message-text" id="errorMessage"></div>
+          <div class="error-recovery-steps" id="errorRecoverySteps" style="display: none;">
+            <h4>Recovery Steps:</h4>
+            <ul id="errorRecoveryList"></ul>
+          </div>
+        </div>
       </div>
 
-      <!-- History -->
+      <!-- History (PRESERVED) -->
       <div class="section">
         <div class="section-title">📊 Extraction History</div>
         <div id="extractionHistory"></div>
       </div>
 
-      <!-- Cache Clear -->
+      <!-- Cache Clear (PRESERVED) -->
       <div class="section">
         <button class="secondary" id="clearCacheBtn" style="width: 100%;">🗑️ Clear Cache & History</button>
       </div>

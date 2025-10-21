@@ -1,23 +1,23 @@
 /**
  * Web Weaver Lightning - Popup UI Controller
- * Version: 3.4.1 (Day 15 - UNLIMITED API USAGE)
+ * Version: 4.0.0 (Day 21 - CHROME AI + SECURITY + TOS)
  * 
- * 🆕 v3.4.1 FIX:
- * - REMOVED all daily API usage tracking
- * - REMOVED API limit warnings (95+ calls)
- * - REMOVED cost estimation displays
- * - Unlimited API usage enabled
+ * 🆕 v4.0 CHANGES (DAY 21):
+ * - TOS/Privacy acceptance flow (blocks until accepted)
+ * - AI Provider toggle (Chrome Built-in AI vs Cloud API)
+ * - Real-time API key validation with status indicators
+ * - Proactive rate limit warnings (25 RPM, 900K RPD thresholds)
+ * - Enhanced error display with structured recovery steps
+ * - Deduplication tracking and display
+ * - Conditional UI sections (API key only for Cloud API)
+ * - Chrome AI availability detection with fallback
  * 
- * ✅ PRESERVED FROM v3.4:
- * - MULTI extraction type (extract all items - default)
- * - SINGLE_ITEM extraction type (screenshot-based extraction)
- * - Dynamic hints based on selected extraction type
- * - Natural pagination guidance for MULTI mode
- * 
- * ✅ PRESERVED FROM v3.3:
- * - Graceful degradation messages with specific recovery steps
- * - Detection tier failure context (DOM/Visual/AI)
- * - User-actionable error suggestions
+ * ✅ PRESERVED FROM v3.4.1:
+ * - MULTI/SINGLE_ITEM extraction types
+ * - Unlimited API usage philosophy (no hard limits)
+ * - Natural pagination guidance
+ * - Graceful degradation error messages
+ * - All 5 extraction modes (offline, min, balanced, max, auto)
  */
 
 // ========================================
@@ -25,14 +25,19 @@
 // ========================================
 let currentData = null;
 let currentMode = 'auto';
-let currentExtractionType = 'MULTI'; // 🆕 Day 15: Default to MULTI
+let currentExtractionType = 'MULTI';
+let currentAIProvider = 'CHROME_BUILTIN'; // 🆕 Day 21
 let extractionInProgress = false;
+let chromeAIAvailable = false; // 🆕 Day 21
+let rateLimitWarningCount = 0; // 🆕 Day 21: Track consecutive rate limit warnings
 
-// ❌ REMOVED: Daily API usage tracking
-// No more dailyApiUsage variable
+// 🆕 DAY 21: TOS acceptance tracking
+let tosAccepted = false;
+const TOS_VERSION = '1.0.0';
+const TOS_STORAGE_KEY = 'web_weaver_tos_accepted';
 
 // ========================================
-// ERROR MESSAGES (PRESERVED FROM DAY 13)
+// 🆕 DAY 21: ERROR MESSAGES (ENHANCED)
 // ========================================
 const ERROR_MESSAGES = {
   // Detection failures
@@ -40,67 +45,92 @@ const ERROR_MESSAGES = {
     title: 'No Repeating Patterns Detected',
     message: 'The page structure doesn\'t show clear repeating elements.',
     suggestions: [
-      '🚀 Try <strong>Max Mode</strong> for AI-powered deep analysis',
-      '🔄 Refresh the page and try again',
-      '📄 Try <strong>SINGLE_ITEM mode</strong> if viewing one article'
+      'Try <strong>Max Mode</strong> for AI-powered deep analysis',
+      'Refresh the page and try again',
+      'Try <strong>SINGLE_ITEM mode</strong> if viewing one article',
+      'Switch to <strong>Chrome AI</strong> for faster processing'
     ],
-    severity: 'info'
+    severity: 'info',
+    recoveryAction: 'switch_mode'
   },
   
   'Visual detection timeout': {
     title: 'Visual Analysis Timed Out',
     message: 'The page has complex layout that exceeded analysis time limit.',
     suggestions: [
-      '🤖 Switch to <strong>Max Mode</strong> for AI fallback',
-      '🟢 Try <strong>Offline Mode</strong> for basic DOM extraction',
-      '⏳ Wait a moment and try again'
+      'Switch to <strong>Max Mode</strong> for AI fallback',
+      'Try <strong>Offline Mode</strong> for basic DOM extraction',
+      'Wait a moment and try again',
+      'Consider using <strong>Chrome AI</strong> for local processing'
     ],
-    severity: 'warning'
+    severity: 'warning',
+    recoveryAction: 'retry'
   },
   
   'Site uses heavy JS rendering': {
     title: 'Dynamic Content Detected',
     message: 'This site loads content dynamically with JavaScript.',
     suggestions: [
-      '⏱️ Wait 2-3 seconds after page load before extracting',
-      '🔄 Scroll down first to load more content',
-      '🚀 Use <strong>Max Mode</strong> for better handling'
+      'Wait 2-3 seconds after page load before extracting',
+      'Scroll down first to load more content',
+      'Use <strong>Max Mode</strong> for better handling',
+      '<strong>Chrome AI</strong> processes faster for dynamic sites'
     ],
-    severity: 'warning'
+    severity: 'warning',
+    recoveryAction: 'wait_and_retry'
   },
   
-  // API failures
+  // 🆕 DAY 21: Enhanced API error handling
   'API error: 429': {
-    title: 'Rate Limit Exceeded',
-    message: 'Gemini API rate limit reached. Too many requests.',
+    title: '⚠️ API Rate Limit Exceeded',
+    message: 'Google Gemini API rate limit reached. This is a Google-imposed limit (15 RPM or 1M TPD).',
     suggestions: [
-      '⏳ Wait 60 seconds before trying again',
-      '🟢 Switch to <strong>Offline Mode</strong> (no API calls)',
-      '🌿 Use <strong>Min Mode</strong> to reduce API usage'
+      '<strong>✅ Switch to Chrome AI</strong> (zero cost, no limits)',
+      'Wait 60-120 seconds for rate limit reset',
+      'Switch to <strong>Offline Mode</strong> (no API calls)',
+      'Check quota at <a href="https://aistudio.google.com" target="_blank">Google AI Studio</a>'
     ],
-    severity: 'error'
+    severity: 'error',
+    recoveryAction: 'switch_to_chrome_ai'
   },
   
   'API error: 403': {
-    title: 'API Authentication Failed',
-    message: 'Your API key may be invalid or expired.',
+    title: '🔒 API Key Invalid or Expired',
+    message: 'Your Gemini API key is invalid, expired, or lacks permissions.',
     suggestions: [
-      '🔑 Check your API key in settings',
-      '🔄 Generate a new key at <a href="https://ai.google.dev" target="_blank">ai.google.dev</a>',
-      '💾 Save the new key and try again'
+      '<strong>✅ Switch to Chrome AI</strong> (no key required)',
+      'Generate new key at <a href="https://aistudio.google.com" target="_blank">Google AI Studio</a>',
+      'Update key in Settings → API Configuration',
+      'Verify key permissions (Gemini API enabled)'
     ],
-    severity: 'error'
+    severity: 'error',
+    recoveryAction: 'switch_to_chrome_ai'
   },
   
-  'API error: 400': {
-    title: 'Invalid Request',
-    message: 'The extraction request was malformed.',
+  'API error: 500': {
+    title: '🔧 Gemini API Server Error',
+    message: 'Google AI services are experiencing issues.',
     suggestions: [
-      '🔄 Refresh the page and try again',
-      '🟢 Try <strong>Offline Mode</strong> as fallback',
-      '📝 Report this issue if it persists'
+      '<strong>✅ Switch to Chrome AI</strong> (unaffected by API issues)',
+      'Wait 5-10 minutes and retry',
+      'Check <a href="https://status.cloud.google.com" target="_blank">Google Cloud Status</a>',
+      'Retry extraction after services recover'
     ],
-    severity: 'error'
+    severity: 'error',
+    recoveryAction: 'switch_to_chrome_ai'
+  },
+  
+  'API error: network': {
+    title: '🌐 Network Connection Error',
+    message: 'No internet connection or request timeout.',
+    suggestions: [
+      '<strong>✅ Switch to Chrome AI</strong> (works offline)',
+      'Check WiFi/Ethernet connection',
+      'Disable VPN if active',
+      'Try again after connection restored'
+    ],
+    severity: 'error',
+    recoveryAction: 'switch_to_chrome_ai'
   },
   
   // Content script failures
@@ -108,22 +138,24 @@ const ERROR_MESSAGES = {
     title: 'Extension Load Error',
     message: 'Could not inject content analyzer into page.',
     suggestions: [
-      '🔄 Refresh the page (F5)',
-      '🔄 Close and reopen the extension popup',
-      '❌ Some pages (chrome://, file://) are restricted'
+      'Refresh the page (F5 or Cmd+R)',
+      'Close and reopen the extension popup',
+      'Some pages (chrome://, file://) are restricted'
     ],
-    severity: 'error'
+    severity: 'error',
+    recoveryAction: 'refresh_page'
   },
   
   'No active tab found': {
     title: 'No Active Page',
     message: 'Cannot detect the current page.',
     suggestions: [
-      '📑 Make sure you have a valid webpage open',
-      '🔄 Click on the page before opening extension',
-      '❌ Some pages cannot be extracted (chrome://, about:)'
+      'Make sure you have a valid webpage open',
+      'Click on the page before opening extension',
+      'Some pages cannot be extracted (chrome://, about:)'
     ],
-    severity: 'error'
+    severity: 'error',
+    recoveryAction: 'none'
   },
   
   // Confidence failures
@@ -131,59 +163,318 @@ const ERROR_MESSAGES = {
     title: 'Low Confidence Result',
     message: 'The extraction result had very low reliability score.',
     suggestions: [
-      '🚀 Try <strong>Max Mode</strong> for better accuracy',
-      '🔄 Refresh and try again',
-      '📝 Page structure may be too complex'
+      'Try <strong>Max Mode</strong> for better accuracy',
+      'Refresh and try again',
+      'Page structure may be too complex',
+      '<strong>Chrome AI</strong> might perform better on this site'
     ],
-    severity: 'warning'
+    severity: 'warning',
+    recoveryAction: 'switch_mode'
   },
   
-  // 🆕 DAY 15: Screenshot-specific errors
+  // 🆕 DAY 21: Chrome AI specific errors
+  'Chrome AI unavailable': {
+    title: 'Chrome AI Not Available',
+    message: 'Chrome Built-in AI requires Chrome 128+ Dev/Canary with AI features enabled.',
+    suggestions: [
+      '<strong>Automatic fallback to Cloud API</strong> activated',
+      'Download Chrome Dev/Canary from <a href="https://www.google.com/chrome/dev/" target="_blank">chrome.dev</a>',
+      'Enable AI features in chrome://flags',
+      'Continue using Cloud API for now'
+    ],
+    severity: 'info',
+    recoveryAction: 'fallback_to_cloud'
+  },
+  
+  // Screenshot-specific errors (PRESERVED)
   'SINGLE_ITEM mode requires AI': {
     title: 'AI Required for Screenshot Extraction',
     message: 'SINGLE_ITEM mode uses Vision API which requires AI.',
     suggestions: [
-      '🔑 Add your Gemini API key',
-      '🌿 Switch to <strong>Min/Balanced/Max mode</strong>',
-      '📦 Use <strong>MULTI mode</strong> for DOM-based extraction'
+      'Add your Gemini API key (Cloud API)',
+      'Switch to <strong>Min/Balanced/Max mode</strong>',
+      'Use <strong>MULTI mode</strong> for DOM-based extraction',
+      '<strong>Note:</strong> Chrome AI doesn\'t support vision yet'
     ],
-    severity: 'warning'
+    severity: 'warning',
+    recoveryAction: 'switch_extraction_type'
   },
   
   'Screenshot capture failed': {
     title: 'Screenshot Failed',
     message: 'Unable to capture the visible viewport.',
     suggestions: [
-      '🔄 Refresh the page and try again',
-      '📦 Switch to <strong>MULTI mode</strong> for DOM extraction',
-      '🟢 Try <strong>Offline mode</strong> as fallback'
+      'Refresh the page and try again',
+      'Switch to <strong>MULTI mode</strong> for DOM extraction',
+      'Try <strong>Offline mode</strong> as fallback'
     ],
-    severity: 'error'
+    severity: 'error',
+    recoveryAction: 'switch_extraction_type'
   }
 };
 
 // ========================================
-// INITIALIZATION
+// 🆕 DAY 21: INITIALIZATION (ENHANCED)
 // ========================================
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[Popup] Initializing Web Weaver Lightning v3.4.1...');
+  console.log('[Popup] Initializing Web Weaver Lightning v4.0...');
   
+  // 🆕 Step 1: Check TOS acceptance (blocks until accepted)
+  await checkTOSAcceptance();
+  
+  // 🆕 Step 2: Check Chrome AI availability
+  await checkChromeAIAvailability();
+  
+  // Step 3: Load settings and initialize UI
+  await loadAIProvider();
   await loadApiKey();
   setupEventListeners();
   await loadExtractionHistory();
   initializeModeSelector();
-  initializeExtractionTypeSelector(); // 🆕 Day 15
+  initializeExtractionTypeSelector();
+  initializeAIProviderSelector(); // 🆕
   
-  // ❌ REMOVED: loadDailyApiUsage() call
-  
-  console.log('[Popup] Initialization complete (unlimited API usage)');
+  console.log('[Popup] Initialization complete');
+  console.log('[Popup] AI Provider:', currentAIProvider);
+  console.log('[Popup] Chrome AI Available:', chromeAIAvailable);
 });
 
 // ========================================
-// EVENT LISTENERS
+// 🆕 DAY 21: TOS ACCEPTANCE FLOW
+// ========================================
+async function checkTOSAcceptance() {
+  try {
+    const result = await chrome.storage.local.get(TOS_STORAGE_KEY);
+    const tosData = result[TOS_STORAGE_KEY];
+    
+    if (tosData && tosData.version === TOS_VERSION && tosData.accepted) {
+      tosAccepted = true;
+      console.log('[Popup] TOS already accepted (v' + TOS_VERSION + ')');
+      return;
+    }
+    
+    // TOS not accepted - show modal and block
+    console.log('[Popup] TOS not accepted - showing modal');
+    await showTOSModal();
+    
+  } catch (error) {
+    console.error('[Popup] Error checking TOS:', error);
+    // Fail open - allow usage if storage error
+    tosAccepted = true;
+  }
+}
+
+function showTOSModal() {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('tosModalOverlay');
+    const acceptBtn = document.getElementById('tosAcceptBtn');
+    const declineBtn = document.getElementById('tosDeclineBtn');
+    
+    modal.classList.add('active');
+    
+    acceptBtn.onclick = async () => {
+      try {
+        await chrome.storage.local.set({
+          [TOS_STORAGE_KEY]: {
+            accepted: true,
+            version: TOS_VERSION,
+            timestamp: Date.now()
+          }
+        });
+        
+        tosAccepted = true;
+        modal.classList.remove('active');
+        console.log('[Popup] TOS accepted');
+        resolve();
+        
+      } catch (error) {
+        console.error('[Popup] Error saving TOS acceptance:', error);
+        showError('Failed to save TOS acceptance. Please try again.');
+      }
+    };
+    
+    declineBtn.onclick = () => {
+      // User declined - close popup
+      window.close();
+    };
+  });
+}
+
+// ========================================
+// 🆕 DAY 21: CHROME AI AVAILABILITY CHECK
+// ========================================
+async function checkChromeAIAvailability() {
+  try {
+    // Check if window.ai API exists (Chrome 128+)
+    const response = await chrome.runtime.sendMessage({ 
+      action: 'checkChromeAI' 
+    });
+    
+    chromeAIAvailable = response.available || false;
+    
+    if (chromeAIAvailable) {
+      console.log('[Popup] ✅ Chrome Built-in AI is available');
+    } else {
+      console.log('[Popup] ⚠️ Chrome AI unavailable - will fallback to Cloud API');
+      
+      // Update UI to show Chrome AI unavailable
+      const chromeAIOption = document.getElementById('aiProviderChrome');
+      if (chromeAIOption) {
+        const desc = chromeAIOption.querySelector('.ai-provider-desc');
+        if (desc) {
+          desc.textContent = 'Unavailable (requires Chrome 128+)';
+          desc.style.color = '#EF4444';
+        }
+      }
+      
+      // Auto-select Cloud API if Chrome AI selected but unavailable
+      if (currentAIProvider === 'CHROME_BUILTIN') {
+        console.log('[Popup] Auto-switching to Cloud API (Chrome AI unavailable)');
+        currentAIProvider = 'CLOUD_API';
+        await saveAIProvider('CLOUD_API');
+      }
+    }
+    
+  } catch (error) {
+    console.error('[Popup] Error checking Chrome AI:', error);
+    chromeAIAvailable = false;
+  }
+}
+
+// ========================================
+// 🆕 DAY 21: AI PROVIDER MANAGEMENT
+// ========================================
+async function loadAIProvider() {
+  try {
+    const result = await chrome.storage.local.get('ai_provider');
+    currentAIProvider = result.ai_provider || 'CHROME_BUILTIN';
+    console.log('[Popup] Loaded AI provider:', currentAIProvider);
+  } catch (error) {
+    console.error('[Popup] Error loading AI provider:', error);
+    currentAIProvider = 'CHROME_BUILTIN';
+  }
+}
+
+async function saveAIProvider(provider) {
+  try {
+    await chrome.storage.local.set({ ai_provider: provider });
+    currentAIProvider = provider;
+    
+    // Notify background script of provider change
+    await chrome.runtime.sendMessage({
+      action: 'setAIProvider',
+      provider: provider
+    });
+    
+    console.log('[Popup] AI provider saved:', provider);
+  } catch (error) {
+    console.error('[Popup] Error saving AI provider:', error);
+  }
+}
+
+function initializeAIProviderSelector() {
+  // Set initial state
+  const chromeRadio = document.querySelector('input[name="aiProvider"][value="CHROME_BUILTIN"]');
+  const cloudRadio = document.querySelector('input[name="aiProvider"][value="CLOUD_API"]');
+  
+  if (currentAIProvider === 'CHROME_BUILTIN' && chromeAIAvailable) {
+    if (chromeRadio) chromeRadio.checked = true;
+    document.getElementById('aiProviderChrome')?.classList.add('active');
+    document.getElementById('aiProviderCloud')?.classList.remove('active');
+  } else {
+    if (cloudRadio) cloudRadio.checked = true;
+    document.getElementById('aiProviderCloud')?.classList.add('active');
+    document.getElementById('aiProviderChrome')?.classList.remove('active');
+    currentAIProvider = 'CLOUD_API';
+  }
+  
+  updateAIProviderUI();
+  
+  // Add change listeners
+  document.querySelectorAll('input[name="aiProvider"]').forEach(radio => {
+    radio.addEventListener('change', async (e) => {
+      const newProvider = e.target.value;
+      
+      // Check if Chrome AI selected but unavailable
+      if (newProvider === 'CHROME_BUILTIN' && !chromeAIAvailable) {
+        showWarning('Chrome AI unavailable. Using Cloud API.');
+        // Revert to Cloud API
+        if (cloudRadio) cloudRadio.checked = true;
+        document.getElementById('aiProviderCloud')?.classList.add('active');
+        document.getElementById('aiProviderChrome')?.classList.remove('active');
+        return;
+      }
+      
+      await saveAIProvider(newProvider);
+      updateAIProviderUI();
+      showSuccess(`Switched to ${newProvider === 'CHROME_BUILTIN' ? 'Chrome AI' : 'Cloud API'}`);
+    });
+  });
+}
+
+function updateAIProviderUI() {
+  // Update active visual state
+  document.querySelectorAll('.ai-provider-option').forEach(option => {
+    option.classList.remove('active');
+  });
+  
+  if (currentAIProvider === 'CHROME_BUILTIN') {
+    document.getElementById('aiProviderChrome')?.classList.add('active');
+  } else {
+    document.getElementById('aiProviderCloud')?.classList.add('active');
+  }
+  
+  // Update info text
+  const infoEl = document.getElementById('aiProviderInfo');
+  if (infoEl) {
+    if (currentAIProvider === 'CHROME_BUILTIN') {
+      infoEl.innerHTML = `
+        <span>💡</span>
+        <span><strong>Chrome AI:</strong> Fast and private with local processing. No API key needed. Fallback to Cloud API if unavailable.</span>
+      `;
+      infoEl.classList.remove('ai-provider-unavailable');
+    } else {
+      infoEl.innerHTML = `
+        <span>☁️</span>
+        <span><strong>Cloud API:</strong> Advanced features with vision support. Requires API key. Data sent to Google for processing.</span>
+      `;
+      infoEl.classList.remove('ai-provider-unavailable');
+    }
+  }
+  
+  // Toggle API key section visibility
+  const apiKeySection = document.getElementById('apiKeySection');
+  if (apiKeySection) {
+    if (currentAIProvider === 'CLOUD_API') {
+      apiKeySection.style.display = 'block';
+    } else {
+      apiKeySection.style.display = 'none';
+    }
+  }
+  
+  console.log('[Popup] AI provider UI updated:', currentAIProvider);
+}
+
+// ========================================
+// EVENT LISTENERS (ENHANCED)
 // ========================================
 function setupEventListeners() {
-  document.getElementById('saveApiKey').addEventListener('click', saveApiKey);
+  const saveApiKeyBtn = document.getElementById('saveApiKey');
+  if (saveApiKeyBtn) {
+    saveApiKeyBtn.addEventListener('click', saveApiKey);
+  }
+  
+  // 🆕 Real-time API key validation
+  const apiKeyInput = document.getElementById('apiKey');
+  if (apiKeyInput) {
+    let validationTimeout;
+    apiKeyInput.addEventListener('input', (e) => {
+      clearTimeout(validationTimeout);
+      validationTimeout = setTimeout(() => {
+        validateApiKeyRealtime(e.target.value);
+      }, 500);
+    });
+  }
   
   // Mode selection
   document.querySelectorAll('input[name="mode"]').forEach(radio => {
@@ -193,7 +484,7 @@ function setupEventListeners() {
     });
   });
   
-  // 🆕 DAY 15: Extraction type selection
+  // Extraction type selection
   document.querySelectorAll('input[name="extractionType"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
       currentExtractionType = e.target.value;
@@ -213,10 +504,120 @@ function setupEventListeners() {
 }
 
 // ========================================
-// 🆕 DAY 15: EXTRACTION TYPE SELECTOR
+// 🆕 DAY 21: API KEY VALIDATION
+// ========================================
+async function validateApiKeyRealtime(apiKey) {
+  const statusEl = document.getElementById('apiKeyStatus');
+  const inputEl = document.getElementById('apiKey');
+  
+  if (!apiKey || apiKey.length < 10) {
+    if (statusEl) statusEl.style.display = 'none';
+    if (inputEl) inputEl.classList.remove('error', 'success');
+    return;
+  }
+  
+  // Basic format check
+  if (!apiKey.startsWith('AIza')) {
+    if (statusEl) {
+      statusEl.className = 'api-key-status invalid';
+      statusEl.textContent = 'Invalid format';
+      statusEl.style.display = 'block';
+    }
+    if (inputEl) {
+      inputEl.classList.add('error');
+      inputEl.classList.remove('success');
+    }
+    return;
+  }
+  
+  // Show checking status
+  if (statusEl) {
+    statusEl.className = 'api-key-status checking';
+    statusEl.textContent = 'Validating...';
+    statusEl.style.display = 'block';
+  }
+  
+  try {
+    // Attempt to validate with Gemini API
+    const response = await chrome.runtime.sendMessage({
+      action: 'validateApiKey',
+      apiKey: apiKey
+    });
+    
+    if (response.valid) {
+      if (statusEl) {
+        statusEl.className = 'api-key-status valid';
+        statusEl.textContent = '✓ Valid';
+      }
+      if (inputEl) {
+        inputEl.classList.add('success');
+        inputEl.classList.remove('error');
+      }
+    } else {
+      if (statusEl) {
+        statusEl.className = 'api-key-status invalid';
+        statusEl.textContent = '✗ Invalid';
+      }
+      if (inputEl) {
+        inputEl.classList.add('error');
+        inputEl.classList.remove('success');
+      }
+    }
+    
+  } catch (error) {
+    console.error('[Popup] Validation error:', error);
+    if (statusEl) statusEl.style.display = 'none';
+  }
+}
+
+// ========================================
+// 🆕 DAY 21: RATE LIMIT WARNING SYSTEM
+// ========================================
+function showRateLimitWarning(type, details = {}) {
+  const warningEl = document.getElementById('rateLimitWarning');
+  const titleEl = document.getElementById('rateLimitWarningTitle');
+  const messageEl = document.getElementById('rateLimitWarningMessage');
+  
+  if (!warningEl || !titleEl || !messageEl) return;
+  
+  rateLimitWarningCount++;
+  
+  if (type === 'RPM') {
+    titleEl.textContent = '⚠️ High Request Rate Detected';
+    messageEl.textContent = `You're approaching rate limits (${details.rpm || 25} requests/min). Slow down to avoid 429 errors.`;
+  } else if (type === 'RPD') {
+    titleEl.textContent = '⚠️ Approaching Daily Token Limit';
+    messageEl.textContent = `You've used ~${details.tokensUsed || '900K'} tokens today (limit: 1M TPD). Switch to Chrome AI or reduce usage.`;
+  } else if (type === '429') {
+    titleEl.textContent = '🚨 Multiple Rate Limit Errors';
+    messageEl.textContent = 'You have hit rate limits multiple times. Automatic fallback to Chrome AI recommended.';
+    
+    // Auto-switch after 3 consecutive 429s
+    if (rateLimitWarningCount >= 3 && chromeAIAvailable) {
+      setTimeout(async () => {
+        showInfo('Auto-switching to Chrome AI to avoid rate limits...');
+        const cloudRadio = document.querySelector('input[name="aiProvider"][value="CHROME_BUILTIN"]');
+        if (cloudRadio) {
+          cloudRadio.checked = true;
+          await saveAIProvider('CHROME_BUILTIN');
+          updateAIProviderUI();
+        }
+      }, 2000);
+    }
+  }
+  
+  warningEl.classList.add('active');
+  
+  // Auto-hide after 10 seconds
+  setTimeout(() => {
+    warningEl.classList.remove('active');
+  }, 10000);
+}
+
+// ========================================
+// EXTRACTION TYPE SELECTOR (PRESERVED)
 // ========================================
 function initializeExtractionTypeSelector() {
-  // Set default to MULTI
   const multiRadio = document.querySelector('input[name="extractionType"][value="MULTI"]');
   if (multiRadio) {
     multiRadio.checked = true;
@@ -229,18 +630,16 @@ function initializeExtractionTypeSelector() {
 }
 
 function updateExtractionTypeUI() {
-  // Update active visual state
   document.querySelectorAll('.extraction-type-option').forEach(option => {
     option.classList.remove('active');
   });
   
   if (currentExtractionType === 'MULTI') {
-    document.getElementById('extractionTypeMulti').classList.add('active');
+    document.getElementById('extractionTypeMulti')?.classList.add('active');
   } else {
-    document.getElementById('extractionTypeSingle').classList.add('active');
+    document.getElementById('extractionTypeSingle')?.classList.add('active');
   }
   
-  // Update hint text
   const hintEl = document.getElementById('extractionTypeHint');
   if (hintEl) {
     if (currentExtractionType === 'MULTI') {
@@ -251,7 +650,7 @@ function updateExtractionTypeUI() {
     } else {
       hintEl.innerHTML = `
         <span>📄</span>
-        <span><strong>SINGLE_ITEM Mode:</strong> Captures a screenshot of your visible viewport and uses AI Vision to extract the main article or product. Requires API key and AI mode (Min/Balanced/Max).</span>
+        <span><strong>SINGLE_ITEM Mode:</strong> Captures a screenshot of your visible viewport and uses AI Vision to extract the main article or product. Requires Cloud API (Chrome AI doesn't support vision yet).</span>
       `;
     }
   }
@@ -267,7 +666,8 @@ async function loadApiKey() {
     const response = await chrome.runtime.sendMessage({ action: 'getApiKey' });
     if (response && response.apiKey) {
       document.getElementById('apiKey').value = response.apiKey;
-      showSuccess('API key loaded');
+      // Silently validate on load
+      validateApiKeyRealtime(response.apiKey);
     }
   } catch (error) {
     console.error('[Popup] Error loading API key:', error);
@@ -288,19 +688,25 @@ async function saveApiKey() {
   }
   
   try {
+    // Validate before saving
+    const validationResponse = await chrome.runtime.sendMessage({
+      action: 'validateApiKey',
+      apiKey: apiKey
+    });
+    
+    if (!validationResponse.valid) {
+      showError('API key validation failed. Please check your key.');
+      return;
+    }
+    
     await chrome.runtime.sendMessage({ action: 'saveApiKey', apiKey });
-    showSuccess('API key saved successfully');
+    showSuccess('API key saved and validated successfully');
+    
   } catch (error) {
     console.error('[Popup] Error saving API key:', error);
     showError('Failed to save API key');
   }
 }
-
-// ========================================
-// ❌ REMOVED: DAILY API USAGE TRACKING
-// No more loadDailyApiUsage, incrementDailyApiUsage functions
-// No more showAiWarningDialog with usage tracking
-// ========================================
 
 // ========================================
 // MODE SELECTOR UI (PRESERVED)
@@ -312,7 +718,6 @@ function initializeModeSelector() {
 }
 
 function updateModeUI() {
-  // Update active visual state
   document.querySelectorAll('.mode-option').forEach(option => {
     option.classList.remove('active');
   });
@@ -326,7 +731,7 @@ function updateModeUI() {
 }
 
 // ========================================
-// EXTRACTION HANDLER (SIMPLIFIED - NO API LIMITS)
+// EXTRACTION HANDLER (ENHANCED)
 // ========================================
 async function handleExtract() {
   if (extractionInProgress) {
@@ -334,22 +739,39 @@ async function handleExtract() {
     return;
   }
   
-  // 🆕 DAY 15: Check SINGLE_ITEM mode requirements
-  if (currentExtractionType === 'SINGLE_ITEM' && currentMode === 'offline') {
-    showError('SINGLE_ITEM mode requires AI (Min/Balanced/Max). Switch modes or use MULTI extraction.');
+  // Check TOS acceptance
+  if (!tosAccepted) {
+    showError('Please accept Terms of Service first');
+    await showTOSModal();
     return;
   }
   
-  // Check API key for AI modes
-  if (currentMode !== 'offline') {
-    const apiKey = document.getElementById('apiKey').value.trim();
-    if (!apiKey) {
-      showError('Please add your Gemini API key first');
+  // SINGLE_ITEM mode requirements
+  if (currentExtractionType === 'SINGLE_ITEM') {
+    if (currentMode === 'offline') {
+      showError('SINGLE_ITEM mode requires AI (Min/Balanced/Max). Switch modes or use MULTI extraction.');
       return;
     }
     
-    // ❌ REMOVED: Daily API usage check (95+ calls warning)
-    // ❌ REMOVED: AI warning dialog with cost/usage display
+    // SINGLE_ITEM requires Cloud API (vision support)
+    if (currentAIProvider === 'CHROME_BUILTIN') {
+      showWarning('SINGLE_ITEM mode requires Cloud API (vision support). Auto-switching...');
+      const cloudRadio = document.querySelector('input[name="aiProvider"][value="CLOUD_API"]');
+      if (cloudRadio) {
+        cloudRadio.checked = true;
+        await saveAIProvider('CLOUD_API');
+        updateAIProviderUI();
+      }
+    }
+  }
+  
+  // Check API key for Cloud API modes (except offline)
+  if (currentMode !== 'offline' && currentAIProvider === 'CLOUD_API') {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    if (!apiKey) {
+      showError('Please add your Gemini API key first (or switch to Chrome AI)');
+      return;
+    }
   }
   
   extractionInProgress = true;
@@ -361,30 +783,41 @@ async function handleExtract() {
   document.getElementById('resultsSection').style.display = 'none';
   document.getElementById('errorSection').style.display = 'none';
   
+  // Hide rate limit warning during extraction
+  const warningEl = document.getElementById('rateLimitWarning');
+  if (warningEl) warningEl.classList.remove('active');
+  
   try {
-    console.log('[Popup] Starting extraction | Mode:', currentMode, '| Type:', currentExtractionType);
+    console.log('[Popup] Starting extraction | Mode:', currentMode, '| Type:', currentExtractionType, '| AI:', currentAIProvider);
     const startTime = Date.now();
     
-    // 🆕 DAY 15: Send extraction type to background
     const response = await chrome.runtime.sendMessage({
       action: 'extractData',
       mode: currentMode,
-      extractionType: currentExtractionType
+      extractionType: currentExtractionType,
+      aiProvider: currentAIProvider // 🆕 Send AI provider
     });
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
     
     if (response.success) {
       currentData = response.data;
-      displayResults(response);
+      displayResults(response, duration);
       showSuccess(`Extraction complete in ${duration}s`);
       
-      // ❌ REMOVED: API usage increment
-      // No more tracking of API calls/cost
+      // Reset rate limit warning counter on success
+      if (rateLimitWarningCount > 0) {
+        rateLimitWarningCount = Math.max(0, rateLimitWarningCount - 1);
+      }
       
       await loadExtractionHistory();
       
     } else {
+      // Check for rate limit errors
+      if (response.error && response.error.includes('429')) {
+        showRateLimitWarning('429');
+      }
+      
       displayGracefulError(response.error, response);
     }
     
@@ -399,10 +832,10 @@ async function handleExtract() {
 }
 
 // ========================================
-// GRACEFUL DEGRADATION ERROR DISPLAY (PRESERVED)
+// 🆕 DAY 21: ENHANCED ERROR DISPLAY
 // ========================================
 function displayGracefulError(errorMessage, response = {}) {
-  console.log('[Popup] 🆕 Graceful error handling:', errorMessage);
+  console.log('[Popup] Enhanced error handling:', errorMessage);
   
   let errorInfo = null;
   for (const [key, value] of Object.entries(ERROR_MESSAGES)) {
@@ -417,11 +850,13 @@ function displayGracefulError(errorMessage, response = {}) {
       title: 'Extraction Failed',
       message: errorMessage,
       suggestions: [
-        '🔄 Refresh the page and try again',
-        '🚀 Try <strong>Max Mode</strong> for AI-powered extraction',
-        '🟢 Use <strong>Offline Mode</strong> for basic extraction'
+        'Refresh the page and try again',
+        'Try <strong>Max Mode</strong> for AI-powered extraction',
+        'Use <strong>Offline Mode</strong> for basic extraction',
+        'Switch to <strong>Chrome AI</strong> if using Cloud API'
       ],
-      severity: 'error'
+      severity: 'error',
+      recoveryAction: 'none'
     };
   }
   
@@ -438,9 +873,13 @@ function displayGracefulError(errorMessage, response = {}) {
     : '';
   
   document.getElementById('resultsSection').style.display = 'none';
-  document.getElementById('errorSection').style.display = 'block';
+  const errorSection = document.getElementById('errorSection');
+  errorSection.style.display = 'block';
   
-  const errorEl = document.getElementById('errorMessage');
+  const titleEl = document.getElementById('errorTitle');
+  const messageEl = document.getElementById('errorMessage');
+  const recoveryEl = document.getElementById('errorRecoverySteps');
+  const recoveryList = document.getElementById('errorRecoveryList');
   
   const severityColors = {
     info: '#3B82F6',
@@ -457,39 +896,35 @@ function displayGracefulError(errorMessage, response = {}) {
   const color = severityColors[errorInfo.severity] || severityColors.error;
   const icon = severityIcons[errorInfo.severity] || severityIcons.error;
   
-  errorEl.innerHTML = `
-    <div style="padding: 16px; background: ${color}15; border-left: 4px solid ${color}; border-radius: 8px;">
-      <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px; color: ${color}; display: flex; align-items: center; gap: 8px;">
-        <span>${icon}</span>
-        <span>${errorInfo.title}</span>
-      </div>
-      
-      <div style="font-size: 14px; color: #4B5563; margin-bottom: 12px; line-height: 1.5;">
-        ${errorInfo.message}
-      </div>
-      
-      ${contextMessage ? `
-        <div style="font-size: 12px; color: #6B7280; margin-bottom: 12px; padding: 6px 10px; background: rgba(0,0,0,0.05); border-radius: 4px;">
-          ${contextMessage}
-        </div>
-      ` : ''}
-      
-      <div style="font-size: 13px; color: #374151; margin-top: 12px;">
-        <div style="font-weight: 600; margin-bottom: 6px;">💡 Try these solutions:</div>
-        <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-          ${errorInfo.suggestions.map(s => `<li>${s}</li>`).join('')}
-        </ul>
-      </div>
-    </div>
-  `;
+  if (titleEl) {
+    titleEl.textContent = errorInfo.title;
+    titleEl.style.color = color;
+  }
   
-  errorEl.scrollIntoView({ behavior: 'smooth' });
+  if (messageEl) {
+    messageEl.innerHTML = `
+      <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px;">
+        <span style="font-size: 20px;">${icon}</span>
+        <div>
+          <div style="font-size: 14px; color: #4B5563; margin-bottom: 8px;">${errorInfo.message}</div>
+          ${contextMessage ? `<div style="font-size: 12px; color: #6B7280; padding: 6px 10px; background: rgba(0,0,0,0.05); border-radius: 4px;">${contextMessage}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+  
+  if (recoveryEl && recoveryList && errorInfo.suggestions) {
+    recoveryEl.style.display = 'block';
+    recoveryList.innerHTML = errorInfo.suggestions.map(s => `<li>${s}</li>`).join('');
+  }
+  
+  errorSection.scrollIntoView({ behavior: 'smooth' });
 }
 
 // ========================================
-// RESULTS DISPLAY (ENHANCED FOR DAY 15)
+// RESULTS DISPLAY (ENHANCED FOR DAY 21)
 // ========================================
-function displayResults(response) {
+function displayResults(response, duration) {
   const { data, metadata } = response;
   
   document.getElementById('resultsSection').style.display = 'block';
@@ -497,10 +932,18 @@ function displayResults(response) {
   
   displayConfidenceTier(metadata.confidence, metadata.confidenceTier);
   
+  // 🆕 Display AI Provider used
+  const aiProviderUsedEl = document.getElementById('aiProviderUsed');
+  if (aiProviderUsedEl) {
+    const providerIcon = metadata.aiProvider === 'CHROME_BUILTIN' ? '🔵' : '☁️';
+    const providerLabel = metadata.aiProvider === 'CHROME_BUILTIN' ? 'Chrome AI' : 'Cloud API';
+    aiProviderUsedEl.textContent = `${providerIcon} ${providerLabel}`;
+  }
+  
   document.getElementById('modeUsed').textContent = 
     metadata.mode.toUpperCase() + (metadata.cached ? ' 💾' : '');
   
-  // 🆕 DAY 15: Display extraction type used
+  // Display extraction type
   const extractionTypeEl = document.getElementById('extractionTypeUsed');
   if (extractionTypeEl) {
     const typeIcon = metadata.extractionType === 'SINGLE_ITEM' ? '📄' : '📦';
@@ -508,10 +951,20 @@ function displayResults(response) {
     extractionTypeEl.textContent = `${typeIcon} ${typeLabel}`;
   }
   
-  document.getElementById('duration').textContent = metadata.duration + 'ms';
+  document.getElementById('duration').textContent = duration + 's';
   document.getElementById('classification').textContent = metadata.classification || 'Unknown';
   
-  // 🆕 DAY 15: Show pagination hint for MULTI mode
+  // 🆕 Display deduplication stats
+  const duplicatesEl = document.getElementById('duplicatesRemoved');
+  if (duplicatesEl) {
+    const duplicates = metadata.duplicatesRemoved || 0;
+    duplicatesEl.textContent = duplicates;
+    if (duplicates > 0) {
+      duplicatesEl.parentElement.style.background = 'rgba(16, 185, 129, 0.1)';
+    }
+  }
+  
+  // Show pagination hint for MULTI mode
   if (metadata.extractionType === 'MULTI' && metadata.naturalPagination) {
     const paginationHintEl = document.getElementById('paginationHint');
     if (paginationHintEl) {
@@ -520,20 +973,6 @@ function displayResults(response) {
       if (valueEl) {
         valueEl.textContent = metadata.paginationHint || 'Scroll or click "Next Page" to load more, then extract again';
       }
-    }
-  }
-  
-  // Domain adjustment display (preserved)
-  if (metadata.domainAdjustment && metadata.domainAdjustment !== 0) {
-    const domainAdjustEl = document.getElementById('domainAdjustment');
-    if (domainAdjustEl) {
-      domainAdjustEl.style.display = 'block';
-      const sign = metadata.domainAdjustment > 0 ? '+' : '';
-      const color = metadata.domainAdjustment > 0 ? '#10B981' : '#EF4444';
-      domainAdjustEl.innerHTML = `
-        <span style="font-weight: 500;">Domain Adjustment:</span> 
-        <span style="color: ${color}; font-weight: 600;">${sign}${metadata.domainAdjustment}%</span>
-      `;
     }
   }
   
@@ -656,15 +1095,15 @@ async function downloadCSV() {
       showInfo('Converting complex data to CSV with AI...');
       
       const apiKey = document.getElementById('apiKey').value.trim();
-      if (!apiKey) {
-        showError('API key required for AI CSV conversion');
+      if (!apiKey && currentAIProvider === 'CLOUD_API') {
+        showError('API key required for AI CSV conversion (or switch to Chrome AI)');
         return;
       }
       
       const response = await chrome.runtime.sendMessage({
         action: 'convertToCSV',
         data: currentData,
-        apiKey
+        aiProvider: currentAIProvider
       });
       
       if (response.success) {
@@ -783,6 +1222,9 @@ function displayExtractionHistory(history) {
     
     const config = tierConfig[entry.tier] || tierConfig.MEDIUM;
     
+    // 🆕 Show AI provider icon
+    const aiIcon = entry.aiProvider === 'CHROME_BUILTIN' ? '🔵' : '☁️';
+    
     html += `
       <div style="padding: 8px; background: rgba(0,0,0,0.03); border-radius: 6px; margin-bottom: 6px; font-size: 12px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
@@ -790,7 +1232,7 @@ function displayExtractionHistory(history) {
           <span style="color: ${config.color};">${config.icon} ${entry.confidence}%</span>
         </div>
         <div style="color: #666; font-size: 11px;">
-          ${entry.mode.toUpperCase()} • ${new Date(entry.timestamp).toLocaleTimeString()}
+          ${aiIcon} ${entry.mode.toUpperCase()} • ${new Date(entry.timestamp).toLocaleTimeString()}
         </div>
       </div>
     `;
@@ -822,4 +1264,4 @@ function highlightJSON(element) {
   element.innerHTML = highlighted;
 }
 
-console.log('[Popup] Web Weaver Lightning v3.4.1 popup controller loaded (UNLIMITED API USAGE)');
+console.log('[Popup] Web Weaver Lightning v4.0 popup controller loaded (Chrome AI + Security)');
