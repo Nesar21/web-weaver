@@ -1,12 +1,15 @@
 /**
  * Web Weaver Lightning - Module Loader
- * Version: 3.2.0 (Day 13 - Complete Module Loading)
+ * Version: 4.1.0 (Day 21.2 - Chrome Built-in AI Integration)
  * 
  * CRITICAL: This file loads all modules in correct dependency order
  * Must be loaded BEFORE background.js in manifest.json
+ * 
+ * 🆕 v4.1 ADDITIONS:
+ * - Chrome Built-in AI Wrapper (chrome-ai.js)
  */
 
-console.log('[ImportScripts] 🚀 Loading Web Weaver Lightning v3.2 modules...');
+console.log('[ImportScripts] 🚀 Loading Web Weaver Lightning v4.1 modules...');
 
 try {
   // ========================================
@@ -63,8 +66,12 @@ try {
   importScripts('src/utils/ai-extractor.js');
   console.log('[ImportScripts] ✅ AI Extractor loaded');
   
+  // 🆕 NEW: Chrome Built-in AI Wrapper
+  importScripts('src/utils/chrome-ai.js');
+  console.log('[ImportScripts] ✅ Chrome Built-in AI Wrapper loaded');
+  
   console.log('[ImportScripts] ═══════════════════════════════════════════════');
-  console.log('[ImportScripts] ✅ ALL 14 MODULES LOADED SUCCESSFULLY!');
+  console.log('[ImportScripts] ✅ ALL 15 MODULES LOADED SUCCESSFULLY!');
   console.log('[ImportScripts] ═══════════════════════════════════════════════');
   
 } catch (error) {

@@ -1,17 +1,17 @@
 // ============================================================================
-// Day 10 Schema Utility - AI Engine v1 Enhanced (80% Accuracy Milestone)
-// src/utils/schemas.js - DAY 10 ENHANCED
+// Day 21.2 Schema Utility - AI Engine v1 Enhanced + URL Field Enforcement
+// src/utils/schemas.js - DAY 21.2 ENHANCED
 // ============================================================================
 
-console.log('[Schemas] Day 10 AI ENGINE v1 loading - Enhanced Type System...');
+console.log('[Schemas] Day 21.2 AI ENGINE v1 loading - Enhanced Type System + URL Enforcement...');
 
 // ============================================================================
-// DAY 10 ENHANCEMENTS - TYPE SYSTEM + DATE STANDARDIZATION
+// DAY 21.2 ENHANCEMENTS - URL FIELD ENFORCEMENT
 // ============================================================================
 
-const DAY10_VERSION = 'day10-ai-engine-v1-schemas';
+const DAY21_VERSION = 'day21.2-chrome-ai-url-enforcement';
 
-// Day 10 Date Format Converter (YYYY-MM-DD)
+// Day 10 Date Format Converter (YYYY-MM-DD) - PRESERVED
 function convertToStandardDateDay10(dateString) {
   if (!dateString || typeof dateString !== 'string') return null;
   
@@ -29,13 +29,17 @@ function convertToStandardDateDay10(dateString) {
   }
 }
 
+// 🆕 DAY 21.2: URL Validation Pattern
+const URL_VALIDATION_PATTERN = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/;
+
 // ============================================================================
-// DAY 10: Enhanced Field Type Definitions
+// DAY 21.2: Enhanced Field Type Definitions (with URL field)
 // ============================================================================
 
 const DAY10_FIELD_TYPES = {
   bloomberg: {
     title: { type: 'string', nullable: false, minLength: 5, maxLength: 200 },
+    url: { type: 'string', nullable: false, pattern: URL_VALIDATION_PATTERN }, // 🆕 ADDED
     author: { type: 'string', nullable: true, minLength: 2, maxLength: 100 },
     publication_date: { type: 'string', nullable: true, pattern: /^\d{4}-\d{2}-\d{2}$/ },
     main_content_summary: { type: 'string', nullable: true, minLength: 20, maxLength: 2000 },
@@ -51,9 +55,9 @@ const DAY10_FIELD_TYPES = {
       nullable: true,
       items: {
         index_name: { type: 'string', nullable: false },
-        index_value: { type: 'string', nullable: false },  // ✅ CHANGED: number → string
-        index_change: { type: 'string', nullable: true },  // ✅ CHANGED: number → string
-        index_change_percentage: { type: 'string', nullable: true }  // Already string
+        index_value: { type: 'string', nullable: false },
+        index_change: { type: 'string', nullable: true },
+        index_change_percentage: { type: 'string', nullable: true }
       }
     },
     tickers_mentioned: { type: 'array', nullable: true, minItems: 0, maxItems: 50 },
@@ -62,6 +66,7 @@ const DAY10_FIELD_TYPES = {
   
   amazon: {
     title: { type: 'string', nullable: false, minLength: 5, maxLength: 200 },
+    url: { type: 'string', nullable: false, pattern: URL_VALIDATION_PATTERN }, // 🆕 ADDED
     price: { type: 'string', nullable: false, pattern: /^\$?\d+(\.\d{1,2})?$/ },
     description: { type: 'string', nullable: false, minLength: 10, maxLength: 1000 },
     reviews_rating: { type: 'string', nullable: true, pattern: /^\d(\.\d)?\/5$/ },
@@ -72,6 +77,7 @@ const DAY10_FIELD_TYPES = {
   
   allrecipes: {
     title: { type: 'string', nullable: false, minLength: 5, maxLength: 200 },
+    url: { type: 'string', nullable: false, pattern: URL_VALIDATION_PATTERN }, // 🆕 ADDED
     ingredients: { type: 'array', nullable: false, minItems: 3, maxItems: 50 },
     instructions: { type: 'array', nullable: false, minItems: 2, maxItems: 30 },
     author: { type: 'string', nullable: true, minLength: 2, maxLength: 100 },
@@ -82,6 +88,7 @@ const DAY10_FIELD_TYPES = {
   
   wikipedia: {
     title: { type: 'string', nullable: false, minLength: 2, maxLength: 200 },
+    url: { type: 'string', nullable: false, pattern: URL_VALIDATION_PATTERN }, // 🆕 ADDED
     main_content_summary: { type: 'string', nullable: false, minLength: 100, maxLength: 5000 },
     category: { type: 'string', nullable: true, minLength: 2, maxLength: 100 },
     links: { type: 'array', nullable: true, minItems: 2, maxItems: 100 },
@@ -91,23 +98,37 @@ const DAY10_FIELD_TYPES = {
   
   medium: {
     title: { type: 'string', nullable: false, minLength: 5, maxLength: 200 },
+    url: { type: 'string', nullable: false, pattern: URL_VALIDATION_PATTERN }, // 🆕 ADDED
     author: { type: 'string', nullable: false, minLength: 2, maxLength: 100 },
     publication_date: { type: 'string', nullable: true, pattern: /^\d{4}-\d{2}-\d{2}$/ },
     main_content_summary: { type: 'string', nullable: true, minLength: 50, maxLength: 5000 },
     description: { type: 'string', nullable: true, minLength: 10, maxLength: 1000 },
     category: { type: 'string', nullable: true, minLength: 2, maxLength: 100 },
     confidence_score: { type: 'number', nullable: false, min: 0, max: 100 }
+  },
+  
+  // 🆕 Generic/Universal schema (used when site type unknown)
+  generic: {
+    title: { type: 'string', nullable: false, minLength: 2, maxLength: 200 },
+    url: { type: 'string', nullable: false, pattern: URL_VALIDATION_PATTERN }, // 🆕 ADDED
+    description: { type: 'string', nullable: true, minLength: 10, maxLength: 2000 },
+    author: { type: 'string', nullable: true, minLength: 2, maxLength: 100 },
+    category: { type: 'string', nullable: true, minLength: 2, maxLength: 100 },
+    images: { type: 'array', nullable: true, minItems: 0, maxItems: 50 },
+    links: { type: 'array', nullable: true, minItems: 0, maxItems: 100 },
+    confidence_score: { type: 'number', nullable: false, min: 0, max: 100 }
   }
 };
 
 // ============================================================================
-// EXISTING DAY 8 SCHEMA DEFINITIONS
+// EXISTING DAY 8 SCHEMA DEFINITIONS - ENHANCED WITH URL
 // ============================================================================
 
 const DAY8_VERSION = 'day8-modular-enterprise-v2';
 
 const STANDARD_SCHEMA = {
   title: 'string',
+  url: 'string', // 🆕 ADDED - Required for all schemas
   author: 'string',
   publication_date: 'string',
   main_content_summary: 'string',
@@ -124,59 +145,73 @@ const STANDARD_SCHEMA = {
 
 const SITE_SPECIFIC_SCHEMAS = {
   amazon: {
-    required: ['title', 'price', 'description'],
-    optional: ['reviews_rating', 'images', 'category'],
-    nullableFields: ['author', 'publication_date', 'ingredients', 'instructions'],
+    required: ['title', 'url', 'price', 'description'], // 🆕 url added
+    optional: ['reviews_rating', 'images', 'category', 'author'],
+    nullableFields: ['publication_date', 'ingredients', 'instructions'],
     arrayFields: ['images', 'links'],
     formatValidation: {
       price: /^\$?\d+(\.\d{1,2})?$/,
-      reviews_rating: /^\d(\.\d)?\/5$/
+      reviews_rating: /^\d(\.\d)?\/5$/,
+      url: URL_VALIDATION_PATTERN // 🆕 ADDED
     }
   },
   
   allrecipes: {
-    required: ['title', 'ingredients', 'instructions'],
+    required: ['title', 'url', 'ingredients', 'instructions'], // 🆕 url added
     optional: ['author', 'reviews_rating', 'description'],
     nullableFields: ['publication_date', 'price'],
     arrayFields: ['ingredients', 'instructions', 'images'],
     arrayMinimums: {
       ingredients: 3,
       instructions: 2
+    },
+    formatValidation: {
+      url: URL_VALIDATION_PATTERN // 🆕 ADDED
     }
   },
   
   bloomberg: {
-    required: ['title', 'description'],
+    required: ['title', 'url', 'description'], // 🆕 url added
     optional: ['author', 'publication_date', 'category', 'main_content_summary'],
     nullableFields: ['price', 'ingredients', 'instructions', 'reviews_rating'],
     arrayFields: ['links', 'images'],
     formatValidation: {
-      publication_date: /^\d{4}-\d{2}-\d{2}$/
+      publication_date: /^\d{4}-\d{2}-\d{2}$/,
+      url: URL_VALIDATION_PATTERN // 🆕 ADDED
     }
   },
   
   wikipedia: {
-    required: ['title', 'main_content_summary'],
+    required: ['title', 'url', 'main_content_summary'], // 🆕 url added
     optional: ['category', 'links', 'images'],
     nullableFields: ['author', 'publication_date', 'price', 'ingredients', 'instructions', 'reviews_rating'],
     arrayFields: ['links', 'images'],
     arrayMinimums: {
       links: 2
+    },
+    formatValidation: {
+      url: URL_VALIDATION_PATTERN // 🆕 ADDED
     }
   },
   
   medium: {
-    required: ['title', 'author', 'main_content_summary'],
+    required: ['title', 'url', 'author', 'main_content_summary'], // 🆕 url added
     optional: ['publication_date', 'description', 'category'],
     nullableFields: ['price', 'ingredients', 'instructions', 'reviews_rating'],
-    arrayFields: ['links', 'images']
+    arrayFields: ['links', 'images'],
+    formatValidation: {
+      url: URL_VALIDATION_PATTERN // 🆕 ADDED
+    }
   },
   
   generic: {
-    required: ['title'],
+    required: ['title', 'url'], // 🆕 url added (CRITICAL: All schemas MUST have URL)
     optional: ['description', 'author', 'category'],
     nullableFields: ['publication_date', 'price', 'ingredients', 'instructions', 'reviews_rating'],
-    arrayFields: ['links', 'images']
+    arrayFields: ['links', 'images'],
+    formatValidation: {
+      url: URL_VALIDATION_PATTERN // 🆕 ADDED
+    }
   }
 };
 
@@ -186,7 +221,9 @@ const BLOOMBERG_FIELD_MAPPINGS = {
   publishedAt: 'publication_date',
   body: 'main_content_summary',
   summary: 'description',
-  topic: 'category'
+  topic: 'category',
+  link: 'url', // 🆕 ADDED
+  href: 'url' // 🆕 ADDED
 };
 
 function schemaLogger(level, message, data) {
@@ -200,7 +237,7 @@ function schemaLogger(level, message, data) {
 // ============================================================================
 
 const SchemaManager = {
-  VERSION: DAY10_VERSION,
+  VERSION: DAY21_VERSION,
   
   getStandardSchema() {
     return { ...STANDARD_SCHEMA };
@@ -214,6 +251,7 @@ const SchemaManager = {
     const schema = this.getSiteSchema(siteType);
     const violations = [];
     
+    // Check required fields
     schema.required.forEach(field => {
       if (!data[field] || (typeof data[field] === 'string' && !data[field].trim())) {
         violations.push({
@@ -225,6 +263,7 @@ const SchemaManager = {
       }
     });
     
+    // Validate array types
     if (schema.arrayFields) {
       schema.arrayFields.forEach(field => {
         if (data[field] && !Array.isArray(data[field])) {
@@ -238,13 +277,14 @@ const SchemaManager = {
       });
     }
     
+    // Validate formats
     if (schema.formatValidation) {
       Object.keys(schema.formatValidation).forEach(field => {
         if (data[field] && !schema.formatValidation[field].test(data[field])) {
           violations.push({
             field,
             type: 'INVALID_FORMAT',
-            severity: 'MEDIUM',
+            severity: field === 'url' ? 'HIGH' : 'MEDIUM', // 🆕 URL format errors are HIGH severity
             message: `Field '${field}' has invalid format`
           });
         }
@@ -318,13 +358,17 @@ const SchemaManager = {
   },
   
   // ============================================================================
-  // DAY 10 METHODS
+  // DAY 10 METHODS - PRESERVED
   // ============================================================================
   
   getFieldTypeDefinition(fieldName, siteType = 'generic') {
     const siteTypes = DAY10_FIELD_TYPES[siteType];
     if (siteTypes && siteTypes[fieldName]) {
       return siteTypes[fieldName];
+    }
+    // 🆕 Default URL field definition if not found
+    if (fieldName === 'url') {
+      return { type: 'string', nullable: false, pattern: URL_VALIDATION_PATTERN };
     }
     return { type: 'string', nullable: true };
   },
@@ -391,8 +435,8 @@ const SchemaManager = {
           violations.push({
             field: fieldName,
             type: 'PATTERN_MISMATCH',
-            severity: 'HIGH',
-            message: `Pattern mismatch`
+            severity: fieldName === 'url' ? 'HIGH' : 'HIGH', // 🆕 URL pattern mismatch is HIGH
+            message: fieldName === 'url' ? `Invalid URL format` : `Pattern mismatch`
           });
         }
       }
@@ -456,23 +500,65 @@ const SchemaManager = {
     return standardized;
   },
   
+  // 🆕 DAY 21.2: URL Extraction & Validation
+  extractAndValidateURL(data, currentPageURL) {
+    let url = data.url || data.link || data.href || data.productUrl || data.itemUrl;
+    
+    // If no URL found, try to extract from links array
+    if (!url && Array.isArray(data.links) && data.links.length > 0) {
+      url = data.links[0];
+    }
+    
+    // Fallback to current page URL
+    if (!url) {
+      url = currentPageURL;
+      data.url_is_fallback = true;
+      schemaLogger('warn', 'No item-specific URL found, using page URL as fallback');
+    }
+    
+    // Convert relative URLs to absolute
+    if (url && !url.startsWith('http')) {
+      try {
+        const baseURL = new URL(currentPageURL);
+        url = new URL(url, baseURL.origin).href;
+        schemaLogger('debug', `Converted relative URL to absolute: ${url}`);
+      } catch (error) {
+        schemaLogger('error', 'Failed to convert relative URL', error);
+      }
+    }
+    
+    // Validate URL format
+    if (url && !URL_VALIDATION_PATTERN.test(url)) {
+      schemaLogger('warn', `Invalid URL format: ${url}`);
+      data.url_validation_failed = true;
+    }
+    
+    data.url = url;
+    return data;
+  },
+  
   getDay10Status() {
     return {
       version: this.VERSION,
       day10Enhanced: true,
+      day21Enhanced: true, // 🆕 ADDED
       features: {
         typeSystem: true,
         dateStandardization: true,
         confidenceScoring: true,
         bloombergMapping: true,
-        schemaValidation: true
+        schemaValidation: true,
+        urlEnforcement: true, // 🆕 ADDED
+        urlExtraction: true, // 🆕 ADDED
+        urlValidation: true // 🆕 ADDED
       },
       supportedSites: Object.keys(DAY10_FIELD_TYPES)
     };
   }
 };
 
-console.log('[SchemaManager] Day 10 AI ENGINE v1 schema system loaded - Version:', SchemaManager.VERSION);
+console.log('[SchemaManager] Day 21.2 AI ENGINE v1 schema system loaded - Version:', SchemaManager.VERSION);
+console.log('[SchemaManager] 🔗 URL field enforcement enabled for all schemas');
 
 // ============================================================================
 // EXPORT

@@ -1,22 +1,23 @@
 /**
  * Web Weaver Lightning - Configuration System
- * Version: 4.0.0 (Day 21 - CHROME AI + CLOUD API TOGGLE + SECURITY)
+ * Version: 4.1.0 (Day 21.2 - CHROME BUILT-IN AI FULL INTEGRATION)
  * 
- * 🆕 v4.0 CHANGES (DAY 21 SECURITY & AI PROVIDER TOGGLE):
- * - Added AI_PROVIDER: Toggle between Chrome Built-in AI and Cloud API
- * - Added SECURITY: API key validation, expiration warnings, runtime-only keys
- * - Added PRIVACY: TOS acceptance, privacy warnings, opt-in telemetry
- * - Added RATE_LIMIT_WARNINGS: Soft warnings at 25 RPM and 900K RPD
- * - Added DEDUPLICATION: State management for pagination workflows
- * - Added MULTI_SECTION_EXTRACTION: Enhanced DOM pattern detection
- * - ENHANCED: 429 fallback with Chrome AI suggestion
+ * 🆕 v4.1 CHANGES (DAY 21.2 - CHROME AI FULL INTEGRATION):
+ * - Added FALLBACK_BANNER: 24h localStorage cooldown for fallback notifications
+ * - Added CATEGORY_FILTERING: Prompt enhancement for category-specific extraction
+ * - Added URL_EXTRACTION: Ensure URL field in all schemas
+ * - Added ITEM_COUNT_DISPLAY: UI tweak to show item count prominently
+ * - Enhanced Chrome AI wrapper integration
  * 
- * ✅ PRESERVED FROM v3.4:
+ * ✅ PRESERVED FROM v4.0:
+ * - AI_PROVIDER: Toggle between Chrome Built-in AI and Cloud API
+ * - SECURITY: API key validation, expiration warnings, runtime-only keys
+ * - PRIVACY: TOS acceptance, privacy warnings, opt-in telemetry
+ * - RATE_LIMIT_WARNINGS: Soft warnings at 25 RPM and 900K RPD
+ * - DEDUPLICATION: State management for pagination workflows
+ * - MULTI_SECTION_EXTRACTION: Enhanced DOM pattern detection
  * - EXTRACTION_TYPES: MULTI (all items) and SINGLE_ITEM (screenshot)
- * - NO API usage tracking (unlimited extraction philosophy)
- * - Natural pagination (user controls page navigation)
  * - All 5 modes (offline, min, balanced, max, auto)
- * - 3-tier classification (DOM → Visual → AI)
  * 
  * PHILOSOPHY:
  * - Privacy-first: User API keys only, runtime storage, no hardcoded keys
@@ -26,8 +27,8 @@
  */
 
 const CONFIG = {
-  VERSION: '4.0.0-day21-chrome-ai-security',
-  
+  VERSION: '4.1.0-day21.2-chrome-ai-full-integration',
+
   // ════════════════════════════════════════════════════════════════
   // 🆕 v4.0: AI PROVIDER TOGGLE (Chrome Built-in vs Cloud API)
   // ════════════════════════════════════════════════════════════════
@@ -68,7 +69,7 @@ const CONFIG = {
           streamingSupport: true
         }
       },
-      
+
       CLOUD_API: {
         id: 'CLOUD_API',
         name: 'Cloud API (Gemini)',
@@ -101,7 +102,7 @@ const CONFIG = {
         }
       }
     },
-    
+
     // Fallback strategy when primary provider fails
     fallback: {
       enabled: true,
@@ -110,6 +111,228 @@ const CONFIG = {
       cloudToChrome: false, // Don't fallback from Cloud → Chrome (quality degradation)
       notifyUser: true,
       rememberChoice: true // Remember fallback preference per session
+    }
+  },
+
+  // ════════════════════════════════════════════════════════════════
+  // 🆕 v4.1: FALLBACK BANNER (24h Cooldown)
+  // ════════════════════════════════════════════════════════════════
+  FALLBACK_BANNER: {
+    enabled: true,
+    storageKey: 'web_weaver_fallback_banner_state',
+    cooldownPeriod: 86400000, // 24 hours in milliseconds
+    
+    messages: {
+      chromeAIUnavailable: {
+        title: '⚠️ Chrome Built-in AI Unavailable',
+        message: 'Falling back to Cloud API (slower). Get Chrome Dev 128+ for 10× faster extraction.',
+        action: 'Download Chrome Dev',
+        actionUrl: 'https://www.google.com/chrome/dev/',
+        dismissText: 'Got it (hide for 24h)',
+        icon: '🔵→☁️',
+        severity: 'info'
+      },
+      
+      cloudAPIFallback: {
+        title: '✅ Using Cloud API',
+        message: 'Chrome AI not available. Extraction will be slower but more accurate.',
+        dismissText: 'OK',
+        icon: '☁️',
+        severity: 'info'
+      },
+      
+      rateLimitFallback: {
+        title: '🚨 Rate Limit Hit',
+        message: 'Switched to Chrome AI to avoid further rate limiting.',
+        dismissText: 'OK',
+        icon: '⚠️→🔵',
+        severity: 'warning'
+      }
+    },
+    
+    // Don't show again logic
+    suppressSettings: {
+      respectDismissal: true,
+      resetOnProviderChange: true, // Reset cooldown if user manually switches provider
+      showOncePerSession: false, // Can show multiple times per session if cooldown expired
+      maxDismissals: 3 // After 3 dismissals, stop showing forever
+    },
+    
+    // UI positioning
+    ui: {
+      position: 'top', // 'top' | 'bottom'
+      autoDismissAfter: 0, // 0 = manual dismiss only
+      showCloseButton: true,
+      animateIn: true
+    }
+  },
+
+  // ════════════════════════════════════════════════════════════════
+  // 🆕 v4.1: CATEGORY FILTERING (Prompt Enhancement)
+  // ════════════════════════════════════════════════════════════════
+  CATEGORY_FILTERING: {
+    enabled: true,
+    
+    // Supported categories
+    categories: [
+      {
+        id: 'all',
+        name: 'All Items',
+        description: 'Extract all items on the page',
+        promptModifier: '',
+        icon: '📦'
+      },
+      {
+        id: 'products',
+        name: 'Products Only',
+        description: 'Extract only product listings',
+        promptModifier: 'Focus ONLY on product listings. Ignore articles, reviews, or sidebar content.',
+        icon: '🛍️'
+      },
+      {
+        id: 'articles',
+        name: 'Articles Only',
+        description: 'Extract only article/blog posts',
+        promptModifier: 'Focus ONLY on article or blog post listings. Ignore products, ads, or navigation.',
+        icon: '📰'
+      },
+      {
+        id: 'videos',
+        name: 'Videos Only',
+        description: 'Extract only video listings',
+        promptModifier: 'Focus ONLY on video listings. Ignore text articles, products, or images.',
+        icon: '🎥'
+      },
+      {
+        id: 'jobs',
+        name: 'Job Listings',
+        description: 'Extract only job postings',
+        promptModifier: 'Focus ONLY on job listings. Ignore company info, articles, or ads.',
+        icon: '💼'
+      },
+      {
+        id: 'events',
+        name: 'Events',
+        description: 'Extract only event listings',
+        promptModifier: 'Focus ONLY on event listings. Ignore articles, ads, or sidebar content.',
+        icon: '📅'
+      }
+    ],
+    
+    defaultCategory: 'all',
+    storageKey: 'web_weaver_selected_category',
+    
+    // UI settings
+    ui: {
+      showInPopup: true,
+      position: 'afterExtractionType', // Where to show in popup UI
+      showIcon: true,
+      showDescription: true
+    },
+    
+    // Prompt injection
+    promptIntegration: {
+      injectAt: 'beginning', // 'beginning' | 'end' | 'both'
+      prefix: '\n\n🎯 CATEGORY FILTER: ',
+      suffix: '\n\nStrict filtering is enforced. Return ONLY items matching the category.\n'
+    }
+  },
+
+  // ════════════════════════════════════════════════════════════════
+  // 🆕 v4.1: URL EXTRACTION (Ensure URL Field)
+  // ════════════════════════════════════════════════════════════════
+  URL_EXTRACTION: {
+    enabled: true,
+    
+    // Ensure URL field is always present
+    enforceURLField: true,
+    urlFieldName: 'url',
+    
+    // URL extraction strategies
+    strategies: [
+      {
+        priority: 1,
+        method: 'HREF_ATTRIBUTE',
+        selector: 'a[href]',
+        description: 'Extract href from parent/child anchor tags'
+      },
+      {
+        priority: 2,
+        method: 'DATA_ATTRIBUTE',
+        selector: '[data-url], [data-href], [data-link]',
+        description: 'Extract from data attributes'
+      },
+      {
+        priority: 3,
+        method: 'CURRENT_URL',
+        description: 'Use current page URL if no item-specific URL found'
+      }
+    ],
+    
+    // URL validation
+    validation: {
+      ensureAbsolute: true, // Convert relative URLs to absolute
+      validateFormat: true, // Check URL format validity
+      allowFragments: true, // Allow #hash URLs
+      allowQueryParams: true // Allow ?query URLs
+    },
+    
+    // Fallback behavior
+    fallback: {
+      useCurrentURL: true,
+      markAsFallback: true, // Add flag: "url_is_fallback": true
+      logMissingURLs: true
+    },
+    
+    // Prompt enhancement
+    promptAddition: `\n\n**CRITICAL: URL Field Required**\nFor each item, you MUST include a "url" field containing:\n- The item's direct link (from <a> tag href attribute)\n- If no specific URL exists, use the current page URL\n- Ensure URLs are absolute (include http:// or https://)\n\nExample:\n{\n  "title": "Sample Product",\n  "url": "https://example.com/product/123"\n}\n`
+  },
+
+  // ════════════════════════════════════════════════════════════════
+  // 🆕 v4.1: ITEM COUNT DISPLAY (UI Enhancement)
+  // ════════════════════════════════════════════════════════════════
+  ITEM_COUNT_DISPLAY: {
+    enabled: true,
+    
+    // Display settings
+    display: {
+      showInPopup: true,
+      showInNotification: true,
+      showInExportFilename: true,
+      position: 'header', // 'header' | 'footer' | 'inline'
+      prominent: true, // Use larger font/bold
+      animated: true // Animate count updates
+    },
+    
+    // Count formatting
+    formatting: {
+      template: '📊 {count} {label}',
+      labels: {
+        singular: 'item extracted',
+        plural: 'items extracted',
+        zero: 'No items found'
+      },
+      showNewVsTotal: true, // "12 new (18 total)"
+      templateWithNew: '📊 {new} new ({total} total)',
+      highlightNew: true,
+      newItemColor: '#10B981',
+      totalItemColor: '#6B7280'
+    },
+    
+    // Real-time updates
+    realtime: {
+      updateOnExtraction: true,
+      updateOnDeduplication: true,
+      showLoadingState: true,
+      loadingText: 'Counting items...'
+    },
+    
+    // Breakdown display
+    breakdown: {
+      enabled: true,
+      showByCategory: true, // If category filtering enabled
+      showBySection: true, // If multi-section detection enabled
+      template: '{category}: {count} items'
     }
   },
 
@@ -124,14 +347,12 @@ const CONFIG = {
       requireUserInput: true, // Must be entered by user at runtime
       validateOnEntry: true,
       validationEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models?key=',
-      
       expirationWarning: {
         enabled: true,
         checkInterval: 86400000, // Check daily (24h)
         warnDaysBefore: 7, // Warn 7 days before expiration
         blockDaysBefore: 1 // Block usage 1 day before expiration
       },
-      
       errorHandling: {
         invalidKeyMessage: '🔒 Invalid API key. Generate one at https://aistudio.google.com/',
         expiredKeyMessage: '⏰ API key expired. Please update it.',
@@ -139,7 +360,7 @@ const CONFIG = {
         missingKeyMessage: '🔑 No API key found. Add one in Settings or use Chrome AI.'
       }
     },
-    
+
     // Host Permissions (Dynamic, Scoped)
     permissions: {
       requestDynamically: true, // Request only when extraction starts
@@ -148,7 +369,7 @@ const CONFIG = {
       explainBeforeRequest: true,
       permissionMessage: 'Web Weaver needs permission to extract data from this page.'
     },
-    
+
     // Build Security
     build: {
       preventKeyLeakage: true,
@@ -171,7 +392,6 @@ const CONFIG = {
       showOnFirstUse: true,
       blockUntilAccepted: true,
       tosUrl: 'https://github.com/yourusername/web-weaver/blob/main/TERMS.md',
-      
       warningMessage: {
         title: '⚠️ Privacy & Terms Notice',
         content: `Before using Web Weaver:
@@ -191,7 +411,7 @@ Do you accept these terms?`,
         declineButtonText: 'Decline (Extension Disabled)'
       }
     },
-    
+
     // Privacy Settings
     dataCollection: {
       localOnlyDefault: true,
@@ -213,7 +433,7 @@ Do you accept these terms?`,
         'User identifiers'
       ]
     },
-    
+
     // Data Retention
     dataRetention: {
       extractionHistory: {
@@ -232,740 +452,592 @@ Do you accept these terms?`,
   },
 
   // ════════════════════════════════════════════════════════════════
-  // 🆕 v4.0: ENHANCED RATE LIMIT WARNINGS (Proactive)
+  // 🆕 v4.0: RATE LIMIT WARNINGS (Soft Warnings, Not Hard Blocks)
   // ════════════════════════════════════════════════════════════════
-  RATE_LIMIT: {
+  RATE_LIMIT_WARNINGS: {
     enabled: true,
-    trackQuota: false, // Still no quota tracking
-    showUsageInUI: false, // Still no "99/100" displays
     
-    // Proactive Warning Thresholds (BEFORE hitting limits)
-    proactiveWarnings: {
-      enabled: true,
-      
+    // Gemini API Rate Limits (as of 2024)
+    limits: {
+      requestsPerMinute: 15,
+      requestsPerDay: 1500,
+      tokensPerDay: 1000000
+    },
+
+    // Soft warning thresholds (never block, just warn)
+    thresholds: {
       rpm: {
-        threshold: 25, // Warn at 25 RPM (limit is ~15 RPM)
-        message: '⚠️ High request rate detected. Slow down to avoid 429 errors.',
-        action: 'Consider switching to Chrome AI or reducing extraction frequency.',
-        cooldownSuggestion: 'Wait 60 seconds before next extraction.'
+        warning: 10, // Warn at 10 RPM (67% of limit)
+        critical: 13 // Critical warning at 13 RPM (87% of limit)
       },
-      
       rpd: {
-        threshold: 900000, // Warn at 900K tokens/day (limit is 1M TPD)
-        message: '⚠️ Approaching daily token limit (900K/1M).',
-        action: 'Switch to Chrome AI or wait until quota resets (midnight PST).',
-        resetTime: 'Quota resets daily at 12:00 AM Pacific Time.'
-      },
-      
-      consecutive429s: {
-        threshold: 2, // Warn after 2 consecutive 429 errors
-        message: '🚨 Multiple rate limit errors detected.',
-        action: 'Automatic fallback to Chrome AI recommended.',
-        autoSwitchAfter: 3 // Auto-switch after 3 consecutive 429s
+        warning: 900000, // Warn at 900K tokens/day (90% of limit)
+        critical: 950000 // Critical at 950K (95% of limit)
       }
     },
-    
-    exponentialBackoff: true,
-    backoffSchedule: [1000, 2000, 4000, 8000, 16000], // 1s → 16s
-    jitterPercent: 0.20,
-    maxRetries: 5,
-    
-    // Enhanced Error Messages (with Chrome AI fallback)
-    errorMessages: {
-      429: {
-        title: '⚠️ API Rate Limit Exceeded',
-        message: 'Google Gemini API rate limit reached. This is a Google-imposed limit.',
-        action: 'Switch to Chrome AI (zero cost) or wait 60 seconds',
-        recoverySteps: [
-          '✅ Switch to Chrome AI (Settings → AI Provider → Chrome Built-in)',
-          'Wait 60-120 seconds for rate limit reset',
-          'Switch to Offline mode (no AI calls)',
-          'Check quota at https://aistudio.google.com/'
-        ],
-        chromeAIFallback: true,
-        autoSuggestChromeAI: true
-      },
-      403: {
-        title: '🔒 API Key Invalid or Expired',
-        message: 'Your Gemini API key is invalid, expired, or lacks permissions.',
-        action: 'Update API key or switch to Chrome AI',
-        recoverySteps: [
-          '✅ Switch to Chrome AI (no key required)',
-          'Generate new key at https://aistudio.google.com/',
-          'Update key in Settings → API Configuration',
-          'Verify key permissions (Gemini API enabled)'
+
+    // Warning messages
+    messages: {
+      rpmWarning: {
+        title: '⚠️ High API Usage Detected',
+        message: 'You\'ve made {current} API calls in the last minute (limit: {limit} RPM). Consider switching to Chrome Built-in AI (zero cost, no limits).',
+        actions: [
+          { label: 'Switch to Chrome AI', action: 'switchToChromeAI' },
+          { label: 'Slow Down', action: 'dismiss' }
         ]
       },
-      500: {
-        title: '🔧 Gemini API Server Error',
-        message: 'Google AI services are experiencing issues.',
-        action: 'Switch to Chrome AI or try again in 5 minutes',
-        recoverySteps: [
-          '✅ Switch to Chrome AI (unaffected by API issues)',
-          'Wait 5-10 minutes',
-          'Check status.cloud.google.com',
-          'Retry extraction'
-        ]
-      },
-      network: {
-        title: '🌐 Network Connection Error',
-        message: 'No internet connection or request timeout.',
-        action: 'Check connection or switch to Chrome AI (offline-capable)',
-        recoverySteps: [
-          '✅ Switch to Chrome AI (works offline)',
-          'Check WiFi/Ethernet connection',
-          'Disable VPN if active',
-          'Try again'
+      rpdWarning: {
+        title: '⚠️ Daily Token Limit Approaching',
+        message: 'You\'ve used ~{percentage}% of your daily token quota. Remaining: ~{remaining} tokens.',
+        actions: [
+          { label: 'Switch to Chrome AI', action: 'switchToChromeAI' },
+          { label: 'Continue Carefully', action: 'dismiss' }
         ]
       }
+    },
+
+    // Behavior
+    behavior: {
+      showWarningOnce: false, // Can show multiple times
+      autoSwitchToChromeAI: false, // Never auto-switch, always prompt
+      trackUsageInStorage: true,
+      resetCounterDaily: true,
+      resetCounterOnKeyChange: true
     }
   },
 
   // ════════════════════════════════════════════════════════════════
-  // 🆕 v4.0: DEDUPLICATION & STATE MANAGEMENT
+  // 🆕 v4.0: DEDUPLICATION (Pagination Workflow)
   // ════════════════════════════════════════════════════════════════
   DEDUPLICATION: {
     enabled: true,
-    
-    // Per-tab session state
-    sessionManagement: {
-      storageKey: 'web_weaver_session_state',
-      trackPerTab: true,
-      clearOnTabClose: true,
-      maxSessionAge: 3600000, // 1 hour
-      
-      stateSchema: {
-        tabId: 'number',
-        url: 'string',
-        domain: 'string',
-        extractedItemKeys: 'array', // Unique keys of extracted items
-        extractionCount: 'number',
-        lastExtractionTime: 'number',
-        totalItemsSeen: 'number'
-      }
-    },
-    
+    storageKey: 'web_weaver_dedup_cache',
+
     // Deduplication strategy
     strategy: {
-      method: 'COMPOSITE_KEY', // 'COMPOSITE_KEY' | 'CONTENT_HASH' | 'URL_BASED'
-      
-      compositeKeyFields: [
-        'title', // Primary key
-        'url',   // Secondary key
-        'id'     // Tertiary key (if present)
-      ],
-      
-      matchThreshold: 0.85, // 85% similarity = duplicate
+      method: 'HASH', // 'HASH' | 'TITLE' | 'URL' | 'COMPOSITE'
+      hashFields: ['title', 'url'], // Fields to hash for uniqueness
       caseSensitive: false,
       trimWhitespace: true,
-      ignoreFields: ['timestamp', 'confidence', 'extractionId']
+      ignoreEmptyFields: true
     },
-    
-    // User feedback
+
+    // Session management
+    session: {
+      persistAcrossPages: true, // Track across pagination
+      resetOnNewDomain: true,
+      resetOnManualClear: true,
+      maxSessionDuration: 3600000, // 1 hour
+      autoResetOnTimeout: true
+    },
+
+    // Cache settings
+    cache: {
+      maxItems: 10000, // Max unique items to track
+      pruneOldest: true, // Remove oldest when limit hit
+      compressionEnabled: true
+    },
+
+    // UI feedback
     ui: {
       showDuplicateCount: true,
-      showNewItemCount: true,
+      showNewVsTotal: true, // "12 new (18 total)"
       highlightNewItems: true,
-      message: '✅ Extracted {new} new items ({duplicate} duplicates removed)'
+      markDuplicates: false // Don't show duplicates in export
     }
   },
 
   // ════════════════════════════════════════════════════════════════
-  // 🆕 v4.0: MULTI-SECTION EXTRACTION ENHANCEMENT
+  // 🆕 v4.0: MULTI-SECTION EXTRACTION (Enhanced DOM Detection)
   // ════════════════════════════════════════════════════════════════
   MULTI_SECTION_EXTRACTION: {
     enabled: true,
-    
-    // Detect multiple item groups (not just largest)
-    multiGroupDetection: {
-      enabled: true,
-      maxGroups: 5, // Detect up to 5 distinct item groups
-      minItemsPerGroup: 3,
-      minSimilarityWithinGroup: 0.75,
-      maxSimilarityBetweenGroups: 0.40, // Groups must be <40% similar
-      
-      groupLabeling: {
-        auto: true,
-        labelBySection: true, // Use section headings as labels
-        fallbackLabels: ['Main Content', 'Sidebar', 'Related', 'Featured', 'Recent']
-      }
-    },
-    
-    // AI prompt enhancement for sections
-    sectionAwarePrompts: {
-      enabled: true,
-      instructAIToIdentifySections: true,
-      nestedJSONOutput: true,
-      
-      promptAddition: `
-IMPORTANT: If you detect MULTIPLE DISTINCT SECTIONS (e.g., "Featured Products" + "Recently Viewed"), structure your response as:
 
-{
-  "sections": [
-    {
-      "label": "Featured Products",
-      "items": [/* array of items */]
+    // Section detection heuristics
+    detection: {
+      minSectionsToTrigger: 2,
+      sectionIndicators: [
+        'section', 'article', 'aside', 'main', 
+        '[role="region"]', '[role="article"]',
+        '.section', '.category', '.group'
+      ],
+      minItemsPerSection: 3,
+      maxSections: 5
     },
-    {
-      "label": "Recently Viewed",
-      "items": [/* array of items */]
-    }
-  ]
-}
 
-If only ONE section, return flat array as before.`
+    // Section labeling
+    labeling: {
+      autoLabel: true,
+      labelStrategies: [
+        'HEADING', // Use nearest <h1>-<h6>
+        'ARIA_LABEL', // Use aria-label attribute
+        'CLASS_NAME', // Derive from class
+        'POSITION' // "Section 1", "Section 2"
+      ],
+      defaultPrefix: 'Section'
+    },
+
+    // Output formatting
+    output: {
+      groupBySections: true, // { "section1": [...], "section2": [...] }
+      includeMetadata: true, // section name, item count
+      flattenOnExport: false // Keep sections separate in JSON
     }
   },
 
   // ════════════════════════════════════════════════════════════════
-  // PRESERVED: Original Configuration (v3.4)
+  // EXTRACTION TYPES (MULTI vs SINGLE_ITEM)
   // ════════════════════════════════════════════════════════════════
-  
-  API_ENDPOINT: 'https://generativelanguage.googleapis.com/v1beta/models',
-  GEMINI_MODEL: 'gemini-2.0-flash-lite',
-  GEMINI_LITE_MODEL: 'gemini-2.0-flash-lite',
-
-  // 🆕 v3.4: EXTRACTION TYPES (MULTI vs SINGLE_ITEM)
   EXTRACTION_TYPES: {
     MULTI: {
       id: 'MULTI',
-      name: 'Extract All Items',
-      description: 'Extracts all items currently loaded on the page',
+      name: 'Multiple Items',
+      description: 'Extract all items on the current page view',
       icon: '📦',
-      method: 'DOM_ANALYSIS',
-      itemLimit: Infinity,
-      naturalPagination: true,
-      helpText: 'Extracts all items currently loaded. Scroll or click "Next Page" to load more, then click "Extract Again".',
-      supportsAIProvider: {
-        CHROME_BUILTIN: true,
-        CLOUD_API: true
-      }
+      useCases: [
+        'Product listings (Amazon, eBay)',
+        'Search results (Google, Bing)',
+        'Article feeds (Medium, Reddit)',
+        'Social media posts (Twitter, LinkedIn)',
+        'Job boards (Indeed, LinkedIn Jobs)',
+        'Event listings (Eventbrite, Meetup)'
+      ],
+      behavior: {
+        captureScreenshot: false,
+        useVisionAPI: false,
+        paginationAware: true,
+        deduplicationEnabled: true,
+        batchProcessing: true
+      },
+      prompt: 'Extract ALL items visible on the page. Return a JSON array.'
     },
-    
+
     SINGLE_ITEM: {
       id: 'SINGLE_ITEM',
-      name: 'Extract Visible Article',
-      description: 'Captures screenshot and extracts the main visible article/item',
-      icon: '📄',
-      method: 'SCREENSHOT_VISION',
-      itemLimit: 1,
-      naturalPagination: false,
-      helpText: 'Takes a screenshot and extracts the main article/item visible on your screen (ignores sidebars).',
-      supportsAIProvider: {
-        CHROME_BUILTIN: false, // Chrome AI doesn't support vision yet
-        CLOUD_API: true
+      name: 'Single Item (Screenshot)',
+      description: 'Extract one item using screenshot + Vision API',
+      icon: '📸',
+      useCases: [
+        'Product detail pages (full specs, reviews)',
+        'Article pages (full text, images)',
+        'Profile pages (bio, stats)',
+        'Complex layouts (charts, tables)',
+        'Dynamic content (JavaScript-rendered)'
+      ],
+      behavior: {
+        captureScreenshot: true,
+        useVisionAPI: true,
+        paginationAware: false,
+        deduplicationEnabled: false,
+        batchProcessing: false
       },
-      fallbackProvider: 'CLOUD_API',
-      fallbackMessage: 'Screenshot extraction requires Cloud API (vision support)'
+      prompt: 'Extract the main item from this screenshot. Return a single JSON object.'
     }
   },
 
-  // Extraction Mode Configurations (PRESERVED FROM v3.4)
+  // Default extraction type
+  DEFAULT_EXTRACTION_TYPE: 'MULTI',
+
+  // ════════════════════════════════════════════════════════════════
+  // EXTRACTION MODES (5 Modes)
+  // ════════════════════════════════════════════════════════════════
   MODES: {
     offline: {
-      id: 'offline',
-      name: 'Offline Mode',
-      description: 'DOM extraction only - No AI calls',
-      icon: '🟢',
-      pipeline: {
-        useDOMAnalysis: true,
-        useAI: false,
-        apiCalls: 0
-      },
-      performance: {
-        targetSpeed: 1,
-        targetConfidence: 60,
-        acceptableRange: [40, 70]
-      },
-      useCases: [
-        'No API key available',
-        'Testing DOM extraction',
-        'Rate limit exceeded',
-        'Offline usage',
-        'Privacy-focused extraction'
-      ],
-      supportsAIProvider: {
-        CHROME_BUILTIN: false,
-        CLOUD_API: false
-      }
+      name: 'Offline',
+      description: 'No AI, pure DOM parsing (instant, no API)',
+      requiresAPI: false,
+      speed: 'instant',
+      accuracy: 'low',
+      cost: 'free',
+      icon: '⚡',
+      tooltip: 'Fastest mode. No AI, uses HTML structure only.'
     },
-
     min: {
-      id: 'min',
-      name: 'Min Mode',
-      description: 'Fast extraction with minimal AI',
-      icon: '🌿',
-      pipeline: {
-        useDOMAnalysis: true,
-        skipAIVerificationThreshold: 90,
-        alwaysVerifyAI: false,
-        dualExtraction: false
-      },
-      apiStrategy: {
-        maxAPICalls: 2,
-        targetAPICalls: 1.4,
-        skipPromptGeneration: false,
-        skipTypeDetection: true
-      },
-      retry: {
-        maxRetries: 0,
-        retryOnNetworkError: false
-      },
-      cache: {
-        useCache: true,
-        trustCacheThreshold: 0.85,
-        cachePromptTemplates: true,
-        cacheTypeDetection: true
-      },
-      performance: {
-        targetSpeed: 3,
-        targetConfidence: 75,
-        acceptableRange: [70, 80]
-      },
-      useCases: [
-        'High-volume scraping',
-        'Known reliable domains',
-        'Quota conservation',
-        'Testing environments'
-      ],
-      supportsAIProvider: {
-        CHROME_BUILTIN: true,
-        CLOUD_API: true
-      }
+      name: 'Minimal',
+      description: 'Light AI assist (1 API call, ~200 tokens)',
+      requiresAPI: true,
+      speed: 'fast',
+      accuracy: 'medium',
+      cost: 'very low',
+      icon: '🔵',
+      tooltip: 'Quick AI validation. Good for simple pages.'
     },
-
     balanced: {
-      id: 'balanced',
-      name: 'Balanced Mode',
-      description: 'Smart extraction with verification',
+      name: 'Balanced',
+      description: 'Moderate AI depth (1-2 calls, ~500 tokens)',
+      requiresAPI: true,
+      speed: 'moderate',
+      accuracy: 'high',
+      cost: 'low',
       icon: '⚖️',
-      pipeline: {
-        useDOMAnalysis: true,
-        skipAIVerificationThreshold: 80,
-        alwaysVerifyAI: false,
-        dualExtraction: false
-      },
-      apiStrategy: {
-        maxAPICalls: 3,
-        targetAPICalls: 2.4,
-        skipPromptGeneration: false,
-        skipTypeDetection: false
-      },
-      retry: {
-        maxRetries: 1,
-        retryOnNetworkError: true,
-        retryOn500: true,
-        exponentialBackoff: true,
-        backoffDelays: [2000, 4000]
-      },
-      cache: {
-        useCache: true,
-        trustCacheThreshold: 0.95,
-        cachePromptTemplates: true,
-        cacheTypeDetection: true
-      },
-      performance: {
-        targetSpeed: 5,
-        targetConfidence: 85,
-        acceptableRange: [80, 90]
-      },
-      useCases: [
-        'General web scraping',
-        'Production applications',
-        'Mixed page types',
-        'First-time domains'
-      ],
-      supportsAIProvider: {
-        CHROME_BUILTIN: true,
-        CLOUD_API: true
-      }
+      tooltip: 'Best balance of speed and accuracy.'
     },
-
     max: {
-      id: 'max',
-      name: 'Max Mode',
-      description: 'Maximum accuracy with triple verification',
-      icon: '🚀',
-      pipeline: {
-        useDOMAnalysis: true,
-        skipAIVerificationThreshold: 0,
-        alwaysVerifyAI: true,
-        dualExtraction: true,
-        tripleVerification: true
-      },
-      apiStrategy: {
-        maxAPICalls: 4,
-        targetAPICalls: 3.8,
-        skipPromptGeneration: false,
-        skipTypeDetection: false,
-        useMultiplePrompts: true
-      },
-      retry: {
-        maxRetries: 2,
-        retryOnNetworkError: true,
-        retryOn500: true,
-        exponentialBackoff: true,
-        backoffDelays: [2000, 4000, 8000]
-      },
-      cache: {
-        useCache: false,
-        trustCacheThreshold: 1.0,
-        cachePromptTemplates: false,
-        cacheTypeDetection: false
-      },
-      performance: {
-        targetSpeed: 10,
-        targetConfidence: 95,
-        acceptableRange: [90, 100]
-      },
-      useCases: [
-        'Critical data extraction',
-        'Financial data',
-        'Legal documents',
-        'Medical information',
-        'Production-critical scraping'
-      ],
-      supportsAIProvider: {
-        CHROME_BUILTIN: true,
-        CLOUD_API: true
-      }
+      name: 'Maximum',
+      description: 'Deep AI analysis (2-3 calls, ~1000 tokens)',
+      requiresAPI: true,
+      speed: 'slow',
+      accuracy: 'highest',
+      cost: 'moderate',
+      icon: '🎯',
+      tooltip: 'Most accurate. Use for complex/critical extractions.'
+    },
+    auto: {
+      name: 'Smart Auto',
+      description: 'AI chooses best mode based on page complexity',
+      requiresAPI: true,
+      speed: 'adaptive',
+      accuracy: 'adaptive',
+      cost: 'optimized',
+      icon: '🤖',
+      tooltip: 'Automatic mode selection. Recommended for most users.'
+    }
+  },
+
+  DEFAULT_MODE: 'auto',
+
+  // ════════════════════════════════════════════════════════════════
+  // API CONFIGURATION (Cloud API)
+  // ════════════════════════════════════════════════════════════════
+  API: {
+    BASE_URL: 'https://generativelanguage.googleapis.com/v1beta/models',
+    MODEL: 'gemini-2.0-flash-lite',
+    VISION_MODEL: 'gemini-2.0-flash-lite',
+    
+    ENDPOINTS: {
+      TEXT: '/gemini-2.0-flash-lite:generateContent',
+      VISION: '/gemini-2.0-flash-lite:generateContent',
+      MODELS: '?key='
     },
 
-    auto: {
-      id: 'auto',
-      name: 'Smart Auto',
-      description: 'AI chooses best mode automatically',
-      icon: '🤖',
-      decisionWeights: {
-        cacheReliability: 0.35,
-        domConfidence: 0.30,
-        domainHistory: 0.20,
-        pageComplexity: 0.15
+    REQUEST_CONFIG: {
+      temperature: 0.1,
+      topK: 3,
+      topP: 0.95,
+      maxOutputTokens: 8192,
+      timeout: 30000, // 30s timeout
+      retries: 2,
+      retryDelay: 1000
+    },
+
+    RATE_LIMITS: {
+      requestsPerMinute: 15,
+      requestsPerDay: 1500,
+      tokensPerMinute: 32000,
+      tokensPerDay: 1000000
+    },
+
+    ERROR_CODES: {
+      400: 'Invalid request format',
+      401: 'Invalid API key',
+      403: 'API key lacks required permissions',
+      404: 'Model not found',
+      429: 'Rate limit exceeded',
+      500: 'Internal server error',
+      503: 'Service temporarily unavailable'
+    }
+  },
+
+  // ════════════════════════════════════════════════════════════════
+  // CLASSIFICATION (3-Tier System)
+  // ════════════════════════════════════════════════════════════════
+  CLASSIFICATION: {
+    enabled: true,
+    tiers: ['DOM', 'VISUAL', 'AI'],
+    
+    confidence_thresholds: {
+      DOM: 0.7,
+      VISUAL: 0.6,
+      AI: 0.5
+    },
+
+    strategies: {
+      DOM: {
+        patterns: [
+          { type: 'product', selectors: ['.product', '[data-product]', '.item-card'] },
+          { type: 'article', selectors: ['article', '.post', '.story'] },
+          { type: 'search', selectors: ['.search-result', '.result-item'] }
+        ]
       },
-      thresholds: {
-        forceMin: {
-          cacheReliability: 0.90,
-          domConfidence: 85
-        },
-        preferMin: {
-          cacheReliability: 0.85,
-          domConfidence: 80
-        },
-        preferBalanced: {
-          domConfidence: 70,
-          newDomain: true
-        },
-        preferMax: {
-          domConfidence: 50,
-          previousFailures: 2
-        }
+      VISUAL: {
+        enabled: true,
+        indicators: ['images', 'prices', 'ratings', 'buttons']
       },
-      switching: {
-        allowMidSession: true,
-        upgradeOnLowConfidence: true,
-        upgradeThreshold: 70
-      },
-      supportsAIProvider: {
-        CHROME_BUILTIN: true,
-        CLOUD_API: true
+      AI: {
+        enabled: true,
+        fallbackOnly: false
       }
     }
   },
 
-  // Domain Cache Configuration (PRESERVED)
+  // ════════════════════════════════════════════════════════════════
+  // PROMPT CONFIGURATION
+  // ════════════════════════════════════════════════════════════════
+  PROMPTS: {
+    version: 'v10',
+    promptFile: 'prompts/prompt_v10_universal.txt',
+    fallbackFile: 'prompts/prompt_v8_fallback.txt',
+    screenshotFile: 'prompts/prompt_v11_screenshot.txt',
+    
+    // Dynamic prompt modifications
+    modifications: {
+      injectCategory: true, // Add category filter from CATEGORY_FILTERING
+      injectURLRequirement: true, // Add URL requirement from URL_EXTRACTION
+      injectPageContext: true, // Add page URL, title, domain
+      injectExtractionType: true // Add MULTI/SINGLE_ITEM context
+    }
+  },
+
+  // ════════════════════════════════════════════════════════════════
+  // CACHE CONFIGURATION
+  // ════════════════════════════════════════════════════════════════
   CACHE: {
     enabled: true,
-    maxDomains: 100,
-    ttl: 3600000,
-    evictionPolicy: 'LRU',
-    learning: {
-      enabled: true,
-      minExtractionsForLearning: 5,
-      confidenceWindowSize: 20,
-      reliabilityDecayFactor: 0.95
-    },
-    reliability: {
-      minScore: 0.0,
-      maxScore: 1.0,
-      thresholds: {
-        excellent: 0.90,
-        good: 0.80,
-        moderate: 0.70,
-        poor: 0.60
-      }
+    ttl: 3600000, // 1 hour
+    maxSize: 100, // Max cached extractions
+    storageKey: 'web_weaver_cache',
+    
+    strategy: {
+      keyGeneration: 'URL_HASH', // Hash URL + mode + extraction type
+      invalidateOnModeChange: true,
+      invalidateOnProviderChange: true,
+      compressionEnabled: true
     }
   },
 
-  // AI CLASSIFICATION CONFIGURATION (PRESERVED)
-  AI_CLASSIFICATION: {
-    enabled: true,
-    triggerThreshold: 80,
-    timeout: 5000,
-    maxRetries: 1,
-    minConfidence: 75,
-    maxContentLength: 2000,
-    maxHeadings: {
-      h1: 5,
-      h2: 10
-    },
-    temperature: 0.1,
-    maxOutputTokens: 256,
-    fallbackOnError: true,
-    fallbackClassification: 'MULTI_ITEM',
-    estimatedCostPerCall: 0.01,
-    logPrompts: false,
-    logResponses: false
-  },
-
-  // VISUAL PATTERN DETECTION (PRESERVED)
-  VISUAL_DETECTION: {
-    enabled: true,
-    sizeThreshold: 0.20,
-    positionThreshold: 50,
-    structureWeight: 0.50,
-    minItems: 5,
-    maxCandidates: 200,
-    minElementArea: 200,
-    maxFullWidthRatio: 0.90,
-    timeout: 2000,
-    minPatternConfidence: 75,
-    enableSampling: true,
-    samplingRate: 3,
-    enableSignatureCache: true,
-    signatureCacheTTL: 5000,
-    structureWeights: {
-      childCount: 0.40,
-      textLength: 0.30,
-      hasImage: 0.15,
-      hasLink: 0.15
-    },
-    fallbackToAI: true,
-    confidenceBoost: 5,
-    logCandidates: false,
-    logGroups: false,
-    logSignatures: false
-  },
-
-  // UNCERTAINTY DETECTION CONFIG (PRESERVED)
-  UNCERTAINTY_DETECTION: {
-    enabled: true,
-    thresholds: {
-      contradictorySignals: 20,
-      complexFeed: 30,
-      manySections: 25,
-      mediumLike: 25
-    },
-    uncertaintyThreshold: 40,
-    fallbackToMultiItem: true,
-    fallbackConfidence: 60
-  },
-
-  // Confidence Visualization (PRESERVED)
-  CONFIDENCE_DISPLAY: {
-    enabled: true,
-    tiers: {
-      excellent: {
-        threshold: 90,
-        color: '#10B981',
-        icon: '🟢',
-        label: 'High',
-        description: 'Verified AI Consensus',
-        trustLevel: 'Trust this data fully'
-      },
-      good: {
-        threshold: 75,
-        color: '#F59E0B',
-        icon: '🔵',
-        label: 'Good',
-        description: 'Verified Structure',
-        trustLevel: 'Spot-check important fields'
-      },
-      caution: {
-        threshold: 0,
-        color: '#F97316',
-        icon: '🟠',
-        label: 'Medium',
-        description: 'Manual Review Recommended',
-        trustLevel: 'Verify all data manually'
-      }
-    },
-    showBreakdown: true,
-    showPerFieldConfidence: false,
-    showHistoricalTrends: true
-  },
-
-  // Analytics & Telemetry (PRESERVED + Privacy enhancements)
-  ANALYTICS: {
-    enabled: true,
-    anonymous: true,
-    collectLocalOnly: true,
-    trackAPIUsage: false,
-    requireUserConsent: true, // 🆕 Opt-in only
-    metrics: {
-      trackModeUsage: true,
-      trackConfidenceDistribution: true,
-      trackAPICalls: false,
-      trackDomainPerformance: true,
-      trackErrors: true,
-      trackVisualDetection: true,
-      trackUncertaintyFallbacks: true,
-      trackAIClassification: true,
-      trackExtractionTypes: true,
-      trackAIProviderUsage: true, // 🆕 Track Chrome AI vs Cloud API
-      trackDeduplication: true // 🆕 Track duplicate removal stats
-    },
-    reporting: {
-      aggregationInterval: 86400000,
-      maxHistoryDays: 7
-    }
-  },
-
-  // UI/UX Settings (PRESERVED)
-  UX: {
-    animations: {
-      enabled: true,
-      transitionDuration: 200,
-      successAnimation: true,
-      loadingStates: true
-    },
-    tooltips: {
-      enabled: true,
-      showModeHints: true,
-      showConfidenceExplanations: true,
-      showExtractionTypeHints: true,
-      showAIProviderInfo: true // 🆕 Show Chrome AI vs Cloud info
-    },
-    notifications: {
-      enabled: true,
-      showInExtension: true,
-      modeSwitch: true,
-      confidenceAlerts: true,
-      paginationHints: true,
-      aiProviderSwitch: true, // 🆕 Notify on AI provider switch
-      rateLimitWarnings: true // 🆕 Show proactive warnings
-    }
-  },
-
-  // Timeouts (PRESERVED)
-  TIMEOUTS: {
-    default: 30000,
-    offline: 5000,
-    min: 20000,
-    balanced: 30000,
-    max: 45000,
-    domAnalysis: 5000,
-    aiRequest: 25000,
-    visualDetection: 2000,
-    aiClassification: 5000,
-    screenshotCapture: 3000,
-    visionAPIRequest: 8000,
-    chromeAIRequest: 5000 // 🆕 Chrome AI timeout
-  },
-
-  // CSV Export Configuration (PRESERVED)
-  CSV_EXPORT: {
-    useAIForComplexData: true,
-    complexityThreshold: 3,
-    maxManualDepth: 2
-  },
-
-  // SCREENSHOT EXTRACTION (PRESERVED)
-  SCREENSHOT_EXTRACTION: {
+  // ════════════════════════════════════════════════════════════════
+  // SCREENSHOT CONFIGURATION
+  // ════════════════════════════════════════════════════════════════
+  SCREENSHOT: {
     enabled: true,
     format: 'png',
-    quality: 0.92,
-    captureFullPage: false,
-    maxImageSize: 5 * 1024 * 1024,
-    visionAPIModel: 'gemini-2.0-flash-lite',
-    temperature: 0.1,
-    maxOutputTokens: 512,
-    requiresCloudAPI: true, // 🆕 Requires Cloud API (vision support)
-    promptTemplate: `You are analyzing a screenshot of a web page.
-Extract the MAIN article or item visible in the center/top of the screen.
-
-Return JSON with these fields:
-- title (string): Main title/heading visible
-- author (string): Author if visible
-- date (string): Publication date if visible
-- content (string): Main text content (first 500 words)
-- description (string): Brief summary
-- image (string): Main image URL if visible
-- price (string): Price if this is a product
-- rating (string): Rating if visible
-- url (string): Current page URL
-- type (string): article|product|post|video
-
-Focus ONLY on the PRIMARY content visible on screen.
-Ignore navigation, sidebars, ads, comments, recommendations.
-If multiple items visible, extract the LARGEST/MAIN one.`
+    quality: 80,
+    maxWidth: 1280,
+    maxHeight: 10000,
+    captureViewport: false, // Capture visible area only
+    captureFullPage: false, // Don't capture beyond viewport
+    
+    vision: {
+      enabled: true,
+      useWhenDOMFails: true,
+      maxImageSize: 4194304, // 4MB
+      compressionQuality: 0.8
+    }
   },
 
-  // 🆕 v4.0: ERROR REPORTING & DIAGNOSTICS
-  ERROR_REPORTING: {
+  // ════════════════════════════════════════════════════════════════
+  // ANALYTICS & TELEMETRY
+  // ════════════════════════════════════════════════════════════════
+  ANALYTICS: {
     enabled: true,
-    collectLocal: true,
-    userCanExport: true,
-    optInRemoteReporting: false, // Privacy-first
+    optInRequired: true, // User must opt-in
+    storageKey: 'web_weaver_analytics',
     
-    captureDetails: {
-      errorType: true,
-      errorMessage: true,
-      stackTrace: true,
-      timestamp: true,
-      url: false, // Privacy: don't log URLs
-      extractedData: false, // Privacy: don't log data
-      systemInfo: {
-        chromeVersion: true,
-        extensionVersion: true,
-        aiProvider: true,
-        mode: true
-      }
+    trackEvents: [
+      'extraction_started',
+      'extraction_success',
+      'extraction_failed',
+      'mode_changed',
+      'provider_switched',
+      'api_error',
+      'fallback_triggered'
+    ],
+    
+    metrics: {
+      successRate: true,
+      averageLatency: true,
+      confidenceScores: true,
+      errorTypes: true,
+      modeUsage: true,
+      providerUsage: true
     },
     
-    maxLogs: 100,
-    retentionDays: 3,
-    exportFormat: 'json'
+    privacy: {
+      anonymized: true,
+      noPersonalData: true,
+      localStorageOnly: true,
+      exportable: true
+    }
+  },
+
+  // ════════════════════════════════════════════════════════════════
+  // ERROR HANDLING
+  // ════════════════════════════════════════════════════════════════
+  ERROR_HANDLING: {
+    retryAttempts: 2,
+    retryDelay: 1000,
+    exponentialBackoff: true,
+    
+    fallbackChain: [
+      'RETRY_SAME_PROVIDER',
+      'SWITCH_TO_FALLBACK_PROVIDER',
+      'USE_CACHE',
+      'DEGRADE_TO_OFFLINE_MODE'
+    ],
+    
+    userNotification: {
+      showOnError: true,
+      showRecoverySteps: true,
+      allowManualRetry: true,
+      showFallbackSuggestions: true
+    }
+  },
+
+  // ════════════════════════════════════════════════════════════════
+  // UI CONFIGURATION
+  // ════════════════════════════════════════════════════════════════
+  UI: {
+    theme: 'auto', // 'light' | 'dark' | 'auto'
+    animations: true,
+    compactMode: false,
+    
+    popup: {
+      width: 400,
+      minHeight: 500,
+      maxHeight: 700
+    },
+    
+    notifications: {
+      position: 'top-right',
+      duration: 5000,
+      autoClose: true
+    },
+    
+    resultDisplay: {
+      defaultView: 'json', // 'json' | 'table' | 'cards'
+      prettyPrint: true,
+      showMetadata: true,
+      highlightNew: true
+    }
+  },
+
+  // ════════════════════════════════════════════════════════════════
+  // EXPORT CONFIGURATION
+  // ════════════════════════════════════════════════════════════════
+  EXPORT: {
+    formats: ['json', 'csv', 'xlsx'],
+    defaultFormat: 'json',
+    
+    filename: {
+      template: 'web-weaver_{domain}_{timestamp}_{count}items',
+      includeTimestamp: true,
+      includeDomain: true,
+      includeCount: true
+    },
+    
+    json: {
+      prettyPrint: true,
+      indent: 2,
+      includeMetadata: true
+    },
+    
+    csv: {
+      delimiter: ',',
+      includeHeaders: true,
+      flattenNested: true,
+      escapeQuotes: true
+    }
+  },
+
+  // ════════════════════════════════════════════════════════════════
+  // DEBUG & DEVELOPMENT
+  // ════════════════════════════════════════════════════════════════
+  DEBUG: {
+    enabled: false, // Set to true for development
+    verboseLogging: false,
+    logAPIRequests: false,
+    logAPIResponses: false,
+    showTimings: false,
+    
+    devTools: {
+      exposeGlobals: false, // Expose CONFIG, CHROME_AI to window
+      allowManualOverrides: false
+    }
+  },
+
+  // ════════════════════════════════════════════════════════════════
+  // FEATURE FLAGS (Experimental Features)
+  // ════════════════════════════════════════════════════════════════
+  FEATURE_FLAGS: {
+    chromeAI: true, // Enable Chrome Built-in AI
+    categoryFiltering: true, // Enable category filtering
+    urlExtraction: true, // Enforce URL field
+    itemCountDisplay: true, // Show item count prominently
+    multiSectionExtraction: true,
+    deduplication: true,
+    fallbackBanner: true, // 24h cooldown banner
+    smartAutoMode: true,
+    screenshotExtraction: true,
+    visionAPI: true,
+    caching: true,
+    analytics: true
   }
 };
 
-// Freeze config (prevent modifications)
-Object.freeze(CONFIG);
-Object.freeze(CONFIG.AI_PROVIDER);
-Object.freeze(CONFIG.SECURITY);
-Object.freeze(CONFIG.PRIVACY);
-Object.freeze(CONFIG.DEDUPLICATION);
-Object.freeze(CONFIG.MULTI_SECTION_EXTRACTION);
-Object.freeze(CONFIG.EXTRACTION_TYPES);
-Object.freeze(CONFIG.MODES);
-Object.freeze(CONFIG.RATE_LIMIT);
-Object.freeze(CONFIG.CACHE);
-Object.freeze(CONFIG.AI_CLASSIFICATION);
-Object.freeze(CONFIG.VISUAL_DETECTION);
-Object.freeze(CONFIG.UNCERTAINTY_DETECTION);
-Object.freeze(CONFIG.SCREENSHOT_EXTRACTION);
-Object.freeze(CONFIG.ERROR_REPORTING);
+// ════════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ════════════════════════════════════════════════════════════════
 
-// Export to global scope
-self.CONFIG = CONFIG;
-self.WEB_WEAVER_CONFIG = CONFIG;
+CONFIG.getMode = function(modeId) {
+  return this.MODES[modeId] || this.MODES[this.DEFAULT_MODE];
+};
 
-console.log('[Config] ═══════════════════════════════════════════════');
-console.log('[Config] Web Weaver Lightning v4.0 (Day 21) Loaded');
-console.log('[Config] ═══════════════════════════════════════════════');
-console.log('[Config] 🆕 AI PROVIDER TOGGLE: Chrome Built-in + Cloud API');
-console.log('[Config] 🆕 SECURITY: Runtime API keys, validation, expiration warnings');
-console.log('[Config] 🆕 PRIVACY: TOS acceptance, opt-in telemetry, local-first');
-console.log('[Config] 🆕 RATE WARNINGS: Proactive alerts at 25 RPM, 900K RPD');
-console.log('[Config] 🆕 DEDUPLICATION: Session state, composite keys, pagination');
-console.log('[Config] 🆕 MULTI-SECTION: Detect 5+ groups, nested JSON output');
-console.log('[Config] ═══════════════════════════════════════════════');
-console.log('[Config] 5 Modes Available:', Object.keys(CONFIG.MODES));
-console.log('[Config] 2 Extraction Types: MULTI, SINGLE_ITEM');
-console.log('[Config] 2 AI Providers: Chrome Built-in, Cloud API');
-console.log('[Config] ═══════════════════════════════════════════════');
-console.log('[Config] ✅ Chrome AI: Fast, free, private, offline');
-console.log('[Config] ✅ Cloud API: Advanced, vision, high accuracy');
-console.log('[Config] ✅ Auto-fallback: Chrome AI → Cloud API on failure');
-console.log('[Config] ✅ Security: No hardcoded keys, runtime-only');
-console.log('[Config] ✅ Privacy: TOS required, telemetry opt-in');
-console.log('[Config] ═══════════════════════════════════════════════');
+CONFIG.getExtractionType = function(typeId) {
+  return this.EXTRACTION_TYPES[typeId] || this.EXTRACTION_TYPES[this.DEFAULT_EXTRACTION_TYPE];
+};
+
+CONFIG.getProvider = function(providerId) {
+  return this.AI_PROVIDER.providers[providerId] || this.AI_PROVIDER.providers[this.AI_PROVIDER.default];
+};
+
+CONFIG.getCategory = function(categoryId) {
+  return this.CATEGORY_FILTERING.categories.find(c => c.id === categoryId) || 
+         this.CATEGORY_FILTERING.categories.find(c => c.id === this.CATEGORY_FILTERING.defaultCategory);
+};
+
+CONFIG.shouldShowFallbackBanner = async function() {
+  if (!this.FEATURE_FLAGS.fallbackBanner) return false;
+  
+  const state = await chrome.storage.local.get(this.FALLBACK_BANNER.storageKey);
+  const bannerState = state[this.FALLBACK_BANNER.storageKey];
+  
+  if (!bannerState) return true; // First time
+  
+  const now = Date.now();
+  const cooldownExpired = (now - bannerState.lastDismissed) > this.FALLBACK_BANNER.cooldownPeriod;
+  const underDismissalLimit = bannerState.dismissCount < this.FALLBACK_BANNER.suppressSettings.maxDismissals;
+  
+  return cooldownExpired && underDismissalLimit;
+};
+
+CONFIG.dismissFallbackBanner = async function() {
+  const state = await chrome.storage.local.get(this.FALLBACK_BANNER.storageKey);
+  const bannerState = state[this.FALLBACK_BANNER.storageKey] || { dismissCount: 0 };
+  
+  bannerState.lastDismissed = Date.now();
+  bannerState.dismissCount += 1;
+  
+  await chrome.storage.local.set({
+    [this.FALLBACK_BANNER.storageKey]: bannerState
+  });
+};
+
+// ════════════════════════════════════════════════════════════════
+// EXPORT CONFIG
+// ════════════════════════════════════════════════════════════════
+
+if (typeof self !== 'undefined') {
+  self.CONFIG = CONFIG;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = CONFIG;
+}
+
+console.log(`[Config] ✅ Web Weaver Lightning v${CONFIG.VERSION} configuration loaded`);
+console.log('[Config] 🔵 Chrome Built-in AI integration enabled');
+console.log('[Config] ☁️ Cloud API fallback available');
+console.log('[Config] 🎯 Category filtering enabled');
+console.log('[Config] 🔗 URL extraction enforced');
+console.log('[Config] 📊 Item count display enabled');
+console.log('[Config] 🔔 Fallback banner with 24h cooldown enabled');
