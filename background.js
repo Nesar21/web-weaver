@@ -578,7 +578,7 @@ async function handleExtraction(message, sender) {
       throw new Error('URL is required for extraction');
     }
 
-    const tabId = sender.tab?.id || options.tabId;
+    const tabId = sender.tab?.id || message.tabId;
     if (!tabId) {
       throw new Error('No tab ID available for content extraction');
     }
@@ -767,7 +767,7 @@ async function handleSingleItemExtraction(message, sender) {
       throw new Error('URL is required');
     }
 
-    const tabId = sender.tab?.id || options.tabId;
+    const tabId = sender.tab?.id || message.tabId;
     if (!tabId) {
       throw new Error('No tab ID available');
     }
@@ -846,7 +846,7 @@ async function handleMultiItemExtraction(message, sender) {
       throw new Error('URL is required');
     }
 
-    const tabId = sender.tab?.id || options.tabId;
+    const tabId = sender.tab?.id || message.tabId;
     if (!tabId) {
       throw new Error('No tab ID available');
     }
