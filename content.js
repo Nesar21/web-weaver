@@ -14,7 +14,6 @@ console.log('[Content] 🚀 Web Weaver Content Script v4.2.0 initializing...');
 
 function detectItemSelector() {
   console.log('[Scroll] 🔍 Auto-detecting item selector...');
-  
   const selectorCandidates = [
     '.feed-shared-update-v2',
     '[data-testid="tweet"]',
@@ -31,7 +30,7 @@ function detectItemSelector() {
     '[data-asin]',
     '.post', '.item', '.card', '.entry'
   ];
-  
+
   for (const selector of selectorCandidates) {
     try {
       const elements = document.querySelectorAll(selector);
@@ -43,14 +42,13 @@ function detectItemSelector() {
       continue;
     }
   }
-  
+
   console.log('[Scroll] No standard selector found, using fallback');
   return 'article, .post, .item, [role="article"]';
 }
 
 async function scrollUntilNoNewItems(options = {}) {
   console.log('[Scroll] Starting infinite scroll detection...');
-  
   const config = {
     maxScrolls: options.maxScrolls || 10,
     scrollDelay: options.scrollDelay || 1000,
@@ -58,14 +56,14 @@ async function scrollUntilNoNewItems(options = {}) {
     onProgress: options.onProgress || (() => {}),
     noChangeThreshold: 2
   };
-  
+
   let prevCount = 0;
   let scrollCount = 0;
   let noChangeCount = 0;
   let scrolledToBottom = false;
-  
+
   console.log('[Scroll] Configuration:', config);
-  
+
   const getItemCount = () => {
     try {
       return document.querySelectorAll(config.itemSelector).length;
@@ -74,24 +72,24 @@ async function scrollUntilNoNewItems(options = {}) {
       return 0;
     }
   };
-  
+
   const isAtBottom = () => {
     const scrollY = window.scrollY || window.pageYOffset;
     const windowHeight = window.innerHeight;
     const documentHeight = document.documentElement.scrollHeight;
     return (scrollY + windowHeight >= documentHeight - 100);
   };
-  
+
   const scrollDown = () => {
     const scrollHeight = window.innerHeight * 0.8;
     window.scrollBy({ top: scrollHeight, behavior: 'smooth' });
   };
-  
+
   const waitForNewContent = (timeoutMs = 3000) => {
     return new Promise((resolve) => {
       const startCount = getItemCount();
       let resolved = false;
-      
+
       const timeout = setTimeout(() => {
         if (!resolved) {
           resolved = true;
@@ -99,7 +97,7 @@ async function scrollUntilNoNewItems(options = {}) {
           resolve({ newItems: false, count: getItemCount() });
         }
       }, timeoutMs);
-      
+
       const observer = new MutationObserver((mutations) => {
         const currentCount = getItemCount();
         if (currentCount > startCount && !resolved) {
@@ -110,38 +108,36 @@ async function scrollUntilNoNewItems(options = {}) {
           resolve({ newItems: true, count: currentCount });
         }
       });
-      
+
       observer.observe(document.body, {
         childList: true,
         subtree: true
       });
     });
   };
-  
+
   prevCount = getItemCount();
   console.log('[Scroll] Initial item count:', prevCount);
-  
+
   while (scrollCount < config.maxScrolls) {
     scrollDown();
     scrollCount++;
     console.log('[Scroll] Scroll', scrollCount, '/', config.maxScrolls);
-    
+
     const result = await waitForNewContent(config.scrollDelay);
     const currentCount = result.count;
-    
+
     config.onProgress(scrollCount, currentCount);
-    
+
     scrolledToBottom = isAtBottom();
-    
+
     if (currentCount === prevCount) {
       noChangeCount++;
       console.log('[Scroll] No new items detected', noChangeCount, '/', config.noChangeThreshold);
-      
       if (noChangeCount >= config.noChangeThreshold) {
         console.log('[Scroll] No new items for multiple scrolls, stopping');
         break;
       }
-      
       if (scrolledToBottom) {
         console.log('[Scroll] Reached bottom of page, stopping');
         break;
@@ -150,19 +146,18 @@ async function scrollUntilNoNewItems(options = {}) {
       noChangeCount = 0;
       console.log('[Scroll] Items increased:', prevCount, '→', currentCount, '+', currentCount - prevCount);
     }
-    
+
     prevCount = currentCount;
     await new Promise(resolve => setTimeout(resolve, 200));
   }
-  
+
   const items = Array.from(document.querySelectorAll(config.itemSelector));
-  
   console.log('[Scroll] Scroll complete:', {
     totalItems: items.length,
     scrollCount,
     reachedBottom: scrolledToBottom
   });
-  
+
   return {
     itemCount: items.length,
     scrollCount,
@@ -185,7 +180,6 @@ function isInfiniteScrollSite() {
     'tumblr.com',
     'pinterest.com'
   ];
-  
   return infiniteScrollDomains.some(domain => url.includes(domain));
 }
 
@@ -195,11 +189,10 @@ function isInfiniteScrollSite() {
 
 function detectPageType() {
   console.log('[Content] 🎯 Detecting page type for smart defaults...');
-  
   const html = document.documentElement.outerHTML.toLowerCase();
   const bodyText = document.body.innerText.toLowerCase();
   const url = window.location.href.toLowerCase();
-  
+
   // E-commerce detection
   const ecommerceSignals = {
     priceElements: document.querySelectorAll('[class*="price"], [data-price]').length,
@@ -207,13 +200,13 @@ function detectPageType() {
     productGrids: document.querySelectorAll('[class*="product"], [data-product]').length,
     ratingStars: document.querySelectorAll('[class*="star"], [class*="rating"]').length
   };
-  
-  const ecommerceScore = 
+
+  const ecommerceScore =
     (ecommerceSignals.priceElements > 3 ? 3 : 0) +
     (ecommerceSignals.cartButtons ? 2 : 0) +
     (ecommerceSignals.productGrids > 3 ? 3 : 0) +
     (ecommerceSignals.ratingStars > 2 ? 2 : 0);
-  
+
   if (ecommerceScore >= 5) {
     console.log('[Content] ✅ Page type: E-Commerce (score:', ecommerceScore, ')');
     return {
@@ -227,7 +220,7 @@ function detectPageType() {
       summarization: false
     };
   }
-  
+
   // News/Article detection
   const newsSignals = {
     articleElements: document.querySelectorAll('article, [role="article"]').length,
@@ -236,14 +229,14 @@ function detectPageType() {
     headlineElements: document.querySelectorAll('h1, h2').length,
     byline: bodyText.includes('by ') && (bodyText.includes('author') || bodyText.includes('journalist'))
   };
-  
+
   const newsScore =
     (newsSignals.articleElements > 0 ? 3 : 0) +
     (newsSignals.authorMeta ? 2 : 0) +
     (newsSignals.publishDate ? 2 : 0) +
     (newsSignals.headlineElements > 2 ? 2 : 0) +
     (newsSignals.byline ? 1 : 0);
-  
+
   if (newsScore >= 4) {
     console.log('[Content] ✅ Page type: News/Articles (score:', newsScore, ')');
     return {
@@ -257,7 +250,7 @@ function detectPageType() {
       summarization: true
     };
   }
-  
+
   // Social Media detection
   const socialSignals = {
     postElements: document.querySelectorAll('[class*="post"], [data-testid*="post"]').length,
@@ -265,13 +258,13 @@ function detectPageType() {
     commentSections: document.querySelectorAll('[class*="comment"]').length,
     feedStructure: document.querySelectorAll('[class*="feed"], [class*="timeline"]').length
   };
-  
+
   const socialScore =
     (socialSignals.postElements > 3 ? 3 : 0) +
     (socialSignals.likeButtons ? 2 : 0) +
     (socialSignals.commentSections > 2 ? 2 : 0) +
     (socialSignals.feedStructure > 0 ? 3 : 0);
-  
+
   if (socialScore >= 5) {
     console.log('[Content] ✅ Page type: Social Media (score:', socialScore, ')');
     return {
@@ -285,7 +278,7 @@ function detectPageType() {
       summarization: true
     };
   }
-  
+
   // Job Board detection
   const jobSignals = {
     jobElements: document.querySelectorAll('[class*="job"], [data-job]').length,
@@ -293,13 +286,13 @@ function detectPageType() {
     salaryMentions: bodyText.includes('salary') || bodyText.includes('compensation'),
     locationMentions: document.querySelectorAll('[class*="location"]').length
   };
-  
+
   const jobScore =
     (jobSignals.jobElements > 3 ? 4 : 0) +
     (jobSignals.applyButtons ? 3 : 0) +
     (jobSignals.salaryMentions ? 2 : 0) +
     (jobSignals.locationMentions > 2 ? 1 : 0);
-  
+
   if (jobScore >= 5) {
     console.log('[Content] ✅ Page type: Job Board (score:', jobScore, ')');
     return {
@@ -313,7 +306,7 @@ function detectPageType() {
       summarization: true
     };
   }
-  
+
   // Default: Unknown type
   console.log('[Content] ❓ Page type: Unknown/Generic');
   return {
@@ -334,7 +327,6 @@ function detectPageType() {
 
 async function runClassification() {
   console.log('[Content] Calling external classifier...');
-  
   try {
     if (typeof self.classifyPage !== 'function') {
       console.error('[Content] classifyPage not found!');
@@ -347,12 +339,11 @@ async function runClassification() {
         fallbackChain: ['error']
       };
     }
-    
+
     const result = await self.classifyPage();
     console.log('[Content] External classifier result:', result);
     console.log('[Content] Classification:', result.classification, result.confidence + '%');
     console.log('[Content] Tier:', result.tier);
-    
     return result;
   } catch (error) {
     console.error('[Content] Classification error:', error);
@@ -373,17 +364,14 @@ async function runClassification() {
 
 function extractMultipleItems(classification) {
   console.log('[Content] Extracting multiple items...');
-  
   if (classification.classification !== 'MULTI_ITEM') {
     console.log('[Content] Not a MULTI_ITEM page, skipping');
     return null;
   }
-  
+
   const elements = classification.detectedElements || [];
-  
   if (elements.length < 2) {
     console.log('[Content] No detected elements found, fallback to manual search');
-    
     const fallbackSelectors = [
       '.feed-shared-update-v2',
       '[data-testid="tweet"]',
@@ -395,7 +383,7 @@ function extractMultipleItems(classification) {
       '.post-card',
       '.grid-item'
     ];
-    
+
     for (const selector of fallbackSelectors) {
       const items = document.querySelectorAll(selector);
       if (items.length >= 2) {
@@ -403,23 +391,22 @@ function extractMultipleItems(classification) {
         break;
       }
     }
-    
+
     if (elements.length < 2) {
       console.log('[Content] Could not find multiple items');
       return null;
     }
   }
-  
+
   const extractedItems = [];
   const maxItems = 10;
-  
+
   for (let i = 0; i < Math.min(elements.length, maxItems); i++) {
     const el = elements[i];
-    
     try {
       const text = el.innerText?.trim() || '';
       const html = el.outerHTML;
-      
+
       if (text.length > 50) {
         extractedItems.push({
           index: i + 1,
@@ -433,7 +420,7 @@ function extractMultipleItems(classification) {
       continue;
     }
   }
-  
+
   console.log('[Content] Extracted', extractedItems.length, 'items successfully');
   return extractedItems.length >= 2 ? extractedItems : null;
 }
@@ -445,10 +432,9 @@ function extractMultipleItems(classification) {
 async function extractPageData() {
   try {
     console.log('[Content] Extracting page data with external classifier...');
-    
     const classification = await runClassification();
     const pageType = detectPageType(); // 🆕 v4.2
-    
+
     const pageData = {
       url: window.location.href,
       domain: window.location.hostname,
@@ -499,7 +485,7 @@ async function extractPageData() {
         summarization: pageType.summarization
       }
     };
-    
+
     if (classification.classification === 'MULTI_ITEM') {
       const items = extractMultipleItems(classification);
       if (items && items.length >= 2) {
@@ -510,17 +496,16 @@ async function extractPageData() {
         console.log('[Content] MULTI_ITEM page but could not extract individual items');
       }
     }
-    
+
     console.log('[Content] Page data extracted with v4.2.0');
     console.log('[Content] Page classified as:', classification.classification);
     console.log('[Content] Classification tier:', classification.tier);
     console.log('[Content] Confidence:', classification.confidence + '%');
     console.log('[Content] 🎯 Page type detected:', pageType.type, `(${pageType.confidence}%)`);
-    
     if (pageData.extractedItems) {
       console.log('[Content] Extracted', pageData.itemCount, 'individual items');
     }
-    
+
     return pageData;
   } catch (error) {
     console.error('[Content] Extraction failed:', error);
@@ -534,12 +519,11 @@ async function extractPageData() {
 
 async function captureScreenshot() {
   console.log('[Content] Screenshot capture requested');
-  
   try {
     const response = await chrome.runtime.sendMessage({
       action: 'captureScreenshot'
     });
-    
+
     if (response.success) {
       console.log('[Content] Screenshot captured successfully');
       return response.dataUrl;
@@ -553,12 +537,12 @@ async function captureScreenshot() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// MESSAGE LISTENER - ENHANCED WITH v4.2 HANDLERS
+// MESSAGE LISTENER - ENHANCED WITH v4.2 HANDLERS + getPageContent FIX
 // ═══════════════════════════════════════════════════════════════
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('[Content] Message received:', request.action);
-  
+
   try {
     if (request.action === 'extractPageData' || request.action === 'getPageData') {
       extractPageData().then(data => {
@@ -568,7 +552,44 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       return true;
     }
-    
+
+    // 🔥 NEW: getPageContent handler - CRITICAL FIX!
+    else if (request.action === 'getPageContent') {
+      console.log('[Content] getPageContent requested');
+      
+      try {
+        // Extract page content
+        const pageContent = {
+          html: document.documentElement.outerHTML,
+          text: document.body.innerText,
+          url: window.location.href,
+          title: document.title,
+          metadata: {
+            description: document.querySelector('meta[name="description"]')?.content || '',
+            keywords: document.querySelector('meta[name="keywords"]')?.content || '',
+            author: document.querySelector('meta[name="author"]')?.content || '',
+            ogImage: document.querySelector('meta[property="og:image"]')?.content || '',
+            canonical: document.querySelector('link[rel="canonical"]')?.href || window.location.href
+          }
+        };
+        
+        console.log('[Content] Page content extracted:', pageContent.text.length, 'chars');
+        sendResponse({ 
+          success: true, 
+          data: pageContent 
+        });
+        
+      } catch (error) {
+        console.error('[Content] getPageContent error:', error);
+        sendResponse({ 
+          success: false, 
+          error: error.message 
+        });
+      }
+      
+      return false; // Synchronous response
+    }
+
     else if (request.action === 'getDOMData') {
       console.log('[Content] getDOMData requested');
       extractPageData().then(data => {
@@ -582,14 +603,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       return true;
     }
-    
+
     // 🆕 v4.2: Page type detection
     else if (request.action === 'detectPageType') {
       const pageType = detectPageType();
       sendResponse({ success: true, pageType });
       return false;
     }
-    
+
     else if (request.action === 'extractWithHybrid') {
       console.log('[Content] Hybrid extraction requested');
       extractPageData().then(data => {
@@ -599,7 +620,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       return true;
     }
-    
+
     else if (request.action === 'extractProductBlocks') {
       runClassification().then(classification => {
         const items = extractMultipleItems(classification);
@@ -610,7 +631,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       return true;
     }
-    
+
     else if (request.action === 'captureScreenshot') {
       console.log('[Content] Capture screenshot message received');
       chrome.runtime.sendMessage({
@@ -625,10 +646,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       return true;
     }
-    
+
     else if (request.action === 'scrollAndExtract') {
       console.log('[Content] Scroll and extract requested');
-      
       const options = {
         maxScrolls: request.maxScrolls || 10,
         scrollDelay: request.scrollDelay || 1000,
@@ -641,7 +661,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           }).catch(() => {});
         }
       };
-      
+
       scrollUntilNoNewItems(options).then(result => {
         console.log('[Content] Scroll complete, extracting data...');
         return extractPageData();
@@ -660,7 +680,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       return true;
     }
-    
+
     else if (request.action === 'checkInfiniteScroll') {
       const isInfinite = isInfiniteScrollSite();
       sendResponse({
@@ -668,7 +688,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         isInfiniteScroll: isInfinite
       });
     }
-    
+
     else if (request.action === 'extractOffline') {
       console.log('[Content] Offline extraction requested');
       extractPageData().then(data => {
@@ -678,17 +698,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       return true;
     }
-    
+
     else {
       console.warn('[Content] Unknown action:', request.action);
       sendResponse({ success: false, error: 'Unknown action' });
     }
-    
+
   } catch (error) {
     console.error('[Content] Message handler error:', error);
     sendResponse({ success: false, error: error.message });
   }
-  
+
   return true;
 });
 
@@ -707,3 +727,4 @@ console.log('[Content] 🎯 Using external classifier from src/classifier.js');
 console.log('[Content] 🌊 Infinite scroll detection enabled');
 console.log('[Content] 📸 Screenshot capture support added');
 console.log('[Content] 🆕 Page type detection for smart defaults enabled');
+console.log('[Content] 🔥 getPageContent handler added - extraction fix applied!');
