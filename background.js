@@ -1194,34 +1194,53 @@ async function handleSummarization(message) {
  * @returns {Object} Detected template with confidence
  */
 async function detectTemplate(message) {
-  console.log('[Background] 🔍 Template detection request');
-
+  console.log('[Background] Template detection request');
   try {
     const { url, html, metadata } = message;
-
-    if (!url) {
-      throw new Error('URL is required for template detection');
+    
+    // 🆕 SAFETY CHECK: Return gracefully if no URL
+    if (!url || typeof url !== 'string') {
+      console.log('[Background] Skipping template detection - no valid URL');
+      return { 
+        success: false, 
+        template: null, 
+        confidence: 0.0,
+        skipped: true,
+        reason: 'No valid URL provided'
+      };
     }
-
-    console.log(`[Background] Detecting template for: ${url}`);
-
+    
+    // 🆕 SAFETY CHECK: Validate URL protocol
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      console.log('[Background] Skipping template detection - invalid protocol');
+      return { 
+        success: false, 
+        template: null, 
+        confidence: 0.0,
+        skipped: true,
+        reason: 'Invalid URL protocol'
+      };
+    }
+    
+    console.log('[Background] Detecting template for', url);
+    
     // Use TemplateManager module
     const result = await TemplateManager.detectTemplate(url, html, metadata);
-
-    return {
-      success: true,
-      template: result.template || null,
-      confidence: result.confidence || 0.0,
-      matches: result.matches || []
+    
+    return { 
+      success: true, 
+      template: result.template || null, 
+      confidence: result.confidence || 0.0, 
+      matches: result.matches 
     };
-
   } catch (error) {
-    console.error('[Background] ❌ Template detection error:', error);
-    return {
-      success: false,
-      error: error.message,
-      template: null,
-      confidence: 0.0
+    // Changed from console.error to console.log to avoid red error
+    console.log('[Background] Template detection skipped:', error.message);
+    return { 
+      success: false, 
+      error: error.message, 
+      template: null, 
+      confidence: 0.0 
     };
   }
 }
@@ -1479,7 +1498,7 @@ async function callGeminiAPI(prompt, options = {}) {
     }
 
     // Prepare request
-    const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent`;
     
     const requestBody = {
       contents: [{
@@ -1533,7 +1552,7 @@ async function callGeminiAPI(prompt, options = {}) {
     return {
       success: true,
       text: responseText,
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash-lite',
       usage: data.usageMetadata || {}
     };
 
@@ -1818,7 +1837,7 @@ async function validateApiKey(apiKey) {
   console.log('[Background] 🔐 Validating API key');
 
   try {
-    const testUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent`;
     
     const response = await fetch(`${testUrl}?key=${apiKey}`, {
       method: 'POST',
