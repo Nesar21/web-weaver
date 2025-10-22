@@ -144,7 +144,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadCostTracking(); // 🆕 v4.2
   
   // Step 4: Template auto-detection (🆕 v4.2)
-  await detectAndApplyTemplate();
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab && tab.url && tab.url.startsWith('http')) {
+      await detectAndApplyTemplate();
+    } else {
+      console.log('[Popup] Skipping template detection - no valid URL');
+    }
+  } catch (error) {
+    console.log('[Popup] Template detection skipped:', error.message);
+  }
   
   // Step 5: Setup event listeners (ENHANCED FOR v4.2)
   setupEventListeners();
