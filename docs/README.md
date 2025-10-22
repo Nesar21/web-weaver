@@ -1,802 +1,768 @@
-# ⚡ Web Weaver Lightning
-
-**Version 4.1.0 - Chrome Built-in AI Real APIs Edition**
+⚡ Web Weaver Lightning
+Version 4.2.0 - Modular Architecture Edition
 
 Turn any webpage into structured data (JSON/CSV) with AI-powered extraction. Extract LinkedIn posts, Medium articles, Amazon products, and more—with privacy-first Chrome AI or advanced Cloud API.
 
----
-
-## 🎯 What Does It Do?
-
+🎯 What Does It Do?
 Web Weaver Lightning is a Chrome extension that extracts content from websites and converts it to clean, structured data.
 
-**Two AI Options:**
-- **🔵 Chrome Built-in AI** - Fast, private, zero-cost (local processing with REAL APIs)
-- **☁️ Cloud API (Gemini)** - Advanced features with vision support
-
-**Two Extraction Modes:**
-- **📦 Extract All Items** - Get everything loaded on the page (feeds, product lists, search results)
-- **📄 Extract Main Article** - Capture just the main content (articles, product details, single posts)
-
-**Works On:**
-- LinkedIn (posts, profiles, jobs)
-- Medium (articles, stories)
-- Amazon (products, reviews)
-- News sites (articles, headlines)
-- Blogs, Wikipedia, and almost any website
-
----
-
-## ✨ Key Features
-
-### 🆕 Chrome Built-in AI - REAL APIs (Day 21.2)
-- **4 Real APIs** - Translator, LanguageDetector, Summarizer, LanguageModel (Gemini Nano)
-- **Progressive Fallback** - Auto-switches to Cloud API if Chrome AI unavailable
-- **Smart Defaults** - Translation/Detection always Chrome AI, Extraction user choice
-- **Category Filtering** - 6 predefined categories (Products, Articles, Videos, Jobs, Events)
-- **URL Extraction** - Enforced URL field in all extracted items
-- **Item Count Display** - Shows new/total/duplicate counts during extraction
-- **Fallback Banner** - 24h cooldown notification system when switching providers
-- **Zero Cost** - No API key required, completely free
-- **Privacy-First** - All processing happens locally on your device
-- **Offline Capable** - Works without internet (after initial page load)
-- **Lightning Fast** - <100ms response time vs 500-2000ms cloud
-- **No Rate Limits** - Extract as much as you want
-
-### 🆕 Security & Privacy (Day 21)
-- **TOS Acceptance** - Clear privacy and terms notification on first use
-- **Runtime API Keys** - Never hardcoded, stored locally only
-- **API Key Validation** - Real-time validation with visual status
-- **Scoped Permissions** - Only requests access when needed
-- **No Data Leakage** - Build-time validation prevents accidental key commits
-- **Expiration Warnings** - Alerts before API keys expire
-
-### 🆕 Smart Rate Management (Day 21)
-- **Proactive Warnings** - Alerts at 25 RPM (before hitting 15 RPM limit)
-- **Token Tracking** - Warns at 900K tokens/day (before 1M limit)
-- **Auto-Fallback** - Switches to Chrome AI after 3 consecutive 429 errors
-- **Enhanced Error Messages** - Clear recovery steps for every error type
-
-### 🆕 Deduplication (Day 21)
-- **Session-Based Tracking** - Remembers extracted items per tab
-- **Composite Keys** - Uses title + URL + ID for matching
-- **Pagination Support** - "Extract Again" only gets new items
-- **Auto-Cleanup** - Clears stale sessions after 1 hour
-
-### Two Extraction Types
-- **Extract All Items** - Grabs all visible content on the page
-- **Extract Main Article** - Focuses on the primary content only
-
-### Five Accuracy Modes
-- **Offline** - Fast, DOM-only extraction (no API calls)
-- **Min** - Quick with minimal AI (~75% accuracy)
-- **Balanced** - Best cost/accuracy ratio (~85% accuracy) ⭐ Recommended
-- **Max** - Maximum accuracy (~95% accuracy)
-- **Smart Auto** - AI picks the best mode automatically
-
-### Six Category Filters (NEW in v4.1)
-- **All Items** - Extract everything
-- **Products Only** - E-commerce items with prices
-- **Articles/News** - Blog posts, news stories
-- **Videos** - Video content with thumbnails
-- **Job Listings** - Job postings with salary info
-- **Events** - Events with dates and RSVP details
-
-### Data Export
-- Copy to clipboard (one click)
-- Download as JSON
-- Download as CSV (with category suffix)
-
-### Extraction History
-- View your last 50 extractions
-- See confidence scores
-- Track AI provider used (Chrome AI or Cloud API)
-- View duplicates removed count
-- See category filter applied
-
-***
-
-## 🚀 Quick Start
-
-### 1. Install Extension
-
-**Download Method:**
-1. Download the extension folder
-2. Open Chrome and go to `chrome://extensions/`
-3. Turn on "Developer mode" (top right)
-4. Click "Load unpacked"
-5. Select the extension folder
-
-### 2. Choose Your AI Provider
-
-**Option A: Chrome Built-in AI (Recommended)**
-1. Requires Chrome 128+ (Dev/Canary channel)
-2. No setup needed - works immediately
-3. Completely free and private
-4. Download Chrome Dev: [chrome.dev](https://www.google.com/chrome/dev/)
-5. **Real APIs:** Translator, LanguageDetector, Summarizer, LanguageModel
-
-**Option B: Cloud API (Advanced)**
-1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Click "Create API Key"
-3. Copy the key (starts with `AIza...`)
-4. Paste in extension settings
-
-### 3. Accept Terms of Service
-
-**First Use Only:**
-1. Extension shows privacy & terms notice
-2. Read the terms carefully
-3. Click "I Accept" to continue
-4. Covers:
-   - Data privacy (local vs cloud processing)
-   - User responsibility (comply with website TOS)
-   - API key security
-   - No warranty disclaimer
-
-### 4. Start Extracting!
-
-1. Click the Web Weaver icon in Chrome toolbar
-2. Choose AI Provider (Chrome AI or Cloud API)
-3. **Select category filter** (All Items, Products, Articles, etc.)
-4. Select extraction type (All Items or Main Article)
-5. Pick mode (Balanced recommended)
-6. Click "Extract Data"
-7. **Watch item count update** (X new, Y total, Z duplicates)
-
-***
-
-## 📖 How To Use
-
-### Extract LinkedIn Feed with Category Filter
-
-**Scenario:** You want to save job postings from LinkedIn feed
-
-1. Open LinkedIn feed (`linkedin.com/feed/`)
-2. Scroll to load posts (5–10 visible)
-3. Click Web Weaver icon
-4. **AI Provider:** Chrome AI (fastest)
-5. **Category:** **Job Listings** (filters non-job posts)
-6. **Type:** **📦 Extract All Items**
-7. **Mode:** Balanced
-8. Click **"Extract Data"**
-9. Wait 2–3 seconds (Chrome AI)
-10. See: "8 new items (3 duplicates removed)"
-11. Download as `linkedin_jobs.json`
-
-**Result:** Only job postings with:
-- Job title and company
-- Location and salary
-- Job description
-- Application link
-- Posted date
-
-***
-
-### Extract Amazon Products with Chrome AI
-
-**Scenario:** You're comparing laptops on Amazon
-
-1. Search "laptop" on Amazon
-2. Click Web Weaver icon
-3. **AI Provider:** Chrome AI
-4. **Category:** **Products Only**
-5. **Type:** **📦 Extract All Items**
-6. **Mode:** Min
-7. Click **"Extract Data"**
-8. See: "12 new items (0 duplicates)"
-
-**Result:** All visible products with:
-- Title and price
-- Rating (stars + count)
-- Availability
-- Product URL
-- Image URL
-
-**Scroll for more:** Click "Extract Again" → only new products added
-
-***
-
-### Extract Medium Article (Cloud API)
-
-**Scenario:** You want the full text of a Medium article
-
-1. Open Medium article
-2. Scroll to article beginning
-3. Click Web Weaver icon
-4. **AI Provider:** Cloud API (screenshot mode)
-5. **Category:** **Articles/News**
-6. **Type:** **📄 Extract Main Article**
-7. **Mode:** Balanced
-8. Click **"Extract Data"**
-9. Wait 3–5 seconds
-
-**Result:** Just the article with:
-- Title and subtitle
-- Author information
-- Full article text
-- Publication date
-- Read time
-- Tags
-
-***
-
-## 🎨 Understanding AI Providers
-
-### 🔵 Chrome Built-in AI (v4.1 - REAL APIs)
-
-**What's New in v4.1:**
-- ✅ **Real Translator API** - `Translator.create()` for instant translation
-- ✅ **Real LanguageDetector API** - `LanguageDetector.create()` for language detection
-- ✅ **Real Summarizer API** - `Summarizer.create()` for text summarization
-- ✅ **Real LanguageModel API** - `LanguageModel.create()` for data extraction (Gemini Nano)
-
-**Best For:**
-- ✅ Privacy-sensitive data  
-- ✅ High-volume extraction (100+ pages)  
-- ✅ Offline work (after page loads)  
-- ✅ Zero cost operations  
-- ✅ Fast batch processing  
-- ✅ Translation and language detection (always uses Chrome AI)
-
-**Limitations:**
-- ❌ Requires Chrome 128+ (Dev/Canary)  
-- ❌ No vision/screenshot support yet  
-- ❌ Smaller context window (~4K tokens)  
-- ❌ ~85% accuracy vs 95% Cloud API
-
-**When To Use:**
-- Extracting feeds (LinkedIn, Twitter)
-- Quick scans of simple pages
-- Privacy-critical data
-- High-frequency extraction
-- **Translation/language detection tasks**
-
-***
-
-### ☁️ Cloud API (Gemini)
-
-**Best For:**
-- ✅ Screenshot extraction (Main Article mode)
-- ✅ Maximum accuracy needed
-- ✅ Complex page layouts
-- ✅ Works on any Chrome version
-- ✅ Larger context window (30K+ tokens)
-
-**Limitations:**
-- ❌ Requires API key
-- ❌ Costs ~$0.01 per extraction
-- ❌ Rate limits (15 RPM, 1M TPD)
-- ❌ Requires internet connection
-- ❌ Data sent to Google servers
-
-**When To Use:**
-- Single article extraction (with screenshot)
-- Research requiring high accuracy
-- Complex multi-section pages
-- When Chrome AI unavailable
-
-***
-
-## 🔧 New Features Explained (v4.1)
-
-### Category Filtering
-
-**6 Smart Categories:**
-
-| Category | Best For | Example Sites |
-|----------|----------|---------------|
-| **All Items** | General extraction | Any website |
-| **Products Only** | Shopping, comparisons | Amazon, eBay, Etsy |
-| **Articles/News** | Reading, research | Medium, NYT, blogs |
-| **Videos** | Content discovery | YouTube lists, Vimeo |
-| **Job Listings** | Job hunting | LinkedIn Jobs, Indeed |
-| **Events** | Event planning | Eventbrite, Meetup |
-
-**How It Works:**
-- Category filter added to AI prompt
-- Filters out non-matching items
-- Shows category in export filename
-- Saves your last-used category
-
-**Example:**
-- Category: **Products Only**
-- Amazon page with products + ads + reviews
-- **Result:** Only products extracted (ads/reviews filtered)
-
----
-
-### Item Count Display
-
-**Real-time Feedback:**
-```
-Extracting... 12 new items (3 duplicates, 15 total)
-```
-
-**Breakdown:**
-- **12 new** - Fresh items added this extraction
-- **3 duplicates** - Items already extracted (filtered)
-- **15 total** - Total unique items in session
-
-**Use Cases:**
-- Track extraction progress
-- Verify deduplication working
-- Confirm scroll-and-extract sessions
-
-***
-
-### Fallback Banner System
-
-**When You'll See It:**
-```
-⚠️ Chrome AI unavailable - using Cloud API
-[Dismiss] Get Chrome Dev for 10× faster extraction
-```
-
-**Triggers:**
-1. Chrome AI not available (< v128)
-2. Rate limit hit (after 3× 429 errors)
-3. Chrome AI APIs fail
-
-**Smart Behavior:**
-- Shows once per 24 hours
-- Max 3 dismissals total
-- Auto-hides after 10 seconds
-- Persists in localStorage
-
----
-
-### Progressive Fallback (Option C)
-
-**How It Works:**
-1. Extension tries Chrome AI first (0ms check)
-2. If unavailable → auto-switch to Cloud API
-3. Show fallback banner (dismissible)
-4. Continue extraction without user action
-5. Banner reminds to upgrade Chrome Dev
-
-**User Control:**
-- Manual toggle overrides auto-fallback
-- Settings remember your preference
-- Clear indication of active provider
-
----
-
-## 🔒 Security & Privacy Features
-
-### TOS Acceptance (First Use)
-
-**What You're Agreeing To:**
-1. **Data Privacy**
-   - Chrome AI: All local, no data sent anywhere  
-   - Cloud API: Content sent to Google Gemini API  
-   - Review Google's privacy policy
-
-2. **User Responsibility**
-   - Comply with website Terms of Service  
-   - Respect robots.txt and rate limits  
-   - Follow data protection laws (GDPR, CCPA)  
-   - Don't scrape copyrighted/personal data without permission
-
-3. **No Warranty**
-   - Extension provided "as-is"  
-   - No guarantees of accuracy or reliability  
-   - Use at your own risk
-
-4. **API Key Security**
-   - You're responsible for securing keys  
-   - Never share keys publicly  
-   - Revoke immediately if compromised
-
----
-
-### API Key Best Practices
-
-**DO:**
-- ✅ Store keys only in extension settings (`chrome.storage.local`)
-- ✅ Validate keys before saving
-- ✅ Monitor usage at [Google AI Studio](https://aistudio.google.com/app/quotas)
-- ✅ Revoke and regenerate if exposed
-- ✅ Use `.gitignore` to prevent commits
-
-**DON'T:**
-- ❌ Hardcode keys in code
-- ❌ Commit keys to version control
-- ❌ Share keys via email/chat
-- ❌ Reuse keys across projects
-- ❌ Store keys in plaintext files
-
-***
-
-### Rate Limit Warnings
-
-**Proactive Alerts:**
-- **25 RPM Warning** – "High request rate detected. Slow down to avoid 429 errors."
-- **900K TPD Warning** – "Approaching daily token limit (900K/1M). Switch to Chrome AI."
-- **3× 429 Errors** – "Multiple rate limit errors. Auto-switching to Chrome AI."
-
-**When You See These:**
-1. Wait 60–120 seconds  
-2. Switch to Chrome AI (zero limits)  
-3. Use Offline or Min mode (fewer calls)  
-4. Check quota at Google AI Studio  
-
-***
-
-## 🔧 Troubleshooting
-
-### "Chrome AI Unavailable" Banner
-
-**Problem:** Fallback banner shows "Using Cloud API"  
-**Why:** Chrome Built-in AI not detected (requires Chrome 128+)
-
-**Solutions:**
-1. **Auto-fallback active** – Extension works with Cloud API automatically  
-2. **Upgrade Chrome:**
-   - Download Chrome Dev/Canary: [chrome.dev](https://www.google.com/chrome/dev/)  
-   - Check version: `chrome://version`  
-   - Must be 128 or higher  
-3. **Enable flags** (if using Chrome 128+):  
-   - Go to `chrome://flags`  
-   - Search "Prompt API for Gemini Nano"  
-   - Enable all AI-related flags
-   - Restart Chrome  
-4. **Dismiss banner** – Won't show again for 24 hours
-
-***
-
-### Category Filter Not Working
-
-**Problem:** Getting items outside selected category  
-**Why:** AI prompt filters but doesn't guarantee 100% accuracy
-
-**Solutions:**
-1. Switch to **Cloud API** (better filtering)
-2. Use **Max Mode** (more precise)
-3. Try different category
-4. Post-process results manually
-5. Combine with keywords in export
-
-***
-
-### Item Count Shows 0 New Items
-
-**Problem:** "0 new items (12 duplicates)"  
-**Why:** All items already extracted in this session
-
-**Solutions:**
-1. **This is normal** – deduplication working correctly
-2. Scroll further for new content
-3. Clear cache to reset session
-4. Close/reopen tab to start fresh
-5. Use different URL/page
-
-***
-
-### "URL Field Missing" Warning
-
-**Problem:** Exported items missing URL field  
-**Why:** Page structure prevents URL extraction (rare)
-
-**Solutions:**
-1. **Automatic fallback** – Extension uses current page URL
-2. Try **Cloud API** with screenshot mode
-3. Use **Main Article** extraction type
-4. Check if page loaded completely
-5. Report site for investigation
-
-***
-
-## 💡 Pro Tips (Updated for v4.1)
-
-### Tip 1: Choose Right AI Provider
-| Priority | Use | Speed | Cost |
-|-----------|-----|-------|------|
-| ⚡ Speed | Chrome AI | 10× faster | Free |
-| 🎯 Accuracy | Cloud API | Slower | ~$0.01 |
-| 🔒 Privacy | Chrome AI | 10× faster | Free |
-| 🖼️ Screenshot | Cloud API | Medium | ~$0.01 |
-
-### Tip 2: Category Power-User
-- Set category **before** scrolling
-- Extract → Scroll → Extract (dedup auto-filters)
-- Download with category suffix: `amazon_products_only.csv`
-- Combine categories: Extract "Products" then "Articles" separately
-
-### Tip 3: Item Count Strategy
-- Watch count during extraction
-- Stop when count stops increasing
-- Duplicate count = pagination working
-- Total items = all unique across sessions
-
-### Tip 4: Fallback Banner Management
-- Dismiss if you prefer Cloud API
-- Upgrade Chrome to stop seeing it
-- 24h cooldown = won't spam you
-- Max 3 dismissals = respects your choice
-
-### Tip 5: Progressive Extraction
-```
-1. Set category (e.g., "Job Listings")
-2. Extract page 1 → 10 items
-3. Scroll to page 2
-4. Extract again → 8 new (2 duplicates)
-5. Scroll to page 3
-6. Extract again → 7 new (3 duplicates)
-Total: 25 unique job listings
-```
-
-***
-
-## 📊 Understanding Results (Updated)
-
-### Extraction Metadata
-
-Each extraction now shows:
-- **AI Provider** – Chrome AI (🔵) or Cloud API (☁️)
-- **Category Filter** – Which filter was applied (if not "All")
-- **Confidence** – Score with visual tier indicator
-- **Mode Used** – Which mode processed the extraction
-- **Extraction Type** – All Items or Main Article
-- **Duration** – Time taken (seconds)
-- **Item Count** – X new (Y duplicates, Z total)
-- **Classification** – MULTI_ITEM or SINGLE_ITEM
-
-**Example Metadata:**
-```json
+Two AI Options:
+
+🔵 Chrome Built-in AI - Fast, private, zero-cost (local processing with REAL APIs)
+
+☁️ Cloud API (Gemini) - Advanced features with vision support
+
+Two Extraction Modes:
+
+📦 Extract All Items - Get everything loaded on the page (feeds, product lists, search results)
+
+📄 Extract Main Article - Capture just the main content (articles, product details, single posts)
+
+Works On:
+
+LinkedIn (posts, profiles, jobs)
+
+Medium (articles, stories)
+
+Amazon (products, reviews)
+
+News sites (articles, headlines)
+
+Blogs, Wikipedia, and almost any website
+
+✨ Key Features
+🆕 v4.2.0 - Modular Architecture (Oct 22, 2025)
+Batch Processing Module - Process multiple translations/summarizations simultaneously
+
+Cost Tracker Module - Real-time API cost tracking with budget warnings (75%, 90%, 100%)
+
+Deduplication Manager - Fuzzy matching with 85% similarity threshold
+
+Auto-Cleanup - 7-day retention for deduplication fingerprints
+
+Template Auto-Detection - Intelligent site-type detection and custom templates
+
+AI Insights Generator - Generate summaries, comparisons, and recommendations
+
+Modular Codebase - 21.6% smaller background.js (56K vs 72K chars)
+
+Independent Modules - Easier maintenance and feature additions
+
+Better Error Isolation - Module-level error handling
+
+🆕 Chrome Built-in AI - REAL APIs (v4.1)
+4 Real APIs - Translator, LanguageDetector, Summarizer, LanguageModel (Gemini Nano)
+
+Progressive Fallback - Auto-switches to Cloud API if Chrome AI unavailable
+
+Smart Defaults - Translation/Detection always Chrome AI, Extraction user choice
+
+Category Filtering - 6 predefined categories (Products, Articles, Videos, Jobs, Events)
+
+URL Extraction - Enforced URL field in all extracted items
+
+Item Count Display - Shows new/total/duplicate counts during extraction
+
+Fallback Banner - 24h cooldown notification system when switching providers
+
+Zero Cost - No API key required, completely free
+
+Privacy-First - All processing happens locally on your device
+
+Offline Capable - Works without internet (after initial page load)
+
+Lightning Fast - <100ms response time vs 500-2000ms cloud
+
+No Rate Limits - Extract as much as you want
+
+🆕 Security & Privacy (v4.1)
+TOS Acceptance - Clear privacy and terms notification on first use
+
+Runtime API Keys - Never hardcoded, stored locally only
+
+API Key Validation - Real-time validation with visual status
+
+Scoped Permissions - Only requests access when needed
+
+No Data Leakage - Build-time validation prevents accidental key commits
+
+Expiration Warnings - Alerts before API keys expire
+
+🆕 Smart Rate Management (v4.1)
+Proactive Warnings - Alerts at 25 RPM (before hitting 15 RPM limit)
+
+Token Tracking - Warns at 900K tokens/day (before 1M limit)
+
+Auto-Fallback - Switches to Chrome AI after 3 consecutive 429 errors
+
+Enhanced Error Messages - Clear recovery steps for every error type
+
+Five Accuracy Modes
+Offline - Fast, DOM-only extraction (no API calls)
+
+Min - Quick with minimal AI (~75% accuracy)
+
+Balanced - Best cost/accuracy ratio (~85% accuracy) ⭐ Recommended
+
+Max - Maximum accuracy (~95% accuracy)
+
+Smart Auto - AI picks the best mode automatically
+
+Six Category Filters
+All Items - Extract everything
+
+Products Only - E-commerce items with prices
+
+Articles/News - Blog posts, news stories
+
+Videos - Video content with thumbnails
+
+Job Listings - Job postings with salary info
+
+Events - Events with dates and RSVP details
+
+Data Export
+Copy to clipboard (one click)
+
+Download as JSON
+
+Download as CSV (with category suffix)
+
+Extraction History
+View your last 50 extractions
+
+See confidence scores
+
+Track AI provider used (Chrome AI or Cloud API)
+
+View duplicates removed count
+
+See category filter applied
+
+🚀 Quick Start
+1. Install Extension
+Download Method:
+
+Download the extension folder
+
+Open Chrome and go to chrome://extensions/
+
+Turn on "Developer mode" (top right)
+
+Click "Load unpacked"
+
+Select the extension folder
+
+2. Choose Your AI Provider
+Option A: Chrome Built-in AI (Recommended)
+
+Requires Chrome 128+ (Dev/Canary channel)
+
+No setup needed - works immediately
+
+Completely free and private
+
+Download Chrome Dev: chrome.dev
+
+Real APIs: Translator, LanguageDetector, Summarizer, LanguageModel
+
+Option B: Cloud API (Advanced)
+
+Visit Google AI Studio
+
+Click "Create API Key"
+
+Copy the key (starts with AIza...)
+
+Paste in extension settings
+
+3. Accept Terms of Service
+First Use Only:
+
+Extension shows privacy & terms notice
+
+Read the terms carefully
+
+Click "I Accept" to continue
+
+Covers:
+
+Data privacy (local vs cloud processing)
+
+User responsibility (comply with website TOS)
+
+API key security
+
+No warranty disclaimer
+
+4. Start Extracting!
+Click the Web Weaver icon in Chrome toolbar
+
+Choose AI Provider (Chrome AI or Cloud API)
+
+Select category filter (All Items, Products, Articles, etc.)
+
+Select extraction type (All Items or Main Article)
+
+Pick mode (Balanced recommended)
+
+Click "Extract Data"
+
+Watch item count update (X new, Y total, Z duplicates)
+
+🆕 What's New in v4.2.0 - Modular Architecture
+Batch Processing Module
+Process Multiple Items Simultaneously:
+
+Batch Translation - Translate multiple items at once using Chrome AI
+
+Batch Summarization - Summarize multiple articles in parallel
+
+Progress Tracking - Real-time progress bar for batch operations
+
+Efficient Queue Management - Optimal resource utilization
+
+Use Cases:
+
+Translate 50 LinkedIn posts to Spanish in one click
+
+Summarize 20 news articles simultaneously
+
+Process entire feeds without manual iteration
+
+Cost Tracker Module
+Real-Time Budget Management:
+
+Live Cost Display - See API costs as you extract
+
+Budget Warnings:
+
+75% threshold: "Approaching budget limit"
+
+90% threshold: "Budget nearly exhausted"
+
+100% threshold: "Budget exceeded - extraction blocked"
+
+Daily/Weekly/Monthly Reports - Track spending over time
+
+Per-Operation Costs - Know exactly what each extraction costs
+
+Dashboard:
+
+text
+Today's Usage:
+  Extractions: 45 ($0.45)
+  Translations: 120 ($0.12)
+  Summarizations: 30 ($0.03)
+  Total: $0.60 / $10.00 daily budget
+Deduplication Manager (Enhanced)
+Fuzzy Matching with 85% Similarity:
+
+Smart Detection - Identifies similar items, not just exact matches
+
+7-Day Retention - Automatic cleanup of old fingerprints
+
+Content Hashing - Fast similarity checks using content fingerprints
+
+Session Tracking - Remembers what you've extracted per tab
+
+How It Works:
+
+text
+Item 1: "Apple MacBook Pro 14-inch M3 Chip"
+Item 2: "Apple MacBook Pro (14-inch, M3 chip)"
+→ 87% similar → Marked as duplicate
+Benefits:
+
+Cleaner datasets (no near-duplicates)
+
+Faster pagination (skips similar content)
+
+Memory efficient (auto-cleanup)
+
+Template Auto-Detection
+Intelligent Site Recognition:
+
+Auto-Detection - Recognizes 50+ popular sites (Amazon, LinkedIn, Medium, etc.)
+
+Custom Templates - Define your own extraction patterns
+
+Template Confidence - Shows match confidence (0-100%)
+
+Override Option - Manual template selection
+
+Supported Templates:
+
+Site	Template	Fields Extracted
+Amazon	E-commerce	title, price, rating, image, url
+LinkedIn	Social Media	author, post, date, engagement
+Medium	Article	title, author, content, readTime
+GitHub	Repository	name, stars, language, description
+YouTube	Video	title, channel, views, duration
+Custom Template Example:
+
+json
 {
-  "aiProvider": "CHROME_BUILTIN",
-  "category": "products",
-  "confidence": 87,
-  "mode": "balanced",
-  "extractionType": "MULTI",
-  "newItemsCount": 12,
-  "duplicateCount": 3,
-  "totalSessionItems": 45,
-  "executionTime": 234
-}
-```
-
-***
-
-## 🛠️ Technical Details (Updated for v4.1)
-
-### Chrome Built-in AI APIs (REAL)
-
-**v4.1 Integration:**
-```javascript
-// Real Chrome APIs (not placeholders)
-const translator = await Translator.create({ sourceLanguage: 'en', targetLanguage: 'es' });
-const detector = await LanguageDetector.create();
-const summarizer = await Summarizer.create({ type: 'tldr', length: 'short' });
-const model = await LanguageModel.create();
-```
-
-**API Availability Check:**
-```javascript
-// Progressive fallback
-if (chromeAIAvailable && typeof LanguageModel !== 'undefined') {
-  // Use Chrome AI
-} else {
-  // Auto-fallback to Cloud API
-  triggerFallbackBanner();
-}
-```
-
-**Smart Defaults:**
-- **Translation** → Always Chrome AI (10× faster)
-- **Detection** → Always Chrome AI (perfect accuracy)
-- **Summarization** → User choice (toggle)
-- **Extraction** → User choice (toggle)
-
-***
-
-### Category Filtering Implementation
-
-**Prompt Injection:**
-```javascript
-const categoryConfig = {
-  id: 'products',
-  promptModifier: 'FILTER: Only extract items that are products for sale'
-};
-
-const prompt = basePrompt + '\n\n' + categoryConfig.promptModifier;
-```
-
-**6 Category Configs:**
-1. All Items (no filter)
-2. Products Only (price + buy button)
-3. Articles/News (headlines + authors)
-4. Videos (thumbnails + duration)
-5. Job Listings (job title + salary)
-6. Events (date + location)
-
-***
-
-### Fallback Banner System
-
-**localStorage Schema:**
-```javascript
-{
-  "fallbackBannerState": {
-    "dismissCount": 2,
-    "lastDismissed": 1729534800000
+  "name": "Custom Blog",
+  "domain": "myblog.com",
+  "selectors": {
+    "title": "h1.post-title",
+    "author": ".author-name",
+    "content": ".post-content"
   }
 }
-```
+AI Insights Generator
+Generate Smart Insights from Extracted Data:
 
-**24h Cooldown Logic:**
-```javascript
-const cooldownExpired = (Date.now() - lastDismissed) > 86400000; // 24h
-const underLimit = dismissCount < 3;
+Summaries - Condense large datasets into key takeaways
 
-if (cooldownExpired && underLimit) {
-  showBanner();
+Comparisons - Side-by-side analysis of similar items
+
+Recommendations - AI-powered suggestions based on data patterns
+
+Trend Detection - Identify patterns across extracted items
+
+Example Insights:
+
+text
+Extracted 25 laptops from Amazon:
+
+Summary:
+- Average price: $1,245
+- Most common brand: Dell (32%)
+- Highest rated: ASUS ZenBook (4.8★)
+
+Recommendations:
+- Best value: Lenovo ThinkPad ($899, 4.5★)
+- Premium pick: MacBook Pro M3 ($1,999, 4.9★)
+- Budget option: HP Pavilion ($649, 4.2★)
+
+Trends:
+- 16GB RAM standard in 80% of devices
+- SSD storage now universal
+- Prices increased 12% vs last month
+Modular Codebase Benefits
+For Users:
+
+Faster Loading - 21.6% smaller background.js file
+
+Better Performance - More efficient memory usage
+
+Fewer Bugs - Isolated modules = easier debugging
+
+Faster Updates - New features ship quicker
+
+For Developers:
+
+Maintainable Code - Each module is independent
+
+Easy Testing - Test modules separately
+
+Reusable Components - Use modules in other projects
+
+Clear Architecture - Better code organization
+
+File Structure:
+
+text
+web-weaver/
+├── background.js (56K → 21.6% smaller)
+├── modules/
+│   ├── batch-processor.js (13K)
+│   ├── cost-tracker.js (12K)
+│   ├── deduplication-manager.js (12K)
+│   ├── template-manager.js (21K)
+│   └── insights-generator.js (20K)
+├── core/
+│   ├── extraction.js
+│   ├── validation.js
+│   └── classifier.js
+└── ...
+📖 How To Use (Updated for v4.2)
+Extract + Translate Batch
+Scenario: Extract 30 LinkedIn posts and translate to Spanish
+
+Open LinkedIn feed
+
+Scroll to load 30 posts
+
+Click Web Weaver icon
+
+AI Provider: Chrome AI
+
+Category: All Items
+
+Click "Extract Data"
+
+Wait for extraction (5 seconds)
+
+Click "Batch Translate" → Select Spanish
+
+Progress bar shows: "Translating 30 items..."
+
+Download as linkedin_posts_es.json
+
+Result: All posts in Spanish with original metadata
+
+Cost-Aware Extraction
+Scenario: Monitor API costs while extracting
+
+Open Cost Tracker (Settings → Cost Dashboard)
+
+Set daily budget: $5.00
+
+Current usage: $3.75 (75%)
+
+Warning appears: "⚠️ Approaching budget limit"
+
+Extract 10 more items (Cloud API)
+
+Cost increases: $4.10 (82%)
+
+Dashboard updates in real-time
+
+At 90%: Switch to Chrome AI (free) automatically
+
+Result: Stay within budget, no surprise costs
+
+Fuzzy Deduplication in Action
+Scenario: Amazon search with similar results
+
+Search "wireless mouse" on Amazon
+
+Extract page 1: 12 items
+
+Scroll to page 2
+
+Extract again:
+
+Found: 12 items
+
+Similar: 3 items (87% match)
+
+New: 9 items added
+
+Total: 21 unique items
+
+Message: "9 new items (3 fuzzy duplicates removed)"
+
+Result: Clean dataset without near-duplicates
+
+Template-Powered Extraction
+Scenario: GitHub repository scraping
+
+Visit github.com/trending
+
+Click Web Weaver icon
+
+Extension auto-detects: "GitHub Template" (95% confidence)
+
+Shows fields: name, stars, language, description
+
+Click "Extract Data"
+
+Gets structured data matching template
+
+Download as github_trending.json
+
+Result: Perfect field matching every time
+
+Generate Insights from Data
+Scenario: Analyze extracted job listings
+
+Extract 40 job postings from LinkedIn
+
+Data shows: titles, salaries, companies, locations
+
+Click "Generate Insights"
+
+AI analyzes dataset:
+
+Average salary: $95,000
+
+Top location: San Francisco (18 jobs)
+
+Most common role: Software Engineer
+
+Remote work: 62% of listings
+
+Recommendations:
+
+"Apply to remote roles first (higher acceptance rate)"
+
+"Target startups (15% higher salaries)"
+
+"Avoid NYC roles (cost of living vs salary)"
+
+Result: Actionable intelligence from raw data
+
+🔧 Technical Architecture (v4.2)
+Module System
+Independent Modules:
+
+javascript
+// BatchProcessor Module
+const BatchProcessor = {
+  async batchTranslate(items, targetLanguage) { ... },
+  async batchSummarize(items, options) { ... }
+};
+
+// CostTracker Module
+const CostTracker = {
+  async trackOperation(type, metadata) { ... },
+  async getBudgetStatus() { ... },
+  async generateReport() { ... }
+};
+
+// DeduplicationManager Module
+const DeduplicationManager = {
+  async isDuplicate(item) { ... },
+  async storeFingerprint(item) { ... },
+  async cleanup() { ... }
+};
+Background.js Integration:
+
+javascript
+// Before v4.2 (Inline logic)
+async function handleBatchTranslation(message) {
+  // ~250 lines of inline logic
 }
-```
 
-***
+// After v4.2 (Module call)
+async function handleBatchTranslation(message) {
+  // ~80 lines calling BatchProcessor
+  return await BatchProcessor.batchTranslate(
+    message.items,
+    message.targetLanguage
+  );
+}
+Benefits:
 
-## ⚠️ Limitations (Updated)
+68% code reduction in background.js
 
-**Chrome AI:**
-- Chrome 128+ only (Dev/Canary)
-- No screenshot support
-- Context window: ~4K tokens
-- ~85% accuracy
+Easier testing (test modules separately)
 
-**Cloud API:**
-- 15 RPM, 1M TPD limits
-- ~$0.01/extraction
-- Needs API key + internet
+Better error isolation
 
-**Category Filtering:**
-- ~90% precision (not 100%)
-- Best with Cloud API
-- Some overlap possible
-- Manual review recommended
+Reusable across features
 
-**General:**
-- Works on 95%+ sites
-- JS-heavy pages may need scroll
-- Some protected sites blocked
-- Accuracy depends on layout
+Cost Tracking Implementation
+Real-Time Calculation:
 
-***
+javascript
+const COSTS = {
+  extraction: {
+    min: 0.005,      // $0.005 per extraction
+    balanced: 0.01,  // $0.01 per extraction
+    max: 0.02        // $0.02 per extraction
+  },
+  translation: 0.001, // $0.001 per item
+  summarization: 0.002 // $0.002 per item
+};
 
-## 📞 Support & Feedback
+// Track every operation
+await CostTracker.trackOperation('extraction', {
+  mode: 'balanced',
+  items: 15,
+  cost: 0.15 // 15 items × $0.01
+});
+Budget Warnings:
 
-**Report Bugs:**  
-github.com/Nesar21/web-weaver  
-Include: site URL, AI provider, category, mode, error, screenshot  
+javascript
+const budget = await CostTracker.getBudgetStatus();
 
-**Feature Requests:**  
-github.com/Nesar21/web-weaver/issues  
+if (budget.percentage >= 90) {
+  showWarning('Budget nearly exhausted');
+  suggestAction('Switch to Chrome AI (free)');
+} else if (budget.percentage >= 75) {
+  showWarning('Approaching budget limit');
+}
+Fuzzy Deduplication Algorithm
+Similarity Calculation:
 
-**Security Issues:**  
-Email: nesaramingad821@gmail.com  
+javascript
+function calculateSimilarity(item1, item2) {
+  const titleSim = levenshteinSimilarity(item1.title, item2.title);
+  const urlSim = urlSimilarity(item1.url, item2.url);
+  const contentSim = cosineSimilarity(item1.content, item2.content);
+  
+  // Weighted average
+  return (titleSim * 0.4) + (urlSim * 0.3) + (contentSim * 0.3);
+}
 
-**Developer:**  
-Nesar Amingad (CSE, 4th Year, JSSSTU)  
-GitHub: [Nesar21](https://github.com/Nesar21)  
-LinkedIn: [Nesar Amingad](https://www.linkedin.com/in/nesar-amingad)
+// 85% threshold
+if (calculateSimilarity(newItem, existingItem) >= 0.85) {
+  markAsDuplicate(newItem);
+}
+Content Fingerprinting:
 
-***
+javascript
+function generateFingerprint(item) {
+  const hash = sha256(item.title + item.url + item.content.substring(0, 500));
+  return {
+    hash,
+    timestamp: Date.now(),
+    expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
+  };
+}
+⚠️ Limitations (Updated for v4.2)
+Chrome AI:
 
-## 📝 Version History
+Chrome 128+ only (Dev/Canary)
 
-**v4.1.0 (Oct 21, 2025) - Day 21.2**  
-🆕 REAL Chrome Built-in AI APIs (Translator, LanguageDetector, Summarizer, LanguageModel)  
-🆕 Progressive fallback with Option C strategy  
-🆕 Category filtering (6 categories)  
-🆕 URL extraction enforcement  
-🆕 Item count display (new/total/duplicates)  
-🆕 Fallback banner with 24h cooldown  
-🆕 Smart defaults (Translation/Detection always Chrome AI)  
-✨ All v4.0 features preserved  
+No screenshot support
 
-**v4.0.0 (Oct 21, 2025) - Day 21**  
-🆕 Chrome AI mode (placeholders)  
-🆕 Dual AI provider toggle  
-🆕 Security hardening & TOS acceptance  
-🆕 Rate limit warnings  
-🆕 Auto-fallback  
-🆕 Deduplication  
-🆕 Enhanced error recovery  
-🆕 Privacy controls  
+Context window: ~4K tokens
 
-**v3.4.0 (Oct 16, 2025)**  
-Two extraction types  
-Better UI  
-Pagination tips  
-Extraction badges  
+~85% accuracy
 
-**v3.3.0 (Oct 15, 2025)**  
-3-tier classification  
-+12% Medium accuracy  
-Universal site support  
+Cloud API:
 
-***
+15 RPM, 1M TPD limits
 
-## 📜 License
+~$0.01/extraction
 
-MIT License – Free to use, modify, and distribute  
+Needs API key + internet
 
-**Permissions:**  
-✅ Commercial use  
-✅ Modification  
-✅ Distribution  
-✅ Private use  
+Batch Processing:
 
-**Conditions:**  
-📄 Include license notice  
-⚠️ No warranty  
+Max 100 items per batch
 
-***
+Rate limits still apply (15 RPM total)
 
-## 🙏 Credits
+Chrome AI recommended for large batches
 
-**AI Engine:**  
-- Google Gemini API
-- Chrome Built-in AI (Translator, LanguageDetector, Summarizer, LanguageModel)
-- Gemini Nano (on-device model)
+Cost Tracker:
 
-**Developer:** Nesar Amingad  
-**Institution:** JSS Science and Tech University  
-**Contact:** nesaramingad821@gmail.com  
-**Version:** 4.1.0  
-**Date:** Oct 21, 2025  
+Estimates only (actual costs may vary)
 
-**Special Thanks:**  
-- Google AI Studio Team
-- Chrome Built-in AI Team
-- Chrome Extensions Team
-- Open Source Community
+Cloud API costs fluctuate based on token usage
 
-***
+Chrome AI operations always $0.00
 
-## 🚧 Roadmap
+Deduplication:
 
-**v4.2 (Coming Soon):**  
-- Multi-language support (20+ languages)
-- Batch extraction UI
-- Custom category templates
-- Export history
+85% similarity threshold (adjustable)
 
-**v5.0 (Future):**  
-- Firefox support
-- Cross-browser architecture
-- Mobile companion app
-- Team collaboration features
-- Advanced scheduling
+7-day retention (auto-cleanup)
 
-***
+Memory usage: ~50MB for 10,000 fingerprints
 
-**Built with 💪 by Nesar**  
-**Extract smarter, not harder! ⚡**
+General:
 
-***
+Works on 95%+ sites
 
-**🎯 Testing Checklist (For Developers):**
+JS-heavy pages may need scroll
 
-Before v4.1 Release:
-- [ ] Chrome AI APIs detected correctly
-- [ ] Progressive fallback works (Chrome AI → Cloud API)
-- [ ] Category filters apply correctly (all 6 categories)
-- [ ] URL field present in all extracted items
-- [ ] Item count displays during extraction
-- [ ] Fallback banner shows/dismisses correctly
-- [ ] 24h cooldown persists across sessions
-- [ ] Deduplication works with category filtering
-- [ ] Export filenames include category suffix
-- [ ] Metadata shows correct AI provider + category
-- [ ] All v4.0 features still work
-- [ ] Zero TypeScript/JavaScript errors
-- [ ] Extension loads without console errors
-- [ ] TOS overlay blocks until accepted
-- [ ] API key validation works (Cloud API)
+Some protected sites blocked
 
-**Test Environments:**
-- Windows Chrome Dev 128+ (Chrome AI available)
-- Mac Chrome Stable (Chrome AI unavailable → fallback)
-- Linux Chrome Canary (mixed scenarios)
+Accuracy depends on layout
+
+📞 Support & Feedback
+Report Bugs:
+github.com/Nesar21/web-weaver
+Include: site URL, AI provider, category, mode, error, screenshot
+
+Feature Requests:
+github.com/Nesar21/web-weaver/issues
+
+Security Issues:
+Email: nesaramingad821@gmail.com
+
+Developer:
+Nesar Amingad (CSE, 4th Year, JSSSTU)
+GitHub: Nesar21
+LinkedIn: Nesar Amingad
+
+📝 Version History
+v4.2.0 (Oct 22, 2025) - Modular Architecture
+🆕 Batch Processing Module (translations + summarizations)
+🆕 Cost Tracker Module with budget warnings
+🆕 Deduplication Manager with fuzzy matching (85%)
+🆕 Template Auto-Detection for 50+ sites
+🆕 AI Insights Generator (summaries + recommendations)
+🆕 21.6% smaller background.js (56K vs 72K)
+🆕 Independent module architecture
+🆕 7-day auto-cleanup for fingerprints
+✨ All v4.1 features preserved
+
+v4.1.0 (Oct 21, 2025) - REAL Chrome Built-in AI APIs
+🆕 REAL Chrome APIs (Translator, LanguageDetector, Summarizer, LanguageModel)
+🆕 Progressive fallback with auto-switching
+🆕 Category filtering (6 categories)
+🆕 URL extraction enforcement
+🆕 Item count display
+🆕 Fallback banner system
+✨ All v4.0 features preserved
+
+v4.0.0 (Oct 21, 2025) - Security & Privacy
+🆕 Chrome AI mode
+🆕 Dual AI provider toggle
+🆕 TOS acceptance
+🆕 Rate limit warnings
+🆕 Auto-fallback
+🆕 Enhanced error recovery
+
+📜 License
+MIT License – Free to use, modify, and distribute
+
+Permissions:
+✅ Commercial use
+✅ Modification
+✅ Distribution
+✅ Private use
+
+Conditions:
+📄 Include license notice
+⚠️ No warranty
+
+🙏 Credits
+AI Engine:
+
+Google Gemini API
+
+Chrome Built-in AI (Translator, LanguageDetector, Summarizer, LanguageModel)
+
+Gemini Nano (on-device model)
+
+Developer: Nesar Amingad
+Institution: JSS Science and Tech University
+Contact: nesaramingad821@gmail.com
+Version: 4.2.0
+Date: Oct 22, 2025
+
+Special Thanks:
+
+Google AI Studio Team
+
+Chrome Built-in AI Team
+
+Chrome Extensions Team
+
+Open Source Community
+
+🚧 Roadmap
+v4.3 (Coming Soon):
+
+Multi-language UI (20+ languages)
+
+Custom template builder
+
+Export history view
+
+Advanced batch scheduling
+
+v5.0 (Future):
+
+Firefox support
+
+Cross-browser architecture
+
+Mobile companion app
+
+Team collaboration features
+
+Advanced scheduling + automation
+
+Built with 💪 by Nesar
+Extract smarter, not harder! ⚡

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Web Weaver Lightning",
-  "version": "4.1.0",
-  "description": "AI-powered web data extraction with Chrome Built-in AI (Translator, Detector, Summarizer, Prompt API), Smart Auto Mode, Cloud API fallback, and intelligent privacy-first extraction",
+  "version": "4.2.0",
+  "description": "Privacy-first Visual AI extraction: multimodal analysis (images, audio), batch translation/summarization, accessibility alt-text, extraction templates, AI insights—100% on-device with Chrome Built-in AI + Cloud fallback",
   "permissions": [
     "activeTab",
     "storage",

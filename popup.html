@@ -3,111 +3,184 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Web Weaver Lightning v4.1</title>
+  <title>Web Weaver Lightning</title>
   <style>
-    /* ========================================
-       BASE STYLES (PRESERVED FROM v4.0)
-       ======================================== */
-    
+    /* ═══════════════════════════════════════════════════════════
+       GLOBAL STYLES - PRESERVED FROM v4.1
+       ═══════════════════════════════════════════════════════ */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
+    
     body {
-      width: 400px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      width: 420px;
       min-height: 500px;
       max-height: 700px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #111827;
-      color: #F9FAFB;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
       overflow-y: auto;
+      padding: 0;
     }
-
+    
     .container {
+      background: white;
+      border-radius: 0;
       padding: 20px;
     }
-
-    /* Header */
+    
+    /* ═══════════════════════════════════════════════════════════
+       HEADER - ENHANCED FOR v4.2 (Privacy Badges)
+       ═══════════════════════════════════════════════════════ */
     .header {
       text-align: center;
-      margin-bottom: 20px;
       padding-bottom: 15px;
-      border-bottom: 2px solid #374151;
+      border-bottom: 2px solid #667eea;
+      margin-bottom: 20px;
+      position: relative;
     }
-
+    
     .header h1 {
-      font-size: 20px;
-      font-weight: 700;
-      color: #60A5FA;
+      font-size: 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
       margin-bottom: 5px;
     }
-
-    .header .version {
-      font-size: 12px;
-      color: #9CA3AF;
-    }
-
-    /* 🆕 DAY 21.2: FALLBACK BANNER STYLES */
-    .fallback-banner {
-      display: none;
-      background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%);
-      color: #1F2937;
-      padding: 12px 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      font-size: 13px;
-      line-height: 1.5;
-      position: relative;
-      animation: slideDown 0.3s ease-out;
-    }
-
-    .fallback-banner-content {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .fallback-banner-message {
-      flex: 1;
-      font-weight: 500;
-    }
-
-    .fallback-banner-action {
-      color: #1F2937;
-      text-decoration: underline;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-
-    .fallback-banner-action:hover {
-      color: #111827;
-    }
-
-    .fallback-banner-dismiss {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: rgba(31, 41, 55, 0.2);
-      border: none;
-      color: #1F2937;
-      font-size: 18px;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      cursor: pointer;
+    
+    .version {
+      font-size: 11px;
+      color: #888;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s;
+      gap: 8px;
     }
-
-    .fallback-banner-dismiss:hover {
-      background: rgba(31, 41, 55, 0.4);
+    
+    /* 🆕 v4.2: Privacy Badges */
+    .privacy-badges {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 10px;
+      flex-wrap: wrap;
     }
-
-    @keyframes slideDown {
+    
+    .privacy-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    
+    .privacy-badge.on-device {
+      background: #EBF5FF;
+      color: #1E40AF;
+      border: 1px solid #93C5FD;
+    }
+    
+    .privacy-badge.cloud {
+      background: #FEF3C7;
+      color: #92400E;
+      border: 1px solid #FCD34D;
+    }
+    
+    .privacy-badge.zero-cost {
+      background: #D1FAE5;
+      color: #065F46;
+      border: 1px solid #6EE7B7;
+    }
+    
+    .privacy-badge.privacy-first {
+      background: #F3F4F6;
+      color: #374151;
+      border: 1px solid #D1D5DB;
+    }
+    
+    .privacy-badge:hover {
+      transform: scale(1.05);
+      cursor: help;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════
+       🆕 v4.2: TEMPLATE SELECTOR
+       ═══════════════════════════════════════════════════════ */
+    .section.template-section {
+      background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+      border: 2px solid #F59E0B;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 15px;
+    }
+    
+    .section.template-section .section-title {
+      color: #92400E;
+      margin-bottom: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .template-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .template-select {
+      flex: 1;
+      padding: 8px 10px;
+      border: 2px solid #F59E0B;
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+      color: #92400E;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .template-select:hover {
+      border-color: #D97706;
+      background: #FFFBEB;
+    }
+    
+    .template-select:focus {
+      outline: none;
+      border-color: #D97706;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    }
+    
+    .template-info {
+      font-size: 11px;
+      color: #78350F;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .template-detected {
+      display: none;
+      background: #10B981;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
       from {
         opacity: 0;
         transform: translateY(-10px);
@@ -117,648 +190,1148 @@
         transform: translateY(0);
       }
     }
-
-    /* 🆕 DAY 21: RATE LIMIT WARNING BANNER (PRESERVED) */
-    .rate-limit-warning {
-      display: none;
-      background: linear-gradient(135deg, #FCA5A5 0%, #EF4444 100%);
-      color: white;
-      padding: 12px 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      font-size: 13px;
-      animation: slideDown 0.3s ease-out;
-    }
-
-    /* Section Styles */
+    
+    /* ═══════════════════════════════════════════════════════════
+       SECTIONS - PRESERVED FROM v4.1
+       ═══════════════════════════════════════════════════════ */
     .section {
-      margin-bottom: 20px;
-      padding: 15px;
-      background: #1F2937;
-      border-radius: 10px;
-      border: 1px solid #374151;
+      margin-bottom: 15px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
     }
-
+    
     .section-title {
-      font-size: 14px;
       font-weight: 600;
-      color: #F9FAFB;
-      margin-bottom: 12px;
+      font-size: 13px;
+      color: #667eea;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    /* AI Provider Toggle - PRESERVED FROM v4.1 */
+    .provider-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    
+    .provider-btn {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #e5e7eb;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    
+    .provider-btn:hover {
+      border-color: #667eea;
+      background: #f9fafb;
+    }
+    
+    .provider-btn.active {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .provider-status {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 5px;
+      padding: 6px 10px;
+      background: #f3f4f6;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .provider-status.available {
+      color: #059669;
+      background: #d1fae5;
+    }
+    
+    .provider-status.unavailable {
+      color: #dc2626;
+      background: #fee2e2;
+    }
+    
+    /* API Key Input - PRESERVED FROM v4.1 */
+    .api-key-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .api-key-input {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    
+    .api-key-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .save-key-btn {
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .save-key-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .api-status {
+      font-size: 11px;
+      margin-top: 5px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .api-status.valid {
+      color: #059669;
+      background: #d1fae5;
+    }
+    
+    .api-status.invalid {
+      color: #dc2626;
+      background: #fee2e2;
+    }
+    
+    /* Extraction Type - PRESERVED FROM v4.1 */
+    .extraction-type-toggle {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .extraction-type-btn {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #e5e7eb;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    
+    .extraction-type-btn:hover {
+      border-color: #667eea;
+      background: #f9fafb;
+    }
+    
+    .extraction-type-btn.active {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .extraction-type-description {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 8px;
+      padding: 8px;
+      background: #f3f4f6;
+      border-radius: 4px;
+      line-height: 1.5;
+    }
+    
+    /* Category Filter - PRESERVED FROM v4.1 */
+    .category-select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .category-select:hover {
+      border-color: #667eea;
+    }
+    
+    .category-select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    /* Mode Selector - PRESERVED FROM v4.1 */
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    
+    .mode-btn {
+      padding: 10px;
+      border: 2px solid #e5e7eb;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .mode-btn:hover {
+      border-color: #667eea;
+      background: #f9fafb;
+    }
+    
+    .mode-btn.active {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .mode-icon {
+      font-size: 18px;
+    }
+    
+    .mode-name {
+      font-size: 11px;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════
+       🆕 v4.2: POST-PROCESSING OPTIONS (Checkboxes)
+       ═══════════════════════════════════════════════════════ */
+    .section.post-processing {
+      background: linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%);
+      border: 2px solid #8B5CF6;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 15px;
+    }
+    
+    .section.post-processing .section-title {
+      color: #5B21B6;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: white;
+      border-radius: 6px;
+      border: 2px solid #DDD6FE;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    
+    .checkbox-item:hover {
+      border-color: #8B5CF6;
+      background: #FAF5FF;
+    }
+    
+    .checkbox-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #8B5CF6;
+    }
+    
+    .checkbox-label {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .checkbox-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #5B21B6;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .checkbox-description {
+      font-size: 11px;
+      color: #6B21A8;
+    }
+    
+    .checkbox-badge {
+      padding: 2px 6px;
+      background: #8B5CF6;
+      color: white;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════
+       🆕 v4.2: COST TRACKER DISPLAY
+       ═══════════════════════════════════════════════════════ */
+    .cost-tracker {
+      display: none;
+      background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+      border: 2px solid #F59E0B;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 15px;
+      font-size: 12px;
+    }
+    
+    .cost-tracker.visible {
+      display: block;
+    }
+    
+    .cost-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    
+    .cost-label {
+      color: #92400E;
+      font-weight: 600;
+    }
+    
+    .cost-value {
+      color: #78350F;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .cost-value.high {
+      color: #DC2626;
+    }
+    
+    .cost-breakdown {
+      font-size: 11px;
+      color: #78350F;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid #FCD34D;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════
+       EXTRACT BUTTON - PRESERVED FROM v4.1
+       ═══════════════════════════════════════════════════════ */
+    .extract-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .extract-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .extract-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    
+    .extract-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .extract-btn.loading {
+      pointer-events: none;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid white;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* ═══════════════════════════════════════════════════════════
+       RESULTS SECTION - ENHANCED FOR v4.2 (Tabs)
+       ═══════════════════════════════════════════════════════ */
+    .results-section {
+      display: none;
+      margin-top: 20px;
+    }
+    
+    .results-section.visible {
+      display: block;
+    }
+    
+    /* 🆕 v4.2: Result Tabs */
+    .result-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #E5E7EB;
+    }
+    
+    .result-tab {
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-size: 13px;
+      font-weight: 600;
+      color: #6B7280;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .result-tab:hover {
+      color: #667eea;
+      background: #F9FAFB;
+    }
+    
+    .result-tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+    
+    .tab-badge {
+      background: #667eea;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* Results Header - PRESERVED FROM v4.1 */
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    
+    .results-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #667eea;
       display: flex;
       align-items: center;
       gap: 8px;
     }
-
-    .section-description {
-      font-size: 12px;
-      color: #9CA3AF;
-      margin-bottom: 12px;
-      line-height: 1.5;
-    }
-
-    /* 🆕 DAY 21: AI Provider Selector (PRESERVED) */
-    .provider-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-    }
-
-    select, input, textarea {
-      width: 100%;
-      padding: 10px 12px;
-      background: #111827;
-      border: 1px solid #374151;
-      border-radius: 6px;
-      color: #F9FAFB;
-      font-size: 13px;
-      transition: border-color 0.2s;
-    }
-
-    select:focus, input:focus, textarea:focus {
-      outline: none;
-      border-color: #60A5FA;
-    }
-
-    select {
-      cursor: pointer;
-    }
-
-    /* Status Indicators */
-    .status-indicator {
-      display: inline-block;
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-weight: 500;
-      margin-left: 8px;
-    }
-
-    .status-success {
-      background: #065F46;
-      color: #10B981;
-    }
-
-    .status-error {
-      background: #7F1D1D;
-      color: #EF4444;
-    }
-
-    .status-warning {
-      background: #78350F;
-      color: #F59E0B;
-    }
-
-    /* Extraction Type Buttons (PRESERVED) */
-    .extraction-type-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .extraction-type-btn {
-      padding: 12px;
-      background: #374151;
-      border: 2px solid #4B5563;
-      border-radius: 8px;
-      color: #F9FAFB;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
-    }
-
-    .extraction-type-btn:hover {
-      background: #4B5563;
-      border-color: #60A5FA;
-    }
-
-    .extraction-type-btn.active {
-      background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-      border-color: #2563EB;
+    
+    .item-count {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-    }
-
-    /* 🆕 DAY 21.2: CATEGORY SELECTOR STYLES */
-    .category-selector {
-      margin-top: 12px;
-    }
-
-    .category-description {
-      display: none;
-      font-size: 11px;
-      color: #60A5FA;
-      margin-top: 8px;
-      padding: 8px;
-      background: rgba(96, 165, 250, 0.1);
-      border-radius: 4px;
-      border-left: 3px solid #60A5FA;
-    }
-
-    /* Mode Buttons (PRESERVED) */
-    .mode-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
-    }
-
-    .mode-btn {
-      padding: 10px 8px;
-      background: #374151;
-      border: 2px solid #4B5563;
-      border-radius: 6px;
-      color: #F9FAFB;
+      padding: 4px 10px;
+      border-radius: 12px;
       font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
-    }
-
-    .mode-btn:hover {
-      background: #4B5563;
-      border-color: #60A5FA;
-    }
-
-    .mode-btn.active {
-      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-      border-color: #059669;
-      color: white;
-    }
-
-    /* Extract Button */
-    .extract-btn-container {
-      margin: 20px 0;
-    }
-
-    #extract-btn {
-      width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-      border: none;
-      border-radius: 8px;
-      color: white;
-      font-size: 15px;
       font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
     }
-
-    #extract-btn:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-    }
-
-    #extract-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    /* 🆕 DAY 21.2: ITEM COUNT DISPLAY STYLES */
-    .item-count-display {
-      display: none;
-      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-      color: white;
-      padding: 12px 15px;
-      border-radius: 8px;
-      margin-top: 12px;
-      font-size: 14px;
-      font-weight: 600;
-      text-align: center;
-      animation: fadeIn 0.3s ease-in;
-    }
-
-    .item-count-new {
-      color: #D1FAE5;
-      font-size: 16px;
-    }
-
-    .item-count-total {
-      color: #F0FDF4;
-      font-size: 13px;
-    }
-
-    .item-count-loading {
-      color: #FCD34D;
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: scale(0.95);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
-    @keyframes pulse {
-      0%, 100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.6;
-      }
-    }
-
-    /* Result Section (PRESERVED) */
-    #result-section {
-      display: none;
-    }
-
-    .result-display {
-      background: #111827;
-      border: 1px solid #374151;
-      border-radius: 6px;
-      padding: 12px;
-      max-height: 300px;
-      overflow-y: auto;
-      font-family: 'Courier New', monospace;
-      font-size: 11px;
-      color: #10B981;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .metadata-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-
-    .metadata-item {
-      background: #111827;
-      padding: 8px;
-      border-radius: 6px;
-      border-left: 3px solid #60A5FA;
-    }
-
-    .metadata-label {
-      font-size: 11px;
-      color: #9CA3AF;
-      display: block;
-      margin-bottom: 4px;
-    }
-
-    .metadata-value {
-      font-size: 13px;
-      color: #F9FAFB;
-      font-weight: 600;
-    }
-
-    /* Export Buttons */
-    .export-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-top: 15px;
-    }
-
-    .export-btn {
-      padding: 10px;
-      background: #374151;
-      border: 1px solid #4B5563;
-      border-radius: 6px;
-      color: #F9FAFB;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .export-btn:hover {
-      background: #4B5563;
-      border-color: #10B981;
-      color: #10B981;
-    }
-
-    /* Error Section (PRESERVED) */
-    #error-section {
-      display: none;
-    }
-
-    .error-box {
-      background: linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%);
-      border: 1px solid #DC2626;
-      border-radius: 8px;
-      padding: 15px;
-    }
-
-    .error-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: #FCA5A5;
-      margin-bottom: 10px;
-    }
-
-    .error-message {
-      font-size: 13px;
-      color: #FECACA;
-      margin-bottom: 12px;
-      line-height: 1.5;
-    }
-
-    .error-suggestions {
-      font-size: 12px;
-      color: #FED7AA;
-      line-height: 1.6;
-    }
-
-    .error-suggestions ul {
-      margin: 8px 0;
-      padding-left: 20px;
-    }
-
-    .error-suggestions li {
-      margin: 4px 0;
-    }
-
-    .error-actions {
-      margin-top: 12px;
+    
+    .results-actions {
       display: flex;
       gap: 8px;
     }
-
+    
     .action-btn {
-      padding: 8px 16px;
-      background: #EF4444;
-      border: none;
+      padding: 8px 12px;
+      background: white;
+      border: 2px solid #e5e7eb;
       border-radius: 6px;
-      color: white;
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
-
+    
     .action-btn:hover {
-      background: #DC2626;
+      border-color: #667eea;
+      background: #f9fafb;
     }
-
-    /* History Section (PRESERVED) */
-    .history-entry {
-      background: #111827;
-      padding: 10px;
+    
+    /* JSON Display - PRESERVED FROM v4.1 */
+    .json-output {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.6;
+    }
+    
+    /* 🆕 v4.2: Insights Display */
+    .insights-container {
+      padding: 15px;
+      background: #F9FAFB;
+      border-radius: 8px;
+      border: 2px solid #E5E7EB;
+    }
+    
+    .insights-selector {
+      margin-bottom: 15px;
+    }
+    
+    .insights-type-selector {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .insight-type-btn {
+      padding: 8px 12px;
+      background: white;
+      border: 2px solid #E5E7EB;
       border-radius: 6px;
-      border-left: 3px solid #10B981;
-      margin-bottom: 8px;
-    }
-
-    .history-domain {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
-      color: #F9FAFB;
-      margin-bottom: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
-
-    .history-meta {
-      font-size: 11px;
+    
+    .insight-type-btn:hover {
+      border-color: #667eea;
+      background: #F9FAFB;
+    }
+    
+    .insight-type-btn.active {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .insights-output {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      border: 2px solid #E5E7EB;
+      min-height: 200px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #374151;
+    }
+    
+    .insights-output.loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       color: #9CA3AF;
     }
-
-    /* 🆕 DAY 21: TOS OVERLAY (PRESERVED) */
-    .tos-overlay {
+    
+    .insights-output.empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9CA3AF;
+      font-style: italic;
+    }
+    
+    /* 🆕 v4.2: Metadata Display */
+    .metadata-display {
+      background: #F9FAFB;
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid #E5E7EB;
+      font-size: 12px;
+      margin-top: 15px;
+    }
+    
+    .metadata-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #E5E7EB;
+    }
+    
+    .metadata-row:last-child {
+      border-bottom: none;
+    }
+    
+    .metadata-label {
+      font-weight: 600;
+      color: #6B7280;
+    }
+    
+    .metadata-value {
+      color: #374151;
+      font-family: 'Courier New', monospace;
+    }
+    
+    /* Fallback Banner - PRESERVED FROM v4.1 */
+    .fallback-banner {
+      display: none;
+      background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+      border: 2px solid #F59E0B;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 15px;
+      animation: slideDown 0.3s ease;
+    }
+    
+    .fallback-banner.visible {
+      display: block;
+    }
+    
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .fallback-banner-title {
+      font-weight: 700;
+      color: #92400E;
+      margin-bottom: 6px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .fallback-banner-message {
+      font-size: 12px;
+      color: #78350F;
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+    
+    .fallback-banner-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .fallback-action-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+    
+    .fallback-action-btn.primary {
+      background: #F59E0B;
+      color: white;
+      border-color: #F59E0B;
+    }
+    
+    .fallback-action-btn.secondary {
+      background: white;
+      color: #92400E;
+      border-color: #F59E0B;
+    }
+    
+    .fallback-action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+    
+    /* TOS Modal - PRESERVED FROM v4.1 */
+    .modal {
       display: none;
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.95);
-      z-index: 9999;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
       align-items: center;
       justify-content: center;
-      padding: 20px;
     }
-
-    .tos-content {
-      background: #1F2937;
-      border: 2px solid #60A5FA;
+    
+    .modal.visible {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
       border-radius: 12px;
-      padding: 20px;
-      max-width: 360px;
+      padding: 24px;
+      max-width: 500px;
       max-height: 80%;
       overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     }
-
-    .tos-title {
+    
+    .modal-title {
       font-size: 18px;
       font-weight: 700;
-      color: #60A5FA;
-      margin-bottom: 15px;
-      text-align: center;
+      color: #DC2626;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-
-    .tos-text {
-      font-size: 12px;
-      color: #D1D5DB;
-      line-height: 1.6;
-      margin-bottom: 15px;
+    
+    .modal-body {
+      font-size: 13px;
+      line-height: 1.7;
+      color: #374151;
+      margin-bottom: 20px;
     }
-
-    .tos-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
     }
-
-    .tos-btn {
-      padding: 12px;
-      border: none;
+    
+    .modal-btn {
+      padding: 10px 20px;
       border-radius: 8px;
-      font-size: 14px;
       font-weight: 600;
+      font-size: 14px;
       cursor: pointer;
-      transition: transform 0.2s;
+      transition: all 0.2s;
+      border: none;
     }
-
-    .tos-btn:hover {
-      transform: scale(1.05);
-    }
-
-    #accept-tos-btn {
-      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    
+    .modal-btn.primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
-
-    #decline-tos-btn {
-      background: #374151;
-      color: #F9FAFB;
+    
+    .modal-btn.secondary {
+      background: #F3F4F6;
+      color: #6B7280;
     }
-
-    /* Scrollbar Styles */
-    ::-webkit-scrollbar {
-      width: 8px;
+    
+    .modal-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
-
-    ::-webkit-scrollbar-track {
-      background: #1F2937;
+    
+    /* Utility Classes */
+    .hidden {
+      display: none !important;
     }
-
-    ::-webkit-scrollbar-thumb {
-      background: #4B5563;
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #6B7280;
+    
+    .visible {
+      display: block !important;
     }
   </style>
 </head>
+
 <body>
-  <!-- 🆕 DAY 21: TOS OVERLAY (PRESERVED) -->
-  <div id="tos-overlay" class="tos-overlay">
-    <div class="tos-content">
-      <div class="tos-title">⚠️ Privacy & Terms Notice</div>
-      <div class="tos-text">
+  <!-- TOS Modal - PRESERVED FROM v4.1 -->
+  <div id="tosModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">⚠️ Privacy & Terms Notice</div>
+      <div class="modal-body">
         <p><strong>Before using Web Weaver:</strong></p>
-        <ol style="margin: 10px 0; padding-left: 20px;">
-          <li><strong>Cloud API Mode:</strong> When enabled, extracted data is sent to Google's Gemini API for processing. Review Google's privacy policy.</li>
-          <li><strong>Chrome AI Mode:</strong> All processing happens locally. No data leaves your device.</li>
-          <li><strong>User Responsibility:</strong> You are responsible for complying with website Terms of Service and applicable data protection laws (GDPR, CCPA, etc.).</li>
-          <li><strong>No Warranty:</strong> This extension is provided "as-is" without guarantees of accuracy or reliability.</li>
-          <li><strong>API Keys:</strong> You are responsible for securing your API keys. Never share them publicly.</li>
-        </ol>
-        <p>Do you accept these terms?</p>
+        
+        <p><strong>1. Cloud API Mode:</strong><br>
+        When enabled, extracted data is sent to Google's Gemini API for processing. Review Google's privacy policy.</p>
+        
+        <p><strong>2. Chrome AI Mode:</strong><br>
+        All processing happens locally. No data leaves your device.</p>
+        
+        <p><strong>3. User Responsibility:</strong><br>
+        You are responsible for complying with website Terms of Service and applicable data protection laws (GDPR, CCPA, etc.).</p>
+        
+        <p><strong>4. No Warranty:</strong><br>
+        This extension is provided "as-is" without guarantees of accuracy or reliability.</p>
+        
+        <p><strong>5. API Keys:</strong><br>
+        You are responsible for securing your API keys. Never share them publicly.</p>
+        
+        <p><strong>Do you accept these terms?</strong></p>
       </div>
-      <div class="tos-buttons">
-        <button id="accept-tos-btn" class="tos-btn">I Accept</button>
-        <button id="decline-tos-btn" class="tos-btn">Decline</button>
+      <div class="modal-actions">
+        <button id="acceptTos" class="modal-btn primary">I Accept</button>
+        <button id="declineTos" class="modal-btn secondary">Decline</button>
       </div>
     </div>
   </div>
 
   <div class="container">
-    <!-- Header -->
+    <!-- Header - ENHANCED FOR v4.2 -->
     <div class="header">
       <h1>⚡ Web Weaver Lightning</h1>
-      <div class="version">v4.1.0 - Day 21.2 | Chrome AI Integrated</div>
-    </div>
-
-    <!-- 🆕 DAY 21.2: FALLBACK BANNER -->
-    <div id="fallback-banner" class="fallback-banner">
-      <button id="fallback-banner-dismiss" class="fallback-banner-dismiss">×</button>
-      <div class="fallback-banner-content">
-        <div id="fallback-banner-message" class="fallback-banner-message"></div>
-        <a id="fallback-banner-action" class="fallback-banner-action" href="#" target="_blank"></a>
+      <div class="version">
+        <span>v4.2.0 - Visual AI</span>
+        <span>|</span>
+        <span>Chrome AI + Multimodal</span>
+      </div>
+      
+      <!-- 🆕 v4.2: Privacy Badges -->
+      <div class="privacy-badges">
+        <div class="privacy-badge on-device" id="onDeviceBadge" style="display: none;" title="All processing happens locally">
+          🔵 On-Device AI
+        </div>
+        <div class="privacy-badge cloud" id="cloudBadge" style="display: none;" title="Data sent to Google Gemini API">
+          ☁️ Cloud Processing
+        </div>
+        <div class="privacy-badge zero-cost" id="zeroCostBadge" style="display: none;" title="Using Chrome AI - no API costs">
+          💰 $0 Cost
+        </div>
+        <div class="privacy-badge privacy-first" title="Your API key is stored locally">
+          🔒 Privacy-First
+        </div>
       </div>
     </div>
-
-    <!-- 🆕 DAY 21: RATE LIMIT WARNING (PRESERVED) -->
-    <div id="rate-limit-warning-banner" class="rate-limit-warning"></div>
-
-    <!-- 🆕 DAY 21: AI Provider Selector (PRESERVED) -->
+    
+    <!-- Fallback Banner - PRESERVED FROM v4.1 -->
+    <div id="fallbackBanner" class="fallback-banner">
+      <div class="fallback-banner-title">
+        <span id="fallbackBannerIcon">⚠️</span>
+        <span id="fallbackBannerTitle">Chrome Built-in AI Unavailable</span>
+      </div>
+      <div id="fallbackBannerMessage" class="fallback-banner-message">
+        Falling back to Cloud API (slower). Get Chrome Dev 128+ for 10× faster extraction.
+      </div>
+      <div class="fallback-banner-actions">
+        <button id="fallbackActionBtn" class="fallback-action-btn primary">Download Chrome Dev</button>
+        <button id="dismissFallbackBtn" class="fallback-action-btn secondary">Got it (hide for 24h)</button>
+      </div>
+    </div>
+    
+    <!-- 🆕 v4.2: Template Selector -->
+    <div class="section template-section">
+      <div class="section-title">🎯 Extraction Template</div>
+      <div class="template-selector">
+        <select id="templateSelect" class="template-select">
+          <option value="custom">🔧 Custom (Manual)</option>
+          <option value="amazon_products">🛒 Amazon Products</option>
+          <option value="linkedin_posts">💼 LinkedIn Posts</option>
+          <option value="medium_articles">📰 Medium Articles</option>
+          <option value="youtube_videos">🎥 YouTube Videos</option>
+          <option value="indeed_jobs">💼 Indeed Jobs</option>
+          <option value="github_repos">🐙 GitHub Repos</option>
+          <option value="reddit_posts">🤖 Reddit Posts</option>
+        </select>
+      </div>
+      <div class="template-info">
+        <span id="templateInfo">Auto-configured settings for specific sites</span>
+      </div>
+      <div id="templateDetected" class="template-detected">
+        ✅ Template Auto-Detected
+      </div>
+    </div>
+    
+    <!-- AI Provider - PRESERVED FROM v4.1 -->
     <div class="section">
       <div class="section-title">🤖 AI Provider</div>
-      <select id="ai-provider-select">
-        <option value="CHROME_BUILTIN">🔵 Chrome Built-in AI (Fast & Private)</option>
-        <option value="CLOUD_API">☁️ Cloud API (Advanced & Accurate)</option>
-      </select>
-      <div id="provider-description" class="section-description"></div>
-      <div style="margin-top: 8px; font-size: 11px; color: #9CA3AF;">
-        Chrome AI Status: <span id="chrome-ai-status" class="status-indicator status-warning">Checking...</span>
+      <div class="provider-toggle">
+        <button id="chromeAIBtn" class="provider-btn active">
+          🔵 Chrome Built-in AI
+        </button>
+        <button id="cloudAPIBtn" class="provider-btn">
+          ☁️ Cloud API
+        </button>
+      </div>
+      <div id="chromeAIStatus" class="provider-status">
+        Chrome AI Status: <span id="chromeAIStatusText">Checking...</span>
       </div>
     </div>
-
-    <!-- API Key Section (PRESERVED) -->
-    <div id="api-key-section" class="section" style="display: none;">
+    
+    <!-- API Key - PRESERVED FROM v4.1 (Hidden if Chrome AI active) -->
+    <div id="apiKeySection" class="section" style="display: none;">
       <div class="section-title">🔑 Gemini API Key</div>
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <input type="password" id="api-key-input" placeholder="Enter your Gemini API key">
-        <button id="save-api-key-btn" class="export-btn" style="min-width: 70px;">Save</button>
+      <div class="api-key-group">
+        <input type="password" id="apiKeyInput" class="api-key-input" placeholder="Enter your Gemini API key">
+        <button id="saveApiKeyBtn" class="save-key-btn">Save</button>
       </div>
-      <div style="margin-top: 8px; font-size: 11px; color: #9CA3AF;">
-        Status: <span id="api-key-status" class="status-indicator status-warning">Checking...</span>
+      <div id="apiStatus" class="api-status" style="display: none;">
+        Status: <span id="apiStatusText">Checking...</span>
       </div>
     </div>
-
-    <!-- Extraction Type (PRESERVED) -->
+    
+    <!-- Extraction Type - PRESERVED FROM v4.1 -->
     <div class="section">
       <div class="section-title">📦 Extraction Type</div>
-      <div class="extraction-type-grid">
-        <button class="extraction-type-btn active" data-type="MULTI">
-          📦 Multiple Items
-        </button>
-        <button class="extraction-type-btn" data-type="SINGLE_ITEM">
-          📸 Single Item
-        </button>
+      <div class="extraction-type-toggle">
+        <button id="multiItemBtn" class="extraction-type-btn active">📦 Multiple Items</button>
+        <button id="singleItemBtn" class="extraction-type-btn">📸 Single Item</button>
       </div>
-      <div id="extraction-type-description" class="section-description">
-        <strong>MULTI Mode:</strong> Use for search results, product listings, article feeds. Scroll or click "Next Page" to load more, then click "Extract Again" to get more items.
-      </div>
-
-      <!-- 🆕 DAY 21.2: CATEGORY SELECTOR -->
-      <div class="category-selector">
-        <div style="font-size: 13px; font-weight: 600; color: #F9FAFB; margin-bottom: 8px;">🎯 Category Filter</div>
-        <select id="category-select">
-          <!-- Options populated by JS -->
-        </select>
-        <div id="category-description" class="category-description"></div>
+      <div id="extractionTypeDesc" class="extraction-type-description">
+        <strong>MULTI Mode:</strong> Extract all items from current page (product listings, search results, feeds).
       </div>
     </div>
-
-    <!-- Extraction Mode (PRESERVED) -->
+    
+    <!-- Category Filter - PRESERVED FROM v4.1 -->
+    <div class="section">
+      <div class="section-title">🎯 Category Filter</div>
+      <select id="categorySelect" class="category-select">
+        <option value="all">📦 All Items</option>
+        <option value="products">🛍️ Products Only</option>
+        <option value="articles">📰 Articles/News Only</option>
+        <option value="videos">🎥 Videos Only</option>
+        <option value="jobs">💼 Job Listings Only</option>
+        <option value="events">📅 Events Only</option>
+      </select>
+    </div>
+    
+    <!-- Mode Selector - PRESERVED FROM v4.1 -->
     <div class="section">
       <div class="section-title">⚙️ Extraction Mode</div>
       <div class="mode-grid">
-        <button class="mode-btn" data-mode="offline">⚡<br>Offline</button>
-        <button class="mode-btn" data-mode="min">🔵<br>Min</button>
-        <button class="mode-btn" data-mode="balanced">⚖️<br>Balanced</button>
-        <button class="mode-btn" data-mode="max">🎯<br>Max</button>
-        <button class="mode-btn active" data-mode="auto">🤖<br>Auto</button>
+        <button class="mode-btn" data-mode="offline">
+          <span class="mode-icon">⚡</span>
+          <span class="mode-name">Offline</span>
+        </button>
+        <button class="mode-btn" data-mode="min">
+          <span class="mode-icon">🔵</span>
+          <span class="mode-name">Minimal</span>
+        </button>
+        <button class="mode-btn" data-mode="balanced">
+          <span class="mode-icon">⚖️</span>
+          <span class="mode-name">Balanced</span>
+        </button>
+        <button class="mode-btn" data-mode="max">
+          <span class="mode-icon">🎯</span>
+          <span class="mode-name">Maximum</span>
+        </button>
+        <button class="mode-btn active" data-mode="auto">
+          <span class="mode-icon">🤖</span>
+          <span class="mode-name">Smart Auto</span>
+        </button>
       </div>
     </div>
-
-    <!-- Extract Button -->
-    <div class="extract-btn-container">
-      <button id="extract-btn">🔍 Extract Data</button>
+    
+    <!-- 🆕 v4.2: Post-Processing Options -->
+    <div class="section post-processing">
+      <div class="section-title">🔧 Post-Processing (Optional)</div>
+      <div class="checkbox-group">
+        <label class="checkbox-item">
+          <input type="checkbox" id="deduplicationCheckbox">
+          <div class="checkbox-label">
+            <div class="checkbox-title">
+              🔄 Deduplication
+              <span class="checkbox-badge">NEW</span>
+            </div>
+            <div class="checkbox-description">Skip duplicate items across pagination</div>
+          </div>
+        </label>
+        
+        <label class="checkbox-item">
+          <input type="checkbox" id="translationCheckbox">
+          <div class="checkbox-label">
+            <div class="checkbox-title">
+              🌐 Translation
+              <span class="checkbox-badge">BATCH</span>
+            </div>
+            <div class="checkbox-description">Translate items to your language (20/batch)</div>
+          </div>
+        </label>
+        
+        <label class="checkbox-item">
+          <input type="checkbox" id="summarizationCheckbox">
+          <div class="checkbox-label">
+            <div class="checkbox-title">
+              📝 Summarization
+              <span class="checkbox-badge">BATCH</span>
+            </div>
+            <div class="checkbox-description">Generate concise summaries (5/batch)</div>
+          </div>
+        </label>
+      </div>
     </div>
-
-    <!-- 🆕 DAY 21.2: ITEM COUNT DISPLAY -->
-    <div id="item-count-display" class="item-count-display"></div>
-
-    <!-- Result Section (PRESERVED) -->
-    <div id="result-section" class="section">
-      <div class="section-title">✅ Extraction Complete</div>
+    
+    <!-- 🆕 v4.2: Cost Tracker (Shows when Cloud API + post-processing enabled) -->
+    <div id="costTracker" class="cost-tracker">
+      <div class="cost-row">
+        <span class="cost-label">Estimated Cost:</span>
+        <span id="estimatedCost" class="cost-value">$0.00</span>
+      </div>
+      <div class="cost-row">
+        <span class="cost-label">Today:</span>
+        <span id="dailyCost" class="cost-value">$0.00</span>
+      </div>
+      <div class="cost-breakdown">
+        💡 Using Chrome AI = $0 cost
+      </div>
+    </div>
+    
+    <!-- Extract Button - PRESERVED FROM v4.1 -->
+    <button id="extractBtn" class="extract-btn">
+      <span>🚀 Extract Data</span>
+    </button>
+    
+    <!-- Results Section - ENHANCED FOR v4.2 -->
+    <div id="resultsSection" class="results-section">
+      <!-- 🆕 v4.2: Result Tabs -->
+      <div class="result-tabs">
+        <button class="result-tab active" data-tab="data">
+          📊 Data <span id="dataCountBadge" class="tab-badge">0</span>
+        </button>
+        <button class="result-tab" data-tab="insights">
+          💡 Insights
+        </button>
+        <button class="result-tab" data-tab="metadata">
+          ℹ️ Metadata
+        </button>
+      </div>
       
-      <!-- Metadata Display -->
-      <div id="metadata-display"></div>
-
-      <!-- Result Display -->
-      <pre id="result-display" class="result-display"></pre>
-
-      <!-- Export Buttons -->
-      <div class="export-grid">
-        <button id="export-json-btn" class="export-btn">📄 JSON</button>
-        <button id="export-csv-btn" class="export-btn">📊 CSV</button>
-        <button id="copy-btn" class="export-btn">📋 Copy</button>
+      <!-- Data Tab - PRESERVED FROM v4.1 -->
+      <div id="dataTab" class="tab-content active">
+        <div class="results-header">
+          <div class="results-title">
+            <span>📊 Extracted Data</span>
+            <span id="itemCount" class="item-count">0 items</span>
+          </div>
+          <div class="results-actions">
+            <button id="copyBtn" class="action-btn" title="Copy JSON">📋 Copy</button>
+            <button id="downloadBtn" class="action-btn" title="Download JSON">💾 Download</button>
+            <button id="csvBtn" class="action-btn" title="Convert to CSV">📊 CSV</button>
+          </div>
+        </div>
+        <div id="jsonOutput" class="json-output"></div>
+      </div>
+      
+      <!-- 🆕 v4.2: Insights Tab -->
+      <div id="insightsTab" class="tab-content">
+        <div class="insights-container">
+          <div class="insights-selector">
+            <div class="insights-type-selector">
+              <button class="insight-type-btn active" data-insight="summary">📊 Summary</button>
+              <button class="insight-type-btn" data-insight="comparison">⚖️ Compare</button>
+              <button class="insight-type-btn" data-insight="recommendations">💡 Recommend</button>
+              <button class="insight-type-btn" data-insight="anomalies">🔍 Anomalies</button>
+              <button class="insight-type-btn" data-insight="trends">📈 Trends</button>
+            </div>
+          </div>
+          <div id="insightsOutput" class="insights-output empty">
+            Click "Generate Insights" to analyze extracted data
+          </div>
+          <button id="generateInsightsBtn" class="extract-btn" style="margin-top: 15px;">
+            <span>💡 Generate Insights</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- 🆕 v4.2: Metadata Tab -->
+      <div id="metadataTab" class="tab-content">
+        <div id="metadataDisplay" class="metadata-display">
+          <div class="metadata-row">
+            <span class="metadata-label">Duration:</span>
+            <span id="metaDuration" class="metadata-value">-</span>
+          </div>
+          <div class="metadata-row">
+            <span class="metadata-label">Mode:</span>
+            <span id="metaMode" class="metadata-value">-</span>
+          </div>
+          <div class="metadata-row">
+            <span class="metadata-label">AI Provider:</span>
+            <span id="metaProvider" class="metadata-value">-</span>
+          </div>
+          <div class="metadata-row">
+            <span class="metadata-label">Category:</span>
+            <span id="metaCategory" class="metadata-value">-</span>
+          </div>
+          <div class="metadata-row">
+            <span class="metadata-label">Translation:</span>
+            <span id="metaTranslation" class="metadata-value">-</span>
+          </div>
+          <div class="metadata-row">
+            <span class="metadata-label">Summarization:</span>
+            <span id="metaSummarization" class="metadata-value">-</span>
+          </div>
+          <div class="metadata-row">
+            <span class="metadata-label">Deduplication:</span>
+            <span id="metaDeduplication" class="metadata-value">-</span>
+          </div>
+          <div class="metadata-row">
+            <span class="metadata-label">Cost:</span>
+            <span id="metaCost" class="metadata-value">-</span>
+          </div>
+        </div>
       </div>
     </div>
-
-    <!-- Error Section (PRESERVED) -->
-    <div id="error-section" class="section">
-      <div class="error-box">
-        <div id="error-title" class="error-title">❌ Extraction Failed</div>
-        <div id="error-message" class="error-message">Error</div>
-        <div id="error-suggestions" class="error-suggestions"></div>
-        <div id="error-actions" class="error-actions"></div>
-      </div>
-    </div>
-
-    <!-- Extraction History (PRESERVED) -->
-    <div class="section">
-      <div class="section-title">📊 Extraction History</div>
-      <div id="history-container"></div>
-      <button id="clear-cache-btn" class="export-btn" style="width: 100%; margin-top: 10px;">🗑️ Clear Cache</button>
-    </div>
-
-    <!-- Scroll Progress Indicator (PRESERVED) -->
-    <div id="scroll-progress" style="display: none; margin-top: 10px; font-size: 12px; color: #9CA3AF; text-align: center;"></div>
   </div>
-
+  
+  <!-- Scripts - PRESERVED FROM v4.1 + v4.2 NEW MODULES -->
+  <script src="src/config.js"></script>
+  <script src="src/utils/chrome-ai.js"></script>
+  <script src="src/template-manager.js"></script>
+  <script src="src/insights-generator.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
