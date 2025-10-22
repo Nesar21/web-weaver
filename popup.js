@@ -673,12 +673,25 @@ async function handleExtraction() {
   updateExtractButton(true);
   
   try {
+    // ✅ FIX 1: Get current tab info
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true
+    });
+    
+    if (!tab) {
+      throw new Error('No active tab found');
+    }
+    
+    // ✅ FIX 2: Send message WITH url and tabId
     const response = await chrome.runtime.sendMessage({
       action: 'extractData',
       mode: currentMode,
       extractionType: currentExtractionType,
       aiProvider: currentAIProvider,
-      category: currentCategory
+      category: currentCategory,
+      url: tab.url,          // ✅ ADDED
+      tabId: tab.id          // ✅ ADDED
     });
     
     if (response.success) {
