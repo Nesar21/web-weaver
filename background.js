@@ -4,7 +4,7 @@
  * 
  * 🆕 v4.2 MODULAR ENHANCEMENTS:
  * - BATCH PROCESSING: Uses BatchProcessor module for translation/summarization
- * - COST TRACKING: Uses CostTracker module with budget warnings (75%, 90%, 100%)
+ * - COST TRACKING: REMOVED (API billing handled externally per user request)
  * - DEDUPLICATION: Uses DeduplicationManager module with fuzzy matching (85% similarity)
  * - AUTO-CLEANUP: 7-day retention for deduplication fingerprints
  * - TEMPLATE AUTO-DETECTION: Auto-detect site type and apply extraction templates
@@ -58,23 +58,10 @@ let chromeAIAvailable = {
   rewriter: false
 };
 
-/**
- * Cost tracking state (legacy - now handled by CostTracker module)
- * Kept for backward compatibility
- */
-const costTracker = {
-  dailyTotal: 0,
-  monthlyTotal: 0,
-  dailyLimit: 1.00,    // $1 per day
-  monthlyLimit: 20.00,  // $20 per month
-  lastReset: Date.now(),
-  operations: []
-};
-
 console.log('[Background] State initialized');
 
 // ============================================================================
-// INITIALIZATION - FUNCTION 1 of 2
+// FUNCTION 1 of 30: INITIALIZATION
 // ============================================================================
 
 /**
@@ -88,7 +75,7 @@ async function initializeBackground() {
   }
 
   console.log('[Background] Initializing...');
-
+  
   try {
     // Check Chrome Built-in AI availability
     await checkChromeAIAvailability();
@@ -96,7 +83,6 @@ async function initializeBackground() {
     // Verify external modules are loaded
     const modulesLoaded = {
       BatchProcessor: typeof BatchProcessor !== 'undefined',
-      CostTracker: typeof CostTracker !== 'undefined',
       DeduplicationManager: typeof DeduplicationManager !== 'undefined',
       TemplateManager: typeof TemplateManager !== 'undefined',
       InsightsGenerator: typeof InsightsGenerator !== 'undefined',
@@ -107,22 +93,11 @@ async function initializeBackground() {
 
     console.log('[Background] Module availability:', modulesLoaded);
 
-    // Verify critical modules
-    if (modulesLoaded.BatchProcessor) {
-      console.log('[Background] ✅ BatchProcessor module ready');
-    } else {
+    // Verify critical modules (warnings only, no fatal errors)
+    if (!modulesLoaded.BatchProcessor) {
       console.warn('[Background] ⚠️ BatchProcessor module NOT found');
     }
-
-    if (modulesLoaded.CostTracker) {
-      console.log('[Background] ✅ CostTracker module ready');
-    } else {
-      console.warn('[Background] ⚠️ CostTracker module NOT found');
-    }
-
-    if (modulesLoaded.DeduplicationManager) {
-      console.log('[Background] ✅ DeduplicationManager module ready');
-    } else {
+    if (!modulesLoaded.DeduplicationManager) {
       console.warn('[Background] ⚠️ DeduplicationManager module NOT found');
     }
 
@@ -138,7 +113,6 @@ async function initializeBackground() {
 
     BACKGROUND_STATE.initialized = true;
     console.log('[Background] ✅ Initialization complete');
-
   } catch (error) {
     console.error('[Background] ❌ Initialization error:', error);
     BACKGROUND_STATE.lastError = error.message;
@@ -146,7 +120,7 @@ async function initializeBackground() {
 }
 
 // ============================================================================
-// CHROME AI AVAILABILITY CHECK - FUNCTION 2 of 2
+// FUNCTION 2 of 30: CHROME AI AVAILABILITY CHECK
 // ============================================================================
 
 /**
@@ -155,7 +129,7 @@ async function initializeBackground() {
  */
 async function checkChromeAIAvailability() {
   console.log('[Background] Checking Chrome AI availability...');
-
+  
   try {
     // Check Translation API
     if (typeof self.translation !== 'undefined' && self.translation.canTranslate) {
@@ -223,7 +197,6 @@ async function checkChromeAIAvailability() {
     // Summary
     const availableCount = Object.values(chromeAIAvailable).filter(Boolean).length;
     console.log(`[Background] Chrome AI Summary: ${availableCount}/5 APIs available`);
-
   } catch (error) {
     console.warn('[Background] Chrome AI check failed:', error.message);
     // Set all to false on error
@@ -237,10 +210,7 @@ async function checkChromeAIAvailability() {
 initializeBackground();
 
 // ============================================================================
-// END OF PART 1
-// ============================================================================
-// ============================================================================
-// MESSAGE HANDLERS & ROUTING - FUNCTION 3 of 23
+// FUNCTION 3 of 30: MESSAGE HANDLER & ROUTING
 // ============================================================================
 
 /**
@@ -281,17 +251,17 @@ async function handleMessage(message, sender) {
     case 'extractData':
     case 'extraction':
       return await handleExtraction(message, sender);
-
+    
     case 'singleItemExtraction':
       return await handleSingleItemExtraction(message, sender);
-
+    
     case 'multiItemExtraction':
       return await handleMultiItemExtraction(message, sender);
 
-    // Batch operations (v4.2 MODULAR)
+    // Batch operations (v4.2 MODULAR - CostTracker removed)
     case 'batchTranslation':
       return await handleBatchTranslation(message);
-
+    
     case 'batchSummarization':
       return await handleBatchSummarization(message);
 
@@ -299,11 +269,11 @@ async function handleMessage(message, sender) {
     case 'languageDetection':
     case 'detectLanguage':
       return await handleLanguageDetection(message);
-
+    
     case 'translation':
     case 'translateText':
       return await handleTranslation(message);
-
+    
     case 'summarization':
     case 'summarizeText':
       return await handleSummarization(message);
@@ -311,10 +281,10 @@ async function handleMessage(message, sender) {
     // Template & insights
     case 'detectTemplate':
       return await detectTemplate(message);
-
+    
     case 'applyTemplate':
       return await applyTemplate(message);
-
+    
     case 'generateInsights':
     case 'insightsGeneration':
       return await handleInsightsGeneration(message);
@@ -335,7 +305,7 @@ async function handleMessage(message, sender) {
           version: '4.2.0'
         }
       };
-
+    
     case 'getAIAvailability':
       return {
         success: true,
@@ -353,12 +323,12 @@ async function handleMessage(message, sender) {
 }
 
 // ============================================================================
-// 🆕 v4.2 MODULAR: BATCH TRANSLATION - FUNCTION 4 of 23
+// FUNCTION 4 of 30: BATCH TRANSLATION (CostTracker removed)
 // ============================================================================
 
 /**
  * Handle batch translation using BatchProcessor module
- * Translates multiple items with progress tracking and cost calculation
+ * Translates multiple items with progress tracking
  * 
  * @param {Object} message - Message containing items to translate
  * @returns {Object} Translation results with statistics
@@ -386,6 +356,11 @@ async function handleBatchTranslation(message) {
 
     console.log(`[Background] Translating ${items.length} items (${fields.join(', ')}) to ${targetLanguage}`);
 
+    // Check if BatchProcessor is available
+    if (typeof BatchProcessor === 'undefined') {
+      throw new Error('BatchProcessor module not available');
+    }
+
     // Use BatchProcessor module for translation
     const result = await BatchProcessor.batchTranslate(items, {
       fields,
@@ -398,21 +373,11 @@ async function handleBatchTranslation(message) {
       }
     });
 
-    // Track cost using CostTracker module
-    await CostTracker.trackOperation('batchTranslation', {
-      itemCount: items.length,
-      fieldsCount: fields.length,
-      successCount: result.results.filter(r => r.success).length,
-      estimatedCost: result.totalCost || 0,
-      duration: Date.now() - startTime
-    });
-
     // Calculate statistics
     const stats = {
       total: result.results.length,
       successful: result.results.filter(r => r.success).length,
       failed: result.results.filter(r => !r.success).length,
-      totalCost: result.totalCost || 0,
       duration: Date.now() - startTime,
       method: result.method || 'unknown'
     };
@@ -427,14 +392,6 @@ async function handleBatchTranslation(message) {
 
   } catch (error) {
     console.error('[Background] ❌ Batch translation error:', error);
-    
-    // Track failed operation
-    await CostTracker.trackOperation('batchTranslation', {
-      itemCount: message.items?.length || 0,
-      success: false,
-      error: error.message,
-      duration: Date.now() - startTime
-    });
 
     return {
       success: false,
@@ -443,7 +400,6 @@ async function handleBatchTranslation(message) {
         total: message.items?.length || 0,
         successful: 0,
         failed: message.items?.length || 0,
-        totalCost: 0,
         duration: Date.now() - startTime
       }
     };
@@ -451,12 +407,12 @@ async function handleBatchTranslation(message) {
 }
 
 // ============================================================================
-// 🆕 v4.2 MODULAR: BATCH SUMMARIZATION - FUNCTION 5 of 23
+// FUNCTION 5 of 30: BATCH SUMMARIZATION (CostTracker removed)
 // ============================================================================
 
 /**
  * Handle batch summarization using BatchProcessor module
- * Summarizes multiple items with progress tracking and cost calculation
+ * Summarizes multiple items with progress tracking
  * 
  * @param {Object} message - Message containing items to summarize
  * @returns {Object} Summarization results with statistics
@@ -479,6 +435,11 @@ async function handleBatchSummarization(message) {
 
     console.log(`[Background] Summarizing ${items.length} items (field: ${field})`);
 
+    // Check if BatchProcessor is available
+    if (typeof BatchProcessor === 'undefined') {
+      throw new Error('BatchProcessor module not available');
+    }
+
     // Use BatchProcessor module for summarization
     const result = await BatchProcessor.batchSummarize(items, {
       field,
@@ -491,20 +452,11 @@ async function handleBatchSummarization(message) {
       }
     });
 
-    // Track cost using CostTracker module
-    await CostTracker.trackOperation('batchSummarization', {
-      itemCount: items.length,
-      successCount: result.results.filter(r => r.success).length,
-      estimatedCost: result.totalCost || 0,
-      duration: Date.now() - startTime
-    });
-
     // Calculate statistics
     const stats = {
       total: result.results.length,
       successful: result.results.filter(r => r.success).length,
       failed: result.results.filter(r => !r.success).length,
-      totalCost: result.totalCost || 0,
       duration: Date.now() - startTime,
       method: result.method || 'unknown'
     };
@@ -519,14 +471,6 @@ async function handleBatchSummarization(message) {
 
   } catch (error) {
     console.error('[Background] ❌ Batch summarization error:', error);
-    
-    // Track failed operation
-    await CostTracker.trackOperation('batchSummarization', {
-      itemCount: message.items?.length || 0,
-      success: false,
-      error: error.message,
-      duration: Date.now() - startTime
-    });
 
     return {
       success: false,
@@ -535,784 +479,324 @@ async function handleBatchSummarization(message) {
         total: message.items?.length || 0,
         successful: 0,
         failed: message.items?.length || 0,
-        totalCost: 0,
         duration: Date.now() - startTime
       }
     };
   }
 }
-
 // ============================================================================
-// END OF PART 2
-// ============================================================================
-// ============================================================================
-// CORE EXTRACTION HANDLERS - FUNCTION 6 of 23
+// FUNCTION 6 of 30: LANGUAGE DETECTION
 // ============================================================================
 
 /**
- * Main extraction handler - orchestrates the entire extraction process
- * Integrates: content fetching, classification, AI extraction, deduplication
+ * Detect language of provided text
+ * Uses Chrome Language Detector API with Cloud API fallback
  * 
- * @param {Object} message - Extraction request parameters
- * @param {Object} sender - Message sender information
- * @returns {Object} Extraction results with metadata
- */
-async function handleExtraction(message, sender) {
-  const startTime = Date.now();
-  const extractionId = `ext_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
-  console.log(`[Background] 🚀 Starting extraction [${extractionId}]`);
-  BACKGROUND_STATE.currentExtractions.add(extractionId);
-
-  try {
-    const {
-      url,
-      mode = 'smart',
-      category,
-      userPrompt,
-      options = {}
-    } = message;
-
-    // Validation
-    if (!url) {
-      throw new Error('URL is required for extraction');
-    }
-
-    const tabId = sender.tab?.id || message.tabId;
-    if (!tabId) {
-      throw new Error('No tab ID available for content extraction');
-    }
-
-    console.log(`[Background] [${extractionId}] Fetching page content from tab ${tabId}`);
-
-    // Get page content from content script
-    const contentResponse = await chrome.tabs.sendMessage(tabId, {
-      action: 'getPageContent'
-    });
-
-    if (!contentResponse || !contentResponse.success) {
-      throw new Error(`Failed to get page content: ${contentResponse?.error || 'Unknown error'}`);
-    }
-
-    const { html, text, metadata } = contentResponse.data;
-
-    console.log(`[Background] [${extractionId}] Content fetched: ${text.length} chars`);
-
-    // 🆕 v4.2 MODULAR: Check for duplicate using DeduplicationManager
-    if (options.enableDeduplication === true) {
-      console.log(`[Background] [${extractionId}] Checking for duplicates...`);
-      
-      const isDuplicate = await DeduplicationManager.isDuplicate({
-        url,
-        title: metadata.title || '',
-        content: text.substring(0, 5000)
-      });
-
-      if (isDuplicate) {
-        console.log(`[Background] [${extractionId}] ⚠️ Duplicate content detected`);
-        return {
-          success: true,
-          isDuplicate: true,
-          message: 'This content has been extracted recently',
-          metadata: {
-            url,
-            title: metadata.title,
-            responseTime: Date.now() - startTime
-          }
-        };
-      }
-    }
-
-    // Classify content
-    console.log(`[Background] [${extractionId}] Classifying content...`);
-    const classification = await classifyContent(url, text, metadata);
-    console.log(`[Background] [${extractionId}] Classification:`, classification);
-
-    // Detect template if requested
-    let template = null;
-    if (options.useTemplate) {
-      console.log(`[Background] [${extractionId}] Detecting template...`);
-      const templateResult = await detectTemplate({ url, html, metadata });
-      if (templateResult.success && templateResult.template) {
-        template = templateResult.template;
-        console.log(`[Background] [${extractionId}] Template detected: ${template.name}`);
-      }
-    }
-
-    // Perform extraction
-    console.log(`[Background] [${extractionId}] Performing AI extraction...`);
-    let extractionResult;
-
-    if (template) {
-      // Use template-based extraction
-      extractionResult = await applyTemplate({
-        templateId: template.id,
-        content: { html, text, metadata }
-      });
-    } else {
-      // Use AI-based extraction
-      extractionResult = await performAIExtraction({
-        url,
-        html,
-        text,
-        metadata,
-        mode: mode || classification.suggestedMode,
-        category: category || classification.category,
-        userPrompt
-      });
-    }
-
-    if (!extractionResult.success) {
-      throw new Error(`Extraction failed: ${extractionResult.error}`);
-    }
-
-    // 🆕 v4.2 MODULAR: Store fingerprint using DeduplicationManager
-    if (options.enableDeduplication === true && extractionResult.success) {
-      console.log(`[Background] [${extractionId}] Storing fingerprint...`);
-      await DeduplicationManager.storeFingerprint({
-        url,
-        title: metadata.title || '',
-        content: text.substring(0, 5000),
-        extractedData: extractionResult.data
-      });
-    }
-
-    // Track cost using CostTracker module
-    await CostTracker.trackOperation('extraction', {
-      mode: mode || classification.suggestedMode,
-      category: category || classification.category,
-      success: true,
-      itemCount: Array.isArray(extractionResult.data) ? extractionResult.data.length : 1,
-      duration: Date.now() - startTime
-    });
-
-    // Update metrics
-    BACKGROUND_STATE.metrics.totalExtractions++;
-    BACKGROUND_STATE.metrics.successfulExtractions++;
-    BACKGROUND_STATE.lastExtraction = {
-      url,
-      timestamp: Date.now(),
-      success: true
-    };
-
-    const responseTime = Date.now() - startTime;
-    console.log(`[Background] [${extractionId}] ✅ Extraction complete in ${responseTime}ms`);
-
-    return {
-      success: true,
-      data: extractionResult.data,
-      metadata: {
-        ...metadata,
-        classification,
-        template: template?.name,
-        responseTime,
-        cost: extractionResult.cost || 0,
-        extractionId
-      }
-    };
-
-  } catch (error) {
-    console.error(`[Background] [${extractionId}] ❌ Extraction error:`, error);
-
-    // Track failed operation
-    await CostTracker.trackOperation('extraction', {
-      success: false,
-      error: error.message,
-      duration: Date.now() - startTime
-    });
-
-    // Update metrics
-    BACKGROUND_STATE.metrics.totalExtractions++;
-    BACKGROUND_STATE.metrics.failedExtractions++;
-    BACKGROUND_STATE.lastError = error.message;
-
-    return {
-      success: false,
-      error: error.message,
-      metadata: {
-        responseTime: Date.now() - startTime,
-        extractionId
-      }
-    };
-
-  } finally {
-    BACKGROUND_STATE.currentExtractions.delete(extractionId);
-  }
-}
-
-// ============================================================================
-// SINGLE ITEM EXTRACTION - FUNCTION 7 of 23
-// ============================================================================
-
-/**
- * Handle single item extraction
- * Used for extracting individual products, articles, etc.
- * 
- * @param {Object} message - Extraction parameters
- * @param {Object} sender - Message sender
- * @returns {Object} Single item extraction result
- */
-async function handleSingleItemExtraction(message, sender) {
-  console.log('[Background] 📄 Single item extraction request');
-
-  try {
-    const {
-      url,
-      selector,
-      category = 'general',
-      options = {}
-    } = message;
-
-    if (!url) {
-      throw new Error('URL is required');
-    }
-
-    const tabId = sender.tab?.id || message.tabId;
-    if (!tabId) {
-      throw new Error('No tab ID available');
-    }
-
-    // Get targeted content if selector provided
-    let contentResponse;
-    if (selector) {
-      contentResponse = await chrome.tabs.sendMessage(tabId, {
-        action: 'getTargetedContent',
-        selector
-      });
-    } else {
-      contentResponse = await chrome.tabs.sendMessage(tabId, {
-        action: 'getPageContent'
-      });
-    }
-
-    if (!contentResponse || !contentResponse.success) {
-      throw new Error('Failed to get content');
-    }
-
-    const { html, text, metadata } = contentResponse.data;
-
-    // Extract single item using AI
-    const result = await AIExtractor.extractSingle({
-      content: text,
-      html,
-      category,
-      metadata
-    });
-
-    return {
-      success: true,
-      item: result.item,
-      metadata: {
-        ...metadata,
-        category,
-        selector
-      }
-    };
-
-  } catch (error) {
-    console.error('[Background] ❌ Single item extraction error:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
-
-// ============================================================================
-// MULTI ITEM EXTRACTION - FUNCTION 8 of 23
-// ============================================================================
-
-/**
- * Handle multi-item extraction
- * Used for extracting lists (search results, product listings, etc.)
- * 
- * @param {Object} message - Extraction parameters
- * @param {Object} sender - Message sender
- * @returns {Object} Multi-item extraction results
- */
-async function handleMultiItemExtraction(message, sender) {
-  console.log('[Background] 📑 Multi-item extraction request');
-
-  try {
-    const {
-      url,
-      itemSelector,
-      category = 'general',
-      maxItems = 50,
-      options = {}
-    } = message;
-
-    if (!url) {
-      throw new Error('URL is required');
-    }
-
-    const tabId = sender.tab?.id || message.tabId;
-    if (!tabId) {
-      throw new Error('No tab ID available');
-    }
-
-    // Get all items matching selector
-    const itemsResponse = await chrome.tabs.sendMessage(tabId, {
-      action: 'getMultipleItems',
-      selector: itemSelector,
-      maxItems
-    });
-
-    if (!itemsResponse || !itemsResponse.success) {
-      throw new Error('Failed to get items');
-    }
-
-    const { items, metadata } = itemsResponse.data;
-
-    if (!items || items.length === 0) {
-      return {
-        success: true,
-        items: [],
-        metadata: {
-          ...metadata,
-          itemCount: 0,
-          message: 'No items found matching selector'
-        }
-      };
-    }
-
-    console.log(`[Background] Extracting ${items.length} items`);
-
-    // Extract each item using AI
-    const results = await AIExtractor.extractMultiple({
-      items,
-      category,
-      batchSize: 10,
-      metadata
-    });
-
-    return {
-      success: true,
-      items: results.items,
-      metadata: {
-        ...metadata,
-        category,
-        itemSelector,
-        itemCount: results.items.length,
-        totalCost: results.totalCost || 0
-      }
-    };
-
-  } catch (error) {
-    console.error('[Background] ❌ Multi-item extraction error:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
-
-// ============================================================================
-// HELPER: CLASSIFY CONTENT - FUNCTION 9 of 23
-// ============================================================================
-
-/**
- * Classify web content to determine optimal extraction strategy
- * Uses WebContentClassifier module
- * 
- * @param {string} url - Page URL
- * @param {string} text - Page text content
- * @param {Object} metadata - Page metadata
- * @returns {Object} Classification results with confidence scores
- */
-async function classifyContent(url, text, metadata) {
-  try {
-    const result = await WebContentClassifier.classify({
-      url,
-      title: metadata.title || '',
-      description: metadata.description || '',
-      bodyText: text.substring(0, 5000),
-      keywords: metadata.keywords || []
-    });
-
-    return {
-      category: result.category || 'general',
-      confidence: result.confidence || 0.5,
-      suggestedMode: result.suggestedMode || 'smart',
-      indicators: result.indicators || [],
-      pageType: result.pageType || 'unknown'
-    };
-
-  } catch (error) {
-    console.warn('[Background] Classification failed, using defaults:', error.message);
-    return {
-      category: 'general',
-      confidence: 0.3,
-      suggestedMode: 'smart',
-      indicators: [],
-      pageType: 'unknown'
-    };
-  }
-}
-
-// ============================================================================
-// HELPER: PERFORM AI EXTRACTION - FUNCTION 10 of 23
-// ============================================================================
-
-/**
- * Perform AI-powered extraction using best available method
- * Tries Chrome AI first, falls back to Cloud API if needed
- * 
- * @param {Object} options - Extraction parameters
- * @returns {Object} Extraction results with cost information
- */
-async function performAIExtraction(options) {
-  const {
-    url,
-    html,
-    text,
-    metadata,
-    mode,
-    category,
-    userPrompt
-  } = options;
-
-  console.log('[Background] AI extraction:', { mode, category });
-
-  try {
-    // Determine extraction method
-    let extractionMethod;
-    if (mode === 'gemini' || mode === 'cloud') {
-      extractionMethod = 'cloud';
-    } else if (chromeAIAvailable.writer || chromeAIAvailable.summarizer) {
-      extractionMethod = 'chrome-ai';
-    } else {
-      extractionMethod = 'cloud';
-    }
-
-    console.log('[Background] Using extraction method:', extractionMethod);
-
-    // Perform extraction
-    const result = await AIExtractor.extract({
-      content: text,
-      html,
-      metadata,
-      category,
-      userPrompt,
-      method: extractionMethod
-    });
-
-    return result;
-
-  } catch (error) {
-    console.error('[Background] AI extraction failed:', error);
-    throw new Error(`AI extraction failed: ${error.message}`);
-  }
-}
-
-// ============================================================================
-// END OF PART 3
-// ============================================================================
-// ============================================================================
-// AI LANGUAGE & TRANSLATION HANDLERS - FUNCTION 11 of 23
-// ============================================================================
-
-/**
- * Handle language detection request
- * Uses Chrome AI LanguageDetector or Cloud API fallback
- * 
- * @param {Object} message - Text to detect language from
+ * @param {Object} message - Message containing text to analyze
  * @returns {Object} Detected language with confidence score
  */
 async function handleLanguageDetection(message) {
-  console.log('[Background] 🌍 Language detection request');
-
+  console.log('[Background] 🔍 Language detection request');
+  
   try {
     const { text } = message;
 
-    if (!text) {
-      throw new Error('Text is required for language detection');
+    if (!text || typeof text !== 'string') {
+      throw new Error('Invalid text: must be non-empty string');
     }
 
-    console.log(`[Background] Detecting language for ${text.length} characters`);
+    // Truncate text for detection (first 1000 chars sufficient)
+    const truncatedText = text.substring(0, 1000);
 
-    // Use ChromeAI module for language detection
-    const result = await ChromeAI.detectLanguage(text);
+    // Try Chrome Built-in Language Detector first
+    if (chromeAIAvailable.languageDetector) {
+      try {
+        console.log('[Background] Using Chrome Language Detector API');
+        
+        const detector = await self.translation.createDetector();
+        const results = await detector.detect(truncatedText);
+        
+        if (results && results.length > 0) {
+          const topResult = results[0];
+          
+          console.log('[Background] ✅ Language detected (Chrome):', topResult.detectedLanguage);
+          
+          return {
+            success: true,
+            language: topResult.detectedLanguage,
+            confidence: topResult.confidence || 0.9,
+            method: 'chrome_builtin',
+            alternatives: results.slice(1, 3)
+          };
+        }
+      } catch (chromeError) {
+        console.warn('[Background] Chrome Language Detector failed, falling back to Cloud API:', chromeError.message);
+      }
+    }
 
-    return {
-      success: true,
-      language: result.language || 'unknown',
-      confidence: result.confidence || 0.0,
-      method: result.method || 'unknown'
-    };
+    // Fallback to Cloud API (Gemini)
+    if (BACKGROUND_STATE.apiKeyConfigured) {
+      console.log('[Background] Using Cloud API for language detection');
+      
+      const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
+      
+      const prompt = `Detect the language of this text and respond with ONLY the ISO 639-1 language code (e.g., 'en', 'es', 'fr', 'de'):\n\n${truncatedText}`;
+      
+      const result = await callGeminiAPI(prompt, geminiApiKey, {
+        temperature: 0.1,
+        maxOutputTokens: 10
+      });
+
+      const detectedLanguage = result.text.trim().toLowerCase().substring(0, 2);
+      
+      console.log('[Background] ✅ Language detected (Cloud):', detectedLanguage);
+      
+      return {
+        success: true,
+        language: detectedLanguage,
+        confidence: 0.85,
+        method: 'cloud_api'
+      };
+    }
+
+    throw new Error('No language detection method available');
 
   } catch (error) {
     console.error('[Background] ❌ Language detection error:', error);
+    
     return {
       success: false,
       error: error.message,
       language: 'unknown',
-      confidence: 0.0
+      confidence: 0
     };
   }
 }
 
 // ============================================================================
-// TRANSLATION HANDLER - FUNCTION 12 of 23
+// FUNCTION 7 of 30: TRANSLATION
 // ============================================================================
 
 /**
- * Handle text translation request
- * Uses Chrome AI Translator or Cloud API fallback
+ * Translate text to target language
+ * Uses Chrome Translator API with Cloud API fallback
  * 
- * @param {Object} message - Translation parameters
+ * @param {Object} message - Message containing text and target language
  * @returns {Object} Translated text with metadata
  */
 async function handleTranslation(message) {
   console.log('[Background] 🌐 Translation request');
-
+  
   try {
     const {
       text,
-      sourceLang = 'auto',
-      targetLang
+      targetLanguage,
+      sourceLanguage = 'auto'
     } = message;
 
-    if (!text) {
-      throw new Error('Text is required for translation');
+    if (!text || typeof text !== 'string') {
+      throw new Error('Invalid text: must be non-empty string');
     }
 
-    if (!targetLang) {
+    if (!targetLanguage) {
       throw new Error('Target language is required');
     }
 
-    console.log(`[Background] Translating ${text.length} chars from ${sourceLang} to ${targetLang}`);
+    console.log(`[Background] Translating to ${targetLanguage} (source: ${sourceLanguage})`);
 
-    // Use ChromeAI module for translation
-    const result = await ChromeAI.translate(text, sourceLang, targetLang);
+    // Try Chrome Built-in Translator first
+    if (chromeAIAvailable.translator) {
+      try {
+        console.log('[Background] Using Chrome Translator API');
+        
+        const translatorOptions = { targetLanguage };
+        
+        // Add source language if not auto-detect
+        if (sourceLanguage !== 'auto') {
+          translatorOptions.sourceLanguage = sourceLanguage;
+        }
+        
+        const translator = await self.translation.createTranslator(translatorOptions);
+        const translatedText = await translator.translate(text);
+        
+        console.log('[Background] ✅ Translation complete (Chrome)');
+        
+        return {
+          success: true,
+          translatedText,
+          sourceLanguage: sourceLanguage !== 'auto' ? sourceLanguage : 'detected',
+          targetLanguage,
+          method: 'chrome_builtin'
+        };
+      } catch (chromeError) {
+        console.warn('[Background] Chrome Translator failed, falling back to Cloud API:', chromeError.message);
+      }
+    }
 
-    // Track cost
-    await CostTracker.trackOperation('translation', {
-      method: result.method || 'unknown',
-      sourceLength: text.length,
-      targetLength: result.translatedText?.length || 0,
-      success: result.success
-    });
+    // Fallback to Cloud API (Gemini)
+    if (BACKGROUND_STATE.apiKeyConfigured) {
+      console.log('[Background] Using Cloud API for translation');
+      
+      const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
+      
+      const prompt = `Translate the following text to ${targetLanguage}. Return ONLY the translated text without any explanations or additional content:\n\n${text}`;
+      
+      const result = await callGeminiAPI(prompt, geminiApiKey, {
+        temperature: 0.3,
+        maxOutputTokens: Math.min(text.length * 2, 2048)
+      });
 
-    return {
-      success: true,
-      translatedText: result.translatedText || text,
-      sourceLang: result.sourceLang || sourceLang,
-      targetLang,
-      method: result.method || 'unknown',
-      cost: result.cost || 0
-    };
+      const translatedText = result.text.trim();
+      
+      console.log('[Background] ✅ Translation complete (Cloud)');
+      
+      return {
+        success: true,
+        translatedText,
+        sourceLanguage: sourceLanguage !== 'auto' ? sourceLanguage : 'detected',
+        targetLanguage,
+        method: 'cloud_api'
+      };
+    }
+
+    throw new Error('No translation method available');
 
   } catch (error) {
     console.error('[Background] ❌ Translation error:', error);
     
-    await CostTracker.trackOperation('translation', {
-      success: false,
-      error: error.message
-    });
-
     return {
       success: false,
       error: error.message,
-      translatedText: null
+      translatedText: message.text
     };
   }
 }
 
 // ============================================================================
-// SUMMARIZATION HANDLER - FUNCTION 13 of 23
+// FUNCTION 8 of 30: SUMMARIZATION
 // ============================================================================
 
 /**
- * Handle text summarization request
- * Uses Chrome AI Summarizer or Cloud API fallback
+ * Summarize text
+ * Uses Chrome Summarizer API with Cloud API fallback
  * 
- * @param {Object} message - Summarization parameters
+ * @param {Object} message - Message containing text and summarization options
  * @returns {Object} Summary text with metadata
  */
 async function handleSummarization(message) {
   console.log('[Background] 📝 Summarization request');
-
+  
   try {
     const {
       text,
       type = 'tl;dr',
-      length = 'medium'
+      length = 'medium',
+      format = 'plain-text'
     } = message;
 
-    if (!text) {
-      throw new Error('Text is required for summarization');
+    if (!text || typeof text !== 'string') {
+      throw new Error('Invalid text: must be non-empty string');
     }
 
-    console.log(`[Background] Summarizing ${text.length} chars (type: ${type}, length: ${length})`);
+    console.log(`[Background] Summarizing text (type: ${type}, length: ${length})`);
 
-    // Use ChromeAI module for summarization
-    const result = await ChromeAI.summarize(text, { type, length });
+    // Try Chrome Built-in Summarizer first
+    if (chromeAIAvailable.summarizer) {
+      try {
+        console.log('[Background] Using Chrome Summarizer API');
+        
+        const summarizer = await self.ai.summarizer.create({
+          type,
+          length,
+          format
+        });
+        
+        const summary = await summarizer.summarize(text);
+        
+        console.log('[Background] ✅ Summarization complete (Chrome)');
+        
+        return {
+          success: true,
+          summary,
+          type,
+          length,
+          method: 'chrome_builtin',
+          originalLength: text.length,
+          summaryLength: summary.length
+        };
+      } catch (chromeError) {
+        console.warn('[Background] Chrome Summarizer failed, falling back to Cloud API:', chromeError.message);
+      }
+    }
 
-    // Track cost
-    await CostTracker.trackOperation('summarization', {
-      method: result.method || 'unknown',
-      sourceLength: text.length,
-      summaryLength: result.summary?.length || 0,
-      success: result.success
-    });
+    // Fallback to Cloud API (Gemini)
+    if (BACKGROUND_STATE.apiKeyConfigured) {
+      console.log('[Background] Using Cloud API for summarization');
+      
+      const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
+      
+      // Map length to word count
+      const lengthMap = {
+        short: 50,
+        medium: 100,
+        long: 200
+      };
+      const maxWords = lengthMap[length] || 100;
+      
+      const prompt = `Summarize the following text in ${maxWords} words or less. Use a ${type} style. Return ONLY the summary:\n\n${text}`;
+      
+      const result = await callGeminiAPI(prompt, geminiApiKey, {
+        temperature: 0.5,
+        maxOutputTokens: maxWords * 2
+      });
 
-    return {
-      success: true,
-      summary: result.summary || '',
-      type,
-      length,
-      method: result.method || 'unknown',
-      cost: result.cost || 0
-    };
+      const summary = result.text.trim();
+      
+      console.log('[Background] ✅ Summarization complete (Cloud)');
+      
+      return {
+        success: true,
+        summary,
+        type,
+        length,
+        method: 'cloud_api',
+        originalLength: text.length,
+        summaryLength: summary.length
+      };
+    }
+
+    throw new Error('No summarization method available');
 
   } catch (error) {
     console.error('[Background] ❌ Summarization error:', error);
     
-    await CostTracker.trackOperation('summarization', {
-      success: false,
-      error: error.message
-    });
-
     return {
       success: false,
       error: error.message,
-      summary: null
+      summary: message.text.substring(0, 200) + '...'
     };
   }
 }
 
 // ============================================================================
-// TEMPLATE DETECTION - FUNCTION 14 of 23
+// FUNCTION 9 of 30: INSIGHTS GENERATION (CostTracker removed)
 // ============================================================================
 
 /**
- * Detect template for a given URL and content
- * Uses TemplateManager module for auto-detection
- * 
- * @param {Object} message - Detection parameters
- * @returns {Object} Detected template with confidence
- */
-async function detectTemplate(message) {
-  console.log('[Background] Template detection request');
-  try {
-    const { url, html, metadata } = message;
-    
-    // 🆕 SAFETY CHECK: Return gracefully if no URL
-    if (!url || typeof url !== 'string') {
-      console.log('[Background] Skipping template detection - no valid URL');
-      return { 
-        success: false, 
-        template: null, 
-        confidence: 0.0,
-        skipped: true,
-        reason: 'No valid URL provided'
-      };
-    }
-    
-    // 🆕 SAFETY CHECK: Validate URL protocol
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      console.log('[Background] Skipping template detection - invalid protocol');
-      return { 
-        success: false, 
-        template: null, 
-        confidence: 0.0,
-        skipped: true,
-        reason: 'Invalid URL protocol'
-      };
-    }
-    
-    console.log('[Background] Detecting template for', url);
-    
-    // Use TemplateManager module
-    const result = await TemplateManager.detectTemplate(url, html, metadata);
-    
-    return { 
-      success: true, 
-      template: result.template || null, 
-      confidence: result.confidence || 0.0, 
-      matches: result.matches 
-    };
-  } catch (error) {
-    // Changed from console.error to console.log to avoid red error
-    console.log('[Background] Template detection skipped:', error.message);
-    return { 
-      success: false, 
-      error: error.message, 
-      template: null, 
-      confidence: 0.0 
-    };
-  }
-}
-
-// ============================================================================
-// TEMPLATE APPLICATION - FUNCTION 15 of 23
-// ============================================================================
-
-/**
- * Apply detected template to extract structured data
- * Uses TemplateManager module for template-based extraction
- * 
- * @param {Object} message - Application parameters
- * @returns {Object} Extracted data using template
- */
-async function applyTemplate(message) {
-  console.log('[Background] 📋 Template application request');
-
-  try {
-    const {
-      templateId,
-      content
-    } = message;
-
-    if (!templateId) {
-      throw new Error('Template ID is required');
-    }
-
-    if (!content) {
-      throw new Error('Content is required for template application');
-    }
-
-    console.log(`[Background] Applying template: ${templateId}`);
-
-    // Use TemplateManager module
-    const result = await TemplateManager.applyTemplate(templateId, content);
-
-    return {
-      success: true,
-      data: result.data || null,
-      template: result.template || templateId,
-      fieldsExtracted: result.fieldsExtracted || 0
-    };
-
-  } catch (error) {
-    console.error('[Background] ❌ Template application error:', error);
-    return {
-      success: false,
-      error: error.message,
-      data: null
-    };
-  }
-}
-
-// ============================================================================
-// INSIGHTS GENERATION - FUNCTION 16 of 23
-// ============================================================================
-
-/**
- * Generate AI-powered insights from extracted data
+ * Generate insights from extracted data
  * Uses InsightsGenerator module for analysis
  * 
- * @param {Object} message - Generation parameters
- * @returns {Object} Generated insights with recommendations
+ * @param {Object} message - Message containing data and insight type
+ * @returns {Object} Generated insights with metadata
  */
 async function handleInsightsGeneration(message) {
-  console.log('[Background] 💡 Insights generation request');
+  console.log('[Background] 💡 Insights generation request (MODULAR)');
+  const startTime = Date.now();
 
   try {
     const {
       data,
-      category = 'general',
+      insightType = 'summary',
       options = {}
     } = message;
 
@@ -1320,38 +804,57 @@ async function handleInsightsGeneration(message) {
       throw new Error('Data is required for insights generation');
     }
 
-    console.log(`[Background] Generating insights for category: ${category}`);
+    console.log(`[Background] Generating insights (type: ${insightType})`);
 
-    // Use InsightsGenerator module
-    const result = await InsightsGenerator.generate(data, {
-      category,
-      includeComparison: options.includeComparison !== false,
-      includeRecommendations: options.includeRecommendations !== false,
-      includeTrends: options.includeTrends !== false
-    });
+    // Check if InsightsGenerator is available
+    if (typeof InsightsGenerator === 'undefined') {
+      throw new Error('InsightsGenerator module not available');
+    }
 
-    // Track cost
-    await CostTracker.trackOperation('insightsGeneration', {
-      category,
-      dataSize: JSON.stringify(data).length,
-      success: result.success
-    });
+    let insights;
+
+    // Route to appropriate insights generator
+    switch (insightType) {
+      case 'summary':
+        insights = await InsightsGenerator.generateSummary(data, options);
+        break;
+      
+      case 'comparison':
+        insights = await InsightsGenerator.generateComparison(data, options);
+        break;
+      
+      case 'recommendations':
+        insights = await InsightsGenerator.generateRecommendations(data, options);
+        break;
+      
+      case 'trends':
+        insights = await InsightsGenerator.generateTrends(data, options);
+        break;
+      
+      case 'statistics':
+        insights = await InsightsGenerator.generateStatistics(data, options);
+        break;
+      
+      default:
+        throw new Error(`Unknown insight type: ${insightType}`);
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(`[Background] ✅ Insights generated in ${duration}ms`);
 
     return {
       success: true,
-      insights: result.insights || {},
-      summary: result.summary || '',
-      recommendations: result.recommendations || [],
-      category
+      insights,
+      insightType,
+      metadata: {
+        duration,
+        dataSize: Array.isArray(data) ? data.length : 1,
+        generatedAt: new Date().toISOString()
+      }
     };
 
   } catch (error) {
     console.error('[Background] ❌ Insights generation error:', error);
-    
-    await CostTracker.trackOperation('insightsGeneration', {
-      success: false,
-      error: error.message
-    });
 
     return {
       success: false,
@@ -1362,144 +865,655 @@ async function handleInsightsGeneration(message) {
 }
 
 // ============================================================================
-// CHANGE DETECTION - FUNCTION 17 of 23
+// FUNCTION 10 of 30: SAVE API KEY
 // ============================================================================
 
 /**
- * Detect changes between current and previous extraction
- * Compares extracted data to identify what changed
+ * Save and validate Gemini API key
+ * Stores key in Chrome local storage after validation
  * 
- * @param {string} url - Page URL
- * @param {Object} currentData - Current extracted data
- * @returns {Object} Detected changes with details
+ * @param {Object} message - Message containing API key
+ * @returns {Object} Save result with validation status
  */
-async function detectChanges(url, currentData) {
-  console.log('[Background] 🔄 Detecting changes for:', url);
-
+async function handleSaveApiKey(message) {
+  console.log('[Background] 🔑 Save API key request');
+  
   try {
-    // Get previous extraction from history
-    const previousExtraction = BACKGROUND_STATE.extractionHistory.find(
-      h => h.url === url
-    );
+    const { apiKey } = message;
 
-    if (!previousExtraction) {
-      console.log('[Background] No previous extraction found for comparison');
-      return {
-        hasChanges: false,
-        isFirstExtraction: true,
-        changes: []
-      };
+    if (!apiKey || typeof apiKey !== 'string') {
+      throw new Error('Invalid API key: must be non-empty string');
     }
 
-    const previousData = previousExtraction.data;
-    const changes = [];
-
-    // Compare data structures
-    if (Array.isArray(currentData) && Array.isArray(previousData)) {
-      // Compare arrays (e.g., product listings)
-      if (currentData.length !== previousData.length) {
-        changes.push({
-          field: 'itemCount',
-          type: 'count',
-          oldValue: previousData.length,
-          newValue: currentData.length,
-          change: currentData.length - previousData.length
-        });
-      }
-
-      // Check for new items
-      const previousIds = new Set(previousData.map(item => item.id || item.title));
-      const newItems = currentData.filter(item => 
-        !previousIds.has(item.id || item.title)
-      );
-
-      if (newItems.length > 0) {
-        changes.push({
-          field: 'newItems',
-          type: 'addition',
-          count: newItems.length,
-          items: newItems.slice(0, 5) // Only include first 5
-        });
-      }
-    } else if (typeof currentData === 'object' && typeof previousData === 'object') {
-      // Compare objects (e.g., single product, article)
-      for (const key in currentData) {
-        if (currentData[key] !== previousData[key]) {
-          changes.push({
-            field: key,
-            type: 'modification',
-            oldValue: previousData[key],
-            newValue: currentData[key]
-          });
-        }
-      }
+    // Trim and validate format
+    const trimmedKey = apiKey.trim();
+    
+    if (trimmedKey.length < 30) {
+      throw new Error('API key appears to be invalid (too short)');
     }
 
-    const hasChanges = changes.length > 0;
-    console.log(`[Background] ${hasChanges ? '✅' : '⚪'} Changes detected: ${changes.length}`);
-
-    // Store current extraction in history
-    BACKGROUND_STATE.extractionHistory = BACKGROUND_STATE.extractionHistory.filter(
-      h => h.url !== url
-    );
-    BACKGROUND_STATE.extractionHistory.push({
-      url,
-      data: currentData,
-      timestamp: Date.now()
-    });
-
-    // Keep only last 50 extractions
-    if (BACKGROUND_STATE.extractionHistory.length > 50) {
-      BACKGROUND_STATE.extractionHistory = BACKGROUND_STATE.extractionHistory.slice(-50);
+    // Test API key with simple request
+    console.log('[Background] Validating API key...');
+    
+    const testPrompt = 'Respond with "OK"';
+    
+    try {
+      await callGeminiAPI(testPrompt, trimmedKey, {
+        temperature: 0,
+        maxOutputTokens: 5
+      });
+      
+      console.log('[Background] ✅ API key validated successfully');
+    } catch (validationError) {
+      console.error('[Background] API key validation failed:', validationError);
+      throw new Error('API key validation failed: ' + validationError.message);
     }
+
+    // Save to storage
+    await chrome.storage.local.set({ geminiApiKey: trimmedKey });
+    BACKGROUND_STATE.apiKeyConfigured = true;
+
+    console.log('[Background] ✅ API key saved');
 
     return {
-      hasChanges,
-      isFirstExtraction: false,
-      changeCount: changes.length,
-      changes,
-      comparedTo: {
-        timestamp: previousExtraction.timestamp,
-        age: Date.now() - previousExtraction.timestamp
-      }
+      success: true,
+      message: 'API key saved and validated successfully',
+      keyConfigured: true
     };
 
   } catch (error) {
-    console.error('[Background] ❌ Change detection error:', error);
+    console.error('[Background] ❌ Save API key error:', error);
+    
     return {
-      hasChanges: false,
+      success: false,
       error: error.message,
-      changes: []
+      keyConfigured: false
+    };
+  }
+}
+// ============================================================================
+// FUNCTION 11 of 30: TEMPLATE DETECTION
+// ============================================================================
+
+/**
+ * Detect extraction template for current website
+ * Uses TemplateManager module to identify suitable templates
+ * 
+ * @param {Object} message - Message containing URL and domain
+ * @returns {Object} Detected template or null
+ */
+async function detectTemplate(message) {
+  console.log('[Background] 🔍 Template detection request');
+  
+  try {
+    const { url, domain } = message;
+
+    if (!url && !domain) {
+      console.log('[Background] No URL/domain provided for template detection');
+      return {
+        success: true,
+        template: null,
+        message: 'No URL provided'
+      };
+    }
+
+    // Check if TemplateManager is available
+    if (typeof TemplateManager === 'undefined') {
+      console.warn('[Background] TemplateManager module not available');
+      return {
+        success: true,
+        template: null,
+        message: 'TemplateManager not available'
+      };
+    }
+
+    // Extract domain from URL if needed
+    let targetDomain = domain;
+    if (!targetDomain && url) {
+      try {
+        const urlObj = new URL(url);
+        targetDomain = urlObj.hostname;
+      } catch (err) {
+        console.warn('[Background] Invalid URL for template detection:', url);
+        return {
+          success: true,
+          template: null,
+          message: 'Invalid URL'
+        };
+      }
+    }
+
+    console.log(`[Background] Detecting template for domain: ${targetDomain}`);
+
+    // Use TemplateManager to detect template
+    const template = await TemplateManager.detectTemplate(targetDomain);
+
+    if (template) {
+      console.log('[Background] ✅ Template detected:', template.name || template.id);
+      return {
+        success: true,
+        template,
+        detected: true
+      };
+    } else {
+      console.log('[Background] No template detected for domain');
+      return {
+        success: true,
+        template: null,
+        detected: false
+      };
+    }
+
+  } catch (error) {
+    console.error('[Background] ❌ Template detection error:', error);
+    
+    return {
+      success: false,
+      error: error.message,
+      template: null
     };
   }
 }
 
 // ============================================================================
-// CLOUD API CALLER - FUNCTION 18 of 23
+// FUNCTION 12 of 30: APPLY TEMPLATE (NULL-CHECK ADDED)
 // ============================================================================
 
 /**
- * Call Gemini Cloud API for complex operations
- * Handles API key, rate limiting, and error handling
+ * Apply extraction template settings
+ * Configures extraction parameters based on template
  * 
- * @param {string} prompt - Prompt text for API
- * @param {Object} options - API call options
- * @returns {Object} API response with data
+ * @param {Object} message - Message containing template or templateId
+ * @returns {Object} Application result with applied settings
  */
-async function callGeminiAPI(prompt, options = {}) {
-  console.log('[Background] ☁️ Calling Gemini Cloud API');
-
+async function applyTemplate(message) {
+  console.log('[Background] 📋 Apply template request');
+  
   try {
-    // Get API key from storage
-    const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
+    const { template, templateId } = message;
 
-    if (!geminiApiKey) {
-      throw new Error('Gemini API key not configured. Please add your API key in settings.');
+    // ✅ NULL-CHECK ADDED: Validate template or templateId exists
+    if (!template && !templateId) {
+      console.log('[Background] ⚠️ No template or templateId provided, skipping application');
+      return {
+        success: true,
+        applied: false,
+        message: 'No template to apply'
+      };
     }
 
-    // Prepare request
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent`;
+    // Check if TemplateManager is available
+    if (typeof TemplateManager === 'undefined') {
+      console.warn('[Background] TemplateManager module not available');
+      return {
+        success: false,
+        error: 'TemplateManager not available',
+        applied: false
+      };
+    }
+
+    let templateData;
+
+    // Get template by ID or use provided template
+    if (templateId) {
+      console.log(`[Background] Loading template by ID: ${templateId}`);
+      templateData = await TemplateManager.getTemplate(templateId);
+      
+      if (!templateData) {
+        throw new Error(`Template not found: ${templateId}`);
+      }
+    } else {
+      templateData = template;
+    }
+
+    console.log('[Background] Applying template settings:', templateData.name || 'Custom');
+
+    // Apply template settings to storage
+    const settings = {
+      category: templateData.category || 'all',
+      mode: templateData.mode || 'balanced',
+      extractionType: templateData.extractionType || 'MULTI',
+      deduplication: templateData.deduplication || false,
+      translation: templateData.translation || false,
+      summarization: templateData.summarization || false
+    };
+
+    await chrome.storage.local.set(settings);
+
+    console.log('[Background] ✅ Template applied successfully');
+
+    return {
+      success: true,
+      applied: true,
+      template: templateData,
+      settings
+    };
+
+  } catch (error) {
+    console.error('[Background] ❌ Apply template error:', error);
     
+    return {
+      success: false,
+      error: error.message,
+      applied: false
+    };
+  }
+}
+
+// ============================================================================
+// FUNCTION 13 of 30: MAIN EXTRACTION HANDLER (CostTracker removed)
+// ============================================================================
+
+/**
+ * Main extraction handler - coordinates entire extraction workflow
+ * Handles classification, extraction, deduplication, and post-processing
+ * 
+ * @param {Object} message - Message containing extraction parameters
+ * @param {Object} sender - Message sender information
+ * @returns {Object} Extraction results with metadata
+ */
+async function handleExtraction(message, sender) {
+  const extractionId = `ext_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  console.log(`[Background] 🚀 Starting extraction [${extractionId}]`);
+  
+  const startTime = Date.now();
+  BACKGROUND_STATE.metrics.totalExtractions++;
+  BACKGROUND_STATE.currentExtractions.add(extractionId);
+
+  try {
+    // Extract parameters from message
+    const {
+      mode = 'balanced',
+      category = 'all',
+      extractionType = 'MULTI',
+      deduplication = false,
+      translation = false,
+      summarization = false,
+      translationTarget,
+      provider = 'cloud'
+    } = message;
+
+    const tabId = sender.tab?.id;
+    if (!tabId) {
+      throw new Error('No tab ID found - extraction must be initiated from a tab');
+    }
+
+    console.log(`[Background] [${extractionId}] Extraction config:`, {
+      mode,
+      category,
+      extractionType,
+      deduplication,
+      translation,
+      summarization
+    });
+
+    // Fetch page content using content script
+    console.log(`[Background] [${extractionId}] Fetching page content from tab ${tabId}`);
+    
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => {
+        return {
+          html: document.documentElement.outerHTML,
+          text: document.body.innerText,
+          url: window.location.href,
+          title: document.title,
+          meta: {
+            description: document.querySelector('meta[name="description"]')?.content || '',
+            keywords: document.querySelector('meta[name="keywords"]')?.content || ''
+          }
+        };
+      }
+    });
+
+    const pageContent = result.result;
+    console.log(`[Background] [${extractionId}] Content fetched: ${pageContent.html.length} chars`);
+
+    // Classify content using WebContentClassifier
+    let classification = {
+      type: extractionType,
+      confidence: 0.8,
+      method: 'manual'
+    };
+
+    if (typeof WebContentClassifier !== 'undefined' && typeof WebContentClassifier.classifyPage === 'function') {
+      try {
+        console.log(`[Background] [${extractionId}] Classifying content...`);
+        
+        const [classifyResult] = await chrome.scripting.executeScript({
+          target: { tabId },
+          func: () => {
+            if (typeof WebContentClassifier !== 'undefined') {
+              return WebContentClassifier.classifyPage();
+            }
+            return null;
+          }
+        });
+
+        if (classifyResult.result) {
+          classification = classifyResult.result;
+          console.log(`[Background] [${extractionId}] Classification:`, classification);
+        }
+      } catch (classifyError) {
+        console.warn(`[Background] [${extractionId}] Classification failed:`, classifyError.message);
+      }
+    }
+
+    // Route to appropriate extraction handler
+    let extractionResult;
+    
+    if (classification.type === 'MULTI_ITEM' || extractionType === 'MULTI') {
+      extractionResult = await handleMultiItemExtraction({
+        ...message,
+        pageContent,
+        classification,
+        extractionId
+      }, sender);
+    } else {
+      extractionResult = await handleSingleItemExtraction({
+        ...message,
+        pageContent,
+        classification,
+        extractionId
+      }, sender);
+    }
+
+    if (!extractionResult.success) {
+      throw new Error(extractionResult.error || 'Extraction failed');
+    }
+
+    let finalData = extractionResult.data;
+    const metadata = extractionResult.metadata || {};
+
+    // Post-processing: Deduplication
+    if (deduplication && typeof DeduplicationManager !== 'undefined') {
+      console.log(`[Background] [${extractionId}] Applying deduplication...`);
+      
+      try {
+        const domain = new URL(pageContent.url).hostname;
+        const dedupResult = await DeduplicationManager.deduplicateItems(
+          Array.isArray(finalData) ? finalData : [finalData],
+          domain
+        );
+        
+        finalData = dedupResult.items;
+        metadata.deduplication = {
+          total: dedupResult.total,
+          unique: dedupResult.unique,
+          duplicates: dedupResult.duplicates
+        };
+        
+        console.log(`[Background] [${extractionId}] Deduplication: ${dedupResult.unique}/${dedupResult.total} unique`);
+      } catch (dedupError) {
+        console.error(`[Background] [${extractionId}] Deduplication error:`, dedupError);
+      }
+    }
+
+    // Post-processing: Translation
+    if (translation && translationTarget && typeof BatchProcessor !== 'undefined') {
+      console.log(`[Background] [${extractionId}] Applying translation to ${translationTarget}...`);
+      
+      try {
+        const translationResult = await handleBatchTranslation({
+          items: Array.isArray(finalData) ? finalData : [finalData],
+          targetLanguage: translationTarget
+        });
+        
+        if (translationResult.success) {
+          finalData = translationResult.items;
+          metadata.translation = translationResult.stats;
+        }
+      } catch (translationError) {
+        console.error(`[Background] [${extractionId}] Translation error:`, translationError);
+      }
+    }
+
+    // Post-processing: Summarization
+    if (summarization && typeof BatchProcessor !== 'undefined') {
+      console.log(`[Background] [${extractionId}] Applying summarization...`);
+      
+      try {
+        const summarizationResult = await handleBatchSummarization({
+          items: Array.isArray(finalData) ? finalData : [finalData]
+        });
+        
+        if (summarizationResult.success) {
+          finalData = summarizationResult.items;
+          metadata.summarization = summarizationResult.stats;
+        }
+      } catch (summarizationError) {
+        console.error(`[Background] [${extractionId}] Summarization error:`, summarizationError);
+      }
+    }
+
+    // Calculate metrics
+    const duration = Date.now() - startTime;
+    BACKGROUND_STATE.metrics.successfulExtractions++;
+    BACKGROUND_STATE.metrics.avgResponseTime = 
+      (BACKGROUND_STATE.metrics.avgResponseTime * (BACKGROUND_STATE.metrics.successfulExtractions - 1) + duration) / 
+      BACKGROUND_STATE.metrics.successfulExtractions;
+
+    console.log(`[Background] [${extractionId}] ✅ Extraction complete in ${duration}ms`);
+
+    // Store extraction in history
+    BACKGROUND_STATE.lastExtraction = {
+      extractionId,
+      timestamp: new Date().toISOString(),
+      duration,
+      itemCount: Array.isArray(finalData) ? finalData.length : 1
+    };
+
+    return {
+      success: true,
+      data: finalData,
+      metadata: {
+        ...metadata,
+        extractionId,
+        duration,
+        classification,
+        timestamp: new Date().toISOString(),
+        url: pageContent.url,
+        title: pageContent.title
+      }
+    };
+
+  } catch (error) {
+    console.error(`[Background] [${extractionId}] ❌ Extraction error:`, error);
+    
+    BACKGROUND_STATE.metrics.failedExtractions++;
+    BACKGROUND_STATE.lastError = error.message;
+
+    return {
+      success: false,
+      error: error.message,
+      extractionId,
+      duration: Date.now() - startTime
+    };
+  } finally {
+    BACKGROUND_STATE.currentExtractions.delete(extractionId);
+  }
+}
+
+// ============================================================================
+// FUNCTION 14 of 30: SINGLE ITEM EXTRACTION
+// ============================================================================
+
+/**
+ * Extract single main item from page (article, product, etc.)
+ * Uses AIExtractor module for intelligent extraction
+ * 
+ * @param {Object} message - Message containing extraction parameters
+ * @param {Object} sender - Message sender information
+ * @returns {Object} Extracted single item with metadata
+ */
+async function handleSingleItemExtraction(message, sender) {
+  const { extractionId, pageContent, mode, category, provider } = message;
+  
+  console.log(`[Background] [${extractionId}] Single-item extraction`);
+
+  try {
+    // Check if AIExtractor is available
+    if (typeof AIExtractor === 'undefined') {
+      throw new Error('AIExtractor module not available');
+    }
+
+    // Get API key
+    const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
+    if (!geminiApiKey && provider === 'cloud') {
+      throw new Error('API key not configured');
+    }
+
+    // Use AIExtractor for extraction
+    console.log(`[Background] [${extractionId}] Using AIExtractor (${provider})`);
+    
+    const extractionResult = await AIExtractor.extractWithGeminiDay10(
+      pageContent.html,
+      pageContent.text,
+      {
+        url: pageContent.url,
+        title: pageContent.title,
+        mode,
+        category,
+        extractionType: 'SINGLE',
+        apiKey: geminiApiKey
+      }
+    );
+
+    if (!extractionResult.success) {
+      throw new Error(extractionResult.error || 'AI extraction failed');
+    }
+
+    console.log(`[Background] [${extractionId}] ✅ Single-item extracted`);
+
+    return {
+      success: true,
+      data: extractionResult.data,
+      metadata: {
+        extractionType: 'SINGLE',
+        confidence: extractionResult.confidence || 0.8,
+        source: 'AIExtractor'
+      }
+    };
+
+  } catch (error) {
+    console.error(`[Background] [${extractionId}] Single-item extraction error:`, error);
+    
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// ============================================================================
+// FUNCTION 15 of 30: MULTI ITEM EXTRACTION
+// ============================================================================
+
+/**
+ * Extract multiple items from page (product list, feed, search results)
+ * Uses AIExtractor module for batch extraction
+ * 
+ * @param {Object} message - Message containing extraction parameters
+ * @param {Object} sender - Message sender information
+ * @returns {Object} Extracted items array with metadata
+ */
+async function handleMultiItemExtraction(message, sender) {
+  const { extractionId, pageContent, mode, category, provider } = message;
+  
+  console.log(`[Background] [${extractionId}] Multi-item extraction`);
+
+  try {
+    // Check if AIExtractor is available
+    if (typeof AIExtractor === 'undefined') {
+      throw new Error('AIExtractor module not available');
+    }
+
+    // Get API key
+    const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
+    if (!geminiApiKey && provider === 'cloud') {
+      throw new Error('API key not configured');
+    }
+
+    // Use AIExtractor for extraction
+    console.log(`[Background] [${extractionId}] Using AIExtractor (${provider})`);
+    
+    const extractionResult = await AIExtractor.extractWithGeminiDay10(
+      pageContent.html,
+      pageContent.text,
+      {
+        url: pageContent.url,
+        title: pageContent.title,
+        mode,
+        category,
+        extractionType: 'MULTI',
+        apiKey: geminiApiKey
+      }
+    );
+
+    if (!extractionResult.success) {
+      throw new Error(extractionResult.error || 'AI extraction failed');
+    }
+
+    const items = Array.isArray(extractionResult.data) ? extractionResult.data : [extractionResult.data];
+    
+    console.log(`[Background] [${extractionId}] ✅ ${items.length} items extracted`);
+
+    return {
+      success: true,
+      data: items,
+      metadata: {
+        extractionType: 'MULTI',
+        itemCount: items.length,
+        confidence: extractionResult.confidence || 0.8,
+        source: 'AIExtractor'
+      }
+    };
+
+  } catch (error) {
+    console.error(`[Background] [${extractionId}] Multi-item extraction error:`, error);
+    
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+// ============================================================================
+// FUNCTION 16 of 30: CALL GEMINI API (CostTracker removed)
+// ============================================================================
+
+/**
+ * Make API call to Google Gemini
+ * Handles request/response, error handling, and timeouts
+ * 
+ * @param {string} prompt - Prompt text to send to API
+ * @param {string} apiKey - Gemini API key
+ * @param {Object} options - Optional configuration (temperature, maxTokens, timeout)
+ * @returns {Object} API response with generated text
+ */
+async function callGeminiAPI(prompt, apiKey, options = {}) {
+  console.log('[Background] 🤖 Calling Gemini API...');
+  
+  try {
+    const {
+      model = 'gemini-2.0-flash-exp',
+      temperature = 0.7,
+      maxOutputTokens = 8192,
+      timeout = 30000
+    } = options;
+
+    if (!apiKey) {
+      throw new Error('API key is required');
+    }
+
+    if (!prompt || typeof prompt !== 'string') {
+      throw new Error('Valid prompt is required');
+    }
+
+    // Construct API URL
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    // Build request body
     const requestBody = {
       contents: [{
         parts: [{
@@ -1507,57 +1521,86 @@ async function callGeminiAPI(prompt, options = {}) {
         }]
       }],
       generationConfig: {
-        temperature: options.temperature || 0.7,
-        topK: options.topK || 40,
-        topP: options.topP || 0.95,
-        maxOutputTokens: options.maxTokens || 8192
-      }
-    };
-
-    // Add image if provided (multimodal)
-    if (options.imageData) {
-      requestBody.contents[0].parts.unshift({
-        inlineData: {
-          mimeType: options.imageMimeType || 'image/jpeg',
-          data: options.imageData
-        }
-      });
-    }
-
-    console.log('[Background] Making API request...');
-    const response = await fetch(`${apiUrl}?key=${geminiApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
+        temperature,
+        maxOutputTokens,
+        topP: 0.95,
+        topK: 40
       },
-      body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`API request failed: ${response.status} ${errorData.error?.message || response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    // Extract response text
-    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!responseText) {
-      throw new Error('No response text from API');
-    }
-
-    console.log('[Background] ✅ API call successful');
-
-    return {
-      success: true,
-      text: responseText,
-      model: 'gemini-2.0-flash-lite',
-      usage: data.usageMetadata || {}
+      safetySettings: [
+        {
+          category: 'HARM_CATEGORY_HARASSMENT',
+          threshold: 'BLOCK_NONE'
+        },
+        {
+          category: 'HARM_CATEGORY_HATE_SPEECH',
+          threshold: 'BLOCK_NONE'
+        },
+        {
+          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+          threshold: 'BLOCK_NONE'
+        },
+        {
+          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+          threshold: 'BLOCK_NONE'
+        }
+      ]
     };
+
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      // Make API request
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      // Check response status
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`API error ${response.status}: ${errorData}`);
+      }
+
+      // Parse response
+      const data = await response.json();
+
+      // Validate response structure
+      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+        throw new Error('Invalid API response structure');
+      }
+
+      const generatedText = data.candidates[0].content.parts[0].text;
+
+      console.log('[Background] ✅ Gemini API call successful');
+
+      return {
+        success: true,
+        text: generatedText,
+        usage: data.usageMetadata || {},
+        model
+      };
+
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError.name === 'AbortError') {
+        throw new Error(`API request timeout after ${timeout}ms`);
+      }
+      
+      throw fetchError;
+    }
 
   } catch (error) {
     console.error('[Background] ❌ Gemini API error:', error);
+    
     return {
       success: false,
       error: error.message,
@@ -1567,110 +1610,319 @@ async function callGeminiAPI(prompt, options = {}) {
 }
 
 // ============================================================================
-// END OF PART 4
-// ============================================================================
-// ============================================================================
-// UTILITY FUNCTIONS - FUNCTION 19 of 23
+// FUNCTION 17 of 30: CLASSIFY CONTENT
 // ============================================================================
 
 /**
- * Detect page type for smart categorization
- * Analyzes URL and content to determine page category
+ * Classify page content to determine extraction strategy
+ * Uses WebContentClassifier module with fallback heuristics
  * 
+ * @param {string} html - Page HTML content
+ * @param {string} text - Page text content
  * @param {string} url - Page URL
- * @param {Object} metadata - Page metadata
- * @returns {Object} Page type with confidence
+ * @returns {Object} Classification result with type and confidence
  */
-async function detectPageType(url, metadata) {
-  console.log('[Background] 🔍 Detecting page type for:', url);
-
+async function classifyContent(html, text, url) {
+  console.log('[Background] 🔍 Classifying content...');
+  
   try {
-    // Use WebContentClassifier if available
-    if (typeof WebContentClassifier !== 'undefined') {
-      const result = await WebContentClassifier.detectPageType(url, metadata);
-      return result;
+    // Try WebContentClassifier if available
+    if (typeof WebContentClassifier !== 'undefined' && 
+        typeof WebContentClassifier.classifyPage === 'function') {
+      
+      try {
+        const classification = WebContentClassifier.classifyPage();
+        console.log('[Background] ✅ Classification (WebContentClassifier):', classification);
+        return classification;
+      } catch (classifierError) {
+        console.warn('[Background] WebContentClassifier failed:', classifierError.message);
+      }
     }
 
-    // Fallback: Basic URL-based detection
-    const urlLower = url.toLowerCase();
-    let pageType = 'general';
-    let confidence = 0.5;
+    // Fallback: Simple heuristic classification
+    console.log('[Background] Using fallback heuristic classification');
+    
+    const domain = new URL(url).hostname.toLowerCase();
+    
+    // Check for known patterns
+    const multiItemIndicators = [
+      html.match(/<article/gi)?.length > 1,
+      html.match(/class="[^"]*item[^"]*"/gi)?.length > 3,
+      html.match(/class="[^"]*product[^"]*"/gi)?.length > 3,
+      html.match(/class="[^"]*post[^"]*"/gi)?.length > 3,
+      html.match(/<li/gi)?.length > 10
+    ].filter(Boolean).length;
 
-    // E-commerce detection
-    if (urlLower.includes('amazon') || urlLower.includes('ebay') || 
-        urlLower.includes('shop') || urlLower.includes('/product')) {
-      pageType = 'e-commerce';
-      confidence = 0.8;
-    }
-    // News detection
-    else if (urlLower.includes('news') || urlLower.includes('article') || 
-             urlLower.includes('blog') || urlLower.includes('/post/')) {
-      pageType = 'news';
-      confidence = 0.7;
-    }
-    // Social media detection
-    else if (urlLower.includes('twitter') || urlLower.includes('facebook') || 
-             urlLower.includes('linkedin') || urlLower.includes('instagram')) {
-      pageType = 'social-media';
-      confidence = 0.9;
-    }
-    // Video detection
-    else if (urlLower.includes('youtube') || urlLower.includes('vimeo') || 
-             urlLower.includes('/watch') || urlLower.includes('video')) {
+    const isMultiItem = multiItemIndicators >= 2;
+
+    // Determine page type
+    let pageType = 'generic';
+    if (domain.includes('amazon') || domain.includes('shop') || domain.includes('store')) {
+      pageType = 'ecommerce';
+    } else if (domain.includes('linkedin') || domain.includes('twitter') || domain.includes('facebook')) {
+      pageType = 'social';
+    } else if (domain.includes('medium') || domain.includes('blog') || domain.includes('article')) {
+      pageType = 'article';
+    } else if (domain.includes('youtube') || domain.includes('video')) {
       pageType = 'video';
-      confidence = 0.8;
     }
 
-    return {
+    const classification = {
+      type: isMultiItem ? 'MULTI_ITEM' : 'SINGLE_ITEM',
+      confidence: 0.6,
+      method: 'heuristic_fallback',
       pageType,
-      confidence,
-      url
+      indicators: {
+        multiItem: isMultiItem,
+        articleCount: html.match(/<article/gi)?.length || 0,
+        listItemCount: html.match(/<li/gi)?.length || 0
+      }
     };
 
+    console.log('[Background] ✅ Classification (fallback):', classification);
+    return classification;
+
   } catch (error) {
-    console.error('[Background] ❌ Page type detection error:', error);
+    console.error('[Background] ❌ Classification error:', error);
+    
+    // Return safe default
     return {
-      pageType: 'general',
-      confidence: 0.3,
+      type: 'SINGLE_ITEM',
+      confidence: 0.5,
+      method: 'error_fallback',
       error: error.message
     };
   }
 }
 
 // ============================================================================
-// SCREENSHOT CAPTURE - FUNCTION 20 of 23
+// FUNCTION 18 of 30: DETECT PAGE TYPE
 // ============================================================================
 
 /**
- * Capture visible portion of current tab as base64 image
- * Used for multimodal AI extraction with image analysis
+ * Detect the type of page (product, article, social, etc.)
+ * Uses domain and content analysis
  * 
- * @param {number} tabId - Tab to capture
- * @returns {Object} Base64 encoded image data
+ * @param {string} url - Page URL
+ * @param {string} html - Page HTML content
+ * @param {string} text - Page text content
+ * @returns {string} Detected page type
  */
-async function captureVisibleTab(tabId) {
-  console.log('[Background] 📸 Capturing visible tab:', tabId);
-
+function detectPageType(url, html, text) {
+  console.log('[Background] 🔍 Detecting page type...');
+  
   try {
-    const dataUrl = await chrome.tabs.captureVisibleTab(tabId, {
-      format: 'jpeg',
+    const domain = new URL(url).hostname.toLowerCase();
+    const htmlLower = html.toLowerCase();
+    const textLower = text.toLowerCase();
+
+    // E-commerce sites
+    if (domain.includes('amazon') || 
+        domain.includes('ebay') || 
+        domain.includes('etsy') || 
+        domain.includes('walmart') ||
+        domain.includes('shop') ||
+        domain.includes('store')) {
+      return 'ecommerce';
+    }
+
+    // Social media
+    if (domain.includes('linkedin') || 
+        domain.includes('twitter') || 
+        domain.includes('facebook') ||
+        domain.includes('instagram') ||
+        domain.includes('reddit')) {
+      return 'social';
+    }
+
+    // News/Blog/Articles
+    if (domain.includes('medium') || 
+        domain.includes('blog') || 
+        domain.includes('news') ||
+        domain.includes('article') ||
+        htmlLower.includes('<article') ||
+        textLower.includes('published') ||
+        textLower.includes('author:')) {
+      return 'article';
+    }
+
+    // Job listings
+    if (domain.includes('indeed') || 
+        domain.includes('linkedin.com/jobs') ||
+        domain.includes('glassdoor') ||
+        textLower.includes('job description') ||
+        textLower.includes('apply now')) {
+      return 'job';
+    }
+
+    // Video
+    if (domain.includes('youtube') || 
+        domain.includes('vimeo') ||
+        domain.includes('dailymotion') ||
+        htmlLower.includes('<video')) {
+      return 'video';
+    }
+
+    // Recipe sites
+    if (domain.includes('recipe') || 
+        domain.includes('food') ||
+        textLower.includes('ingredients:') ||
+        textLower.includes('instructions:')) {
+      return 'recipe';
+    }
+
+    // GitHub
+    if (domain.includes('github')) {
+      return 'repository';
+    }
+
+    // Generic content detection
+    if (htmlLower.includes('price') || 
+        htmlLower.includes('add to cart') ||
+        htmlLower.includes('buy now')) {
+      return 'ecommerce';
+    }
+
+    // Default
+    return 'generic';
+
+  } catch (error) {
+    console.warn('[Background] Page type detection error:', error);
+    return 'generic';
+  }
+}
+
+// ============================================================================
+// FUNCTION 19 of 30: DETECT CHANGES
+// ============================================================================
+
+/**
+ * Detect changes between current and previous extraction
+ * Useful for pagination and dynamic content tracking
+ * 
+ * @param {Array} currentData - Current extraction data
+ * @param {Array} previousData - Previous extraction data
+ * @returns {Object} Change detection results with new/removed items
+ */
+async function detectChanges(currentData, previousData) {
+  console.log('[Background] 🔄 Detecting changes...');
+  
+  try {
+    // Validate inputs
+    if (!currentData || !Array.isArray(currentData)) {
+      console.log('[Background] No current data for change detection');
+      return {
+        hasChanges: false,
+        newItems: currentData || [],
+        removedItems: [],
+        modifiedItems: [],
+        unchangedItems: []
+      };
+    }
+
+    if (!previousData || !Array.isArray(previousData) || previousData.length === 0) {
+      console.log('[Background] No previous data, all items are new');
+      return {
+        hasChanges: true,
+        newItems: currentData,
+        removedItems: [],
+        modifiedItems: [],
+        unchangedItems: []
+      };
+    }
+
+    // Build identifier sets for comparison
+    const previousIds = new Set(previousData.map(item => {
+      return item.url || item.id || item.title || JSON.stringify(item);
+    }));
+
+    const currentIds = new Set(currentData.map(item => {
+      return item.url || item.id || item.title || JSON.stringify(item);
+    }));
+
+    // Find new items
+    const newItems = currentData.filter(item => {
+      const id = item.url || item.id || item.title || JSON.stringify(item);
+      return !previousIds.has(id);
+    });
+
+    // Find removed items
+    const removedItems = previousData.filter(item => {
+      const id = item.url || item.id || item.title || JSON.stringify(item);
+      return !currentIds.has(id);
+    });
+
+    // Find unchanged items
+    const unchangedItems = currentData.filter(item => {
+      const id = item.url || item.id || item.title || JSON.stringify(item);
+      return previousIds.has(id);
+    });
+
+    const hasChanges = newItems.length > 0 || removedItems.length > 0;
+
+    console.log(`[Background] Change detection: ${newItems.length} new, ${removedItems.length} removed, ${unchangedItems.length} unchanged`);
+
+    return {
+      hasChanges,
+      newItems,
+      removedItems,
+      modifiedItems: [], // Not implemented in basic version
+      unchangedItems
+    };
+
+  } catch (error) {
+    console.error('[Background] ❌ Change detection error:', error);
+    
+    return {
+      hasChanges: false,
+      newItems: currentData || [],
+      removedItems: [],
+      modifiedItems: [],
+      unchangedItems: [],
+      error: error.message
+    };
+  }
+}
+
+// ============================================================================
+// FUNCTION 20 of 30: CAPTURE VISIBLE TAB
+// ============================================================================
+
+/**
+ * Capture screenshot of visible tab area
+ * Used for visual AI processing and debugging
+ * 
+ * @returns {Object} Screenshot data URL in PNG format
+ */
+async function captureVisibleTab() {
+  console.log('[Background] 📸 Capturing visible tab screenshot...');
+  
+  try {
+    // Get active tab
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    if (!activeTab) {
+      throw new Error('No active tab found');
+    }
+
+    // Capture visible area
+    const dataUrl = await chrome.tabs.captureVisibleTab(activeTab.windowId, {
+      format: 'png',
       quality: 90
     });
 
-    // Convert data URL to base64
-    const base64Data = dataUrl.split(',')[1];
-
-    console.log('[Background] ✅ Screenshot captured:', base64Data.length, 'bytes');
+    console.log('[Background] ✅ Screenshot captured');
 
     return {
       success: true,
       dataUrl,
-      base64: base64Data,
-      mimeType: 'image/jpeg'
+      timestamp: new Date().toISOString(),
+      tabId: activeTab.id
     };
 
   } catch (error) {
     console.error('[Background] ❌ Screenshot capture error:', error);
+    
     return {
       success: false,
       error: error.message,
@@ -1678,203 +1930,204 @@ async function captureVisibleTab(tabId) {
     };
   }
 }
-
 // ============================================================================
-// CSV CONVERTER - FUNCTION 21 of 23
+// FUNCTION 21 of 30: ESCAPE CSV
 // ============================================================================
 
 /**
- * Convert complex JSON to CSV format
- * Handles nested objects and arrays
+ * Escape special characters for CSV format
+ * Handles commas, quotes, and newlines
  * 
- * @param {Array|Object} data - Data to convert
- * @returns {string} CSV formatted string
+ * @param {*} value - Value to escape
+ * @returns {string} CSV-safe escaped string
+ */
+function escapeCSV(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  
+  const str = String(value);
+  
+  // Check if escaping is needed
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    // Escape quotes by doubling them and wrap in quotes
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  
+  return str;
+}
+
+// ============================================================================
+// FUNCTION 22 of 30: FLATTEN OBJECT
+// ============================================================================
+
+/**
+ * Flatten nested object into single-level object
+ * Used for CSV conversion of complex JSON structures
+ * 
+ * @param {Object} obj - Object to flatten
+ * @param {string} prefix - Prefix for nested keys
+ * @returns {Object} Flattened object
+ */
+function flattenObject(obj, prefix = '') {
+  const flattened = {};
+  
+  for (const key in obj) {
+    if (!obj.hasOwnProperty(key)) continue;
+    
+    const value = obj[key];
+    const newKey = prefix ? `${prefix}.${key}` : key;
+    
+    if (value === null || value === undefined) {
+      flattened[newKey] = '';
+    } else if (Array.isArray(value)) {
+      // Convert arrays to semicolon-separated strings
+      flattened[newKey] = value
+        .map(item => {
+          if (typeof item === 'object' && item !== null) {
+            return JSON.stringify(item);
+          }
+          return String(item);
+        })
+        .join('; ');
+    } else if (typeof value === 'object') {
+      // Recursively flatten nested objects
+      Object.assign(flattened, flattenObject(value, newKey));
+    } else {
+      flattened[newKey] = value;
+    }
+  }
+  
+  return flattened;
+}
+
+// ============================================================================
+// FUNCTION 23 of 30: CONVERT COMPLEX JSON TO CSV
+// ============================================================================
+
+/**
+ * Convert JSON data to CSV format
+ * Handles arrays of objects and nested structures
+ * 
+ * @param {Array|Object} data - JSON data to convert
+ * @returns {Object} CSV string and conversion status
  */
 function convertComplexJSONToCSV(data) {
-  console.log('[Background] 📊 Converting JSON to CSV');
-
+  console.log('[Background] 📄 Converting JSON to CSV...');
+  
   try {
+    // Handle empty data
+    if (!data) {
+      throw new Error('No data provided for CSV conversion');
+    }
+    
     // Ensure data is an array
     const items = Array.isArray(data) ? data : [data];
-
+    
     if (items.length === 0) {
-      return '';
+      throw new Error('Empty data array');
     }
-
-    // Flatten nested objects
-    const flattenObject = (obj, prefix = '') => {
-      const flattened = {};
-      
-      for (const key in obj) {
-        const value = obj[key];
-        const newKey = prefix ? `${prefix}.${key}` : key;
-        
-        if (value === null || value === undefined) {
-          flattened[newKey] = '';
-        } else if (typeof value === 'object' && !Array.isArray(value)) {
-          Object.assign(flattened, flattenObject(value, newKey));
-        } else if (Array.isArray(value)) {
-          flattened[newKey] = JSON.stringify(value);
-        } else {
-          flattened[newKey] = value;
-        }
-      }
-      
-      return flattened;
-    };
-
+    
     // Flatten all items
-    const flatItems = items.map(item => flattenObject(item));
-
-    // Get all unique keys
+    const flattenedItems = items.map(item => flattenObject(item));
+    
+    // Get all unique keys across all items
     const allKeys = new Set();
-    flatItems.forEach(item => {
+    flattenedItems.forEach(item => {
       Object.keys(item).forEach(key => allKeys.add(key));
     });
-
-    const headers = Array.from(allKeys);
-
-    // Escape CSV value
-    const escapeCSV = (value) => {
-      if (value === null || value === undefined) return '';
-      const str = String(value);
-      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-      return str;
-    };
-
-    // Build CSV
-    let csv = headers.map(escapeCSV).join(',') + '\n';
-
-    flatItems.forEach(item => {
-      const row = headers.map(header => escapeCSV(item[header] || ''));
-      csv += row.join(',') + '\n';
+    
+    const sortedKeys = Array.from(allKeys).sort();
+    
+    // Build CSV header
+    const header = sortedKeys.map(key => escapeCSV(key)).join(',');
+    
+    // Build CSV rows
+    const rows = flattenedItems.map(item => {
+      return sortedKeys.map(key => {
+        const value = item[key];
+        return escapeCSV(value);
+      }).join(',');
     });
-
-    console.log('[Background] ✅ CSV conversion complete');
-    return csv;
-
+    
+    // Combine header and rows
+    const csv = [header, ...rows].join('\n');
+    
+    console.log(`[Background] ✅ CSV conversion complete: ${items.length} rows, ${sortedKeys.length} columns`);
+    
+    return {
+      success: true,
+      csv,
+      stats: {
+        rows: items.length,
+        columns: sortedKeys.length,
+        size: csv.length
+      }
+    };
+    
   } catch (error) {
     console.error('[Background] ❌ CSV conversion error:', error);
-    return '';
+    
+    return {
+      success: false,
+      error: error.message,
+      csv: null
+    };
   }
 }
 
 // ============================================================================
-// API KEY MANAGEMENT - FUNCTION 22 of 23
+// FUNCTION 24 of 30: VALIDATE API KEY
 // ============================================================================
 
 /**
- * Handle API key save request
- * Validates and stores Gemini API key
+ * Validate Gemini API key by making test request
+ * Ensures key is valid and has required permissions
  * 
- * @param {Object} message - Save request with API key
- * @returns {Object} Save result
+ * @param {string} apiKey - API key to validate
+ * @returns {Object} Validation result with status
  */
-async function handleSaveApiKey(message) {
-  console.log('[Background] 🔑 Saving API key');
-
+async function validateApiKey(apiKey) {
+  console.log('[Background] 🔑 Validating API key...');
+  
   try {
-    const { apiKey } = message;
-
     if (!apiKey || typeof apiKey !== 'string') {
       throw new Error('Invalid API key format');
     }
-
-    // Basic validation
+    
     const trimmedKey = apiKey.trim();
     
-    if (trimmedKey.length < 10) {
-      throw new Error('API key too short. Please check your key.');
+    // Basic format check
+    if (trimmedKey.length < 30) {
+      throw new Error('API key appears to be too short');
     }
-
-    // Validate key format (Gemini keys start with 'AIza')
-    if (!trimmedKey.startsWith('AIza')) {
-      console.warn('[Background] ⚠️ API key does not match expected format');
+    
+    // Test with simple API call
+    const testPrompt = 'Respond with exactly "OK"';
+    
+    const result = await callGeminiAPI(testPrompt, trimmedKey, {
+      temperature: 0,
+      maxOutputTokens: 10,
+      timeout: 10000
+    });
+    
+    if (!result.success) {
+      throw new Error(result.error || 'API key validation failed');
     }
-
-    // Test the API key
-    const testResult = await validateApiKey(trimmedKey);
-
-    if (!testResult.valid) {
-      throw new Error(`API key validation failed: ${testResult.error || 'Invalid key'}`);
-    }
-
-    // Save to storage
-    await chrome.storage.local.set({ geminiApiKey: trimmedKey });
-
-    // Update state
-    BACKGROUND_STATE.apiKeyConfigured = true;
-
-    console.log('[Background] ✅ API key saved successfully');
-
+    
+    console.log('[Background] ✅ API key validated successfully');
+    
     return {
       success: true,
-      message: 'API key saved and validated successfully'
+      valid: true,
+      message: 'API key is valid and working'
     };
-
-  } catch (error) {
-    console.error('[Background] ❌ API key save error:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
-
-// ============================================================================
-// API KEY VALIDATOR - FUNCTION 23 of 23
-// ============================================================================
-
-/**
- * Validate Gemini API key by making a test request
- * 
- * @param {string} apiKey - API key to validate
- * @returns {Object} Validation result
- */
-async function validateApiKey(apiKey) {
-  console.log('[Background] 🔐 Validating API key');
-
-  try {
-    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent`;
     
-    const response = await fetch(`${testUrl}?key=${apiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: 'Test'
-          }]
-        }]
-      })
-    });
-
-    if (response.ok) {
-      console.log('[Background] ✅ API key is valid');
-      return {
-        valid: true,
-        message: 'API key validated successfully'
-      };
-    } else if (response.status === 400) {
-      // Bad request but key is valid
-      console.log('[Background] ✅ API key is valid (400 response)');
-      return {
-        valid: true,
-        message: 'API key validated'
-      };
-    } else if (response.status === 401 || response.status === 403) {
-      throw new Error('Invalid or unauthorized API key');
-    } else {
-      throw new Error(`Validation failed with status ${response.status}`);
-    }
-
   } catch (error) {
     console.error('[Background] ❌ API key validation error:', error);
+    
     return {
+      success: false,
       valid: false,
       error: error.message
     };
@@ -1882,44 +2135,436 @@ async function validateApiKey(apiKey) {
 }
 
 // ============================================================================
+// FUNCTION 25 of 30: PERFORM AI EXTRACTION
+// ============================================================================
+
+/**
+ * Core AI extraction logic using external modules
+ * Routes to appropriate extraction method (Chrome AI or Cloud API)
+ * 
+ * @param {Object} options - Extraction options and content
+ * @returns {Object} Extraction result with data and metadata
+ */
+async function performAIExtraction(options) {
+  console.log('[Background] 🤖 Performing AI extraction...');
+  
+  try {
+    const {
+      html,
+      text,
+      url,
+      title,
+      mode = 'balanced',
+      category = 'all',
+      extractionType = 'MULTI',
+      provider = 'cloud',
+      apiKey
+    } = options;
+
+    // Validate required fields
+    if (!html && !text) {
+      throw new Error('Either HTML or text content is required');
+    }
+
+    if (!url) {
+      throw new Error('URL is required for extraction');
+    }
+
+    console.log(`[Background] Extraction config: ${extractionType}, ${mode}, ${category}, ${provider}`);
+
+    // For Chrome Built-in AI (limited functionality)
+    if (provider === 'chrome') {
+      console.warn('[Background] Chrome AI extraction not fully implemented, falling back to Cloud API');
+    }
+
+    // Use Cloud API with AIExtractor module
+    if (!apiKey) {
+      throw new Error('API key is required for Cloud API extraction');
+    }
+
+    // Check if AIExtractor module is available
+    if (typeof AIExtractor === 'undefined' || typeof AIExtractor.extractWithGeminiDay10 !== 'function') {
+      throw new Error('AIExtractor module not available');
+    }
+
+    // Call AIExtractor
+    console.log('[Background] Using AIExtractor module...');
+    
+    const extractionResult = await AIExtractor.extractWithGeminiDay10(
+      html,
+      text,
+      {
+        url,
+        title,
+        mode,
+        category,
+        extractionType,
+        apiKey
+      }
+    );
+
+    if (!extractionResult.success) {
+      throw new Error(extractionResult.error || 'AI extraction failed');
+    }
+
+    console.log('[Background] ✅ AI extraction successful');
+
+    return {
+      success: true,
+      data: extractionResult.data,
+      metadata: {
+        extractionType,
+        mode,
+        category,
+        provider: 'cloud',
+        confidence: extractionResult.confidence || 0.8,
+        model: extractionResult.model || 'gemini-2.0-flash-exp',
+        itemCount: Array.isArray(extractionResult.data) ? extractionResult.data.length : 1
+      }
+    };
+
+  } catch (error) {
+    console.error('[Background] ❌ AI extraction error:', error);
+    
+    return {
+      success: false,
+      error: error.message,
+      data: null
+    };
+  }
+}
+// ============================================================================
+// ARROW FUNCTIONS 26-30: UTILITY HELPERS
+// ============================================================================
+
+/**
+ * FUNCTION 26 of 30: Generate error data object
+ * Helper for consistent error responses in extractions
+ */
+const errorData = (message, extractionId = null) => ({
+  success: false,
+  error: message,
+  extractionId,
+  timestamp: new Date().toISOString(),
+  data: null
+});
+
+/**
+ * FUNCTION 27 of 30: Flatten nested arrays
+ * Helper for data transformation in CSV conversion
+ */
+const flatItems = (arr) => {
+  if (!Array.isArray(arr)) return [arr];
+  return arr.flat(Infinity).filter(item => item !== null && item !== undefined);
+};
+
+/**
+ * FUNCTION 28 of 30: Get new items from comparison
+ * Helper for change detection and deduplication
+ */
+const newItems = (current, previous) => {
+  if (!previous || !Array.isArray(previous)) return current;
+  if (!current || !Array.isArray(current)) return [];
+  
+  const previousIds = new Set(previous.map(item => 
+    item.url || item.id || item.title || JSON.stringify(item)
+  ));
+  
+  return current.filter(item => {
+    const id = item.url || item.id || item.title || JSON.stringify(item);
+    return !previousIds.has(id);
+  });
+};
+
+/**
+ * FUNCTION 29 of 30: Extract IDs from items
+ * Helper for tracking and deduplication
+ */
+const previousIds = (items) => {
+  if (!items || !Array.isArray(items)) return new Set();
+  
+  return new Set(items.map(item => 
+    item.url || item.id || item.title || JSON.stringify(item)
+  ));
+};
+
+/**
+ * FUNCTION 30 of 30: Generate CSV row
+ * Helper for CSV generation from object
+ */
+const row = (obj, keys) => {
+  if (!obj || typeof obj !== 'object') return '';
+  if (!keys || !Array.isArray(keys)) return '';
+  
+  return keys.map(key => {
+    const value = obj[key];
+    return escapeCSV(value);
+  }).join(',');
+};
+
+// ============================================================================
 // SERVICE WORKER LIFECYCLE EVENTS
 // ============================================================================
 
 /**
- * Handle service worker installation
+ * Handle extension installation and updates
  */
-self.addEventListener('install', (event) => {
-  console.log('[Background] 🔧 Service worker installing...');
-  self.skipWaiting();
+chrome.runtime.onInstalled.addListener((details) => {
+  console.log('[Background] 🔧 Extension installed/updated');
+  
+  const { reason, previousVersion } = details;
+  
+  if (reason === 'install') {
+    console.log('[Background] First-time installation');
+    
+    // Set default settings
+    chrome.storage.local.set({
+      mode: 'balanced',
+      category: 'all',
+      extractionType: 'MULTI',
+      deduplication: false,
+      translation: false,
+      summarization: false,
+      version: '4.2.0'
+    });
+    
+    // Open welcome page (optional)
+    // chrome.tabs.create({ url: 'welcome.html' });
+    
+  } else if (reason === 'update') {
+    console.log(`[Background] Updated from v${previousVersion} to v4.2.0`);
+    
+    // Handle migration if needed
+    if (previousVersion && previousVersion.startsWith('4.1')) {
+      console.log('[Background] Migrating from v4.1 to v4.2...');
+      // Migration logic here if needed
+    }
+  } else if (reason === 'chrome_update') {
+    console.log('[Background] Chrome browser updated');
+  }
 });
 
 /**
- * Handle service worker activation
+ * Handle service worker startup
  */
-self.addEventListener('activate', (event) => {
-  console.log('[Background] ✅ Service worker activated');
-  event.waitUntil(clients.claim());
+chrome.runtime.onStartup.addListener(() => {
+  console.log('[Background] 🚀 Service worker started (browser startup)');
+  
+  // Re-initialize on browser startup
+  initializeBackground();
 });
 
 /**
- * Handle service worker errors
+ * Handle service worker suspend (before unload)
  */
-self.addEventListener('error', (event) => {
-  console.error('[Background] ❌ Service worker error:', event.error);
-  BACKGROUND_STATE.lastError = event.error?.message || 'Unknown error';
+self.addEventListener('beforeunload', () => {
+  console.log('[Background] 💤 Service worker suspending...');
+  
+  // Cleanup any active extractions
+  BACKGROUND_STATE.currentExtractions.clear();
 });
 
 /**
- * Handle unhandled promise rejections
+ * Handle extension uninstall (cleanup)
  */
-self.addEventListener('unhandledrejection', (event) => {
-  console.error('[Background] ❌ Unhandled promise rejection:', event.reason);
-  BACKGROUND_STATE.lastError = event.reason?.message || 'Unhandled promise rejection';
+chrome.runtime.setUninstallURL('https://forms.gle/feedback', () => {
+  console.log('[Background] 👋 Uninstall URL set for feedback');
 });
 
 // ============================================================================
-// END OF PART 5
+// TAB EVENT HANDLERS (Optional: for future features)
+// ============================================================================
+
+/**
+ * Track tab updates for potential auto-extraction features
+ */
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // Only log for complete page loads
+  if (changeInfo.status === 'complete' && tab.url) {
+    console.log(`[Background] Tab ${tabId} updated: ${tab.url}`);
+    
+    // Future: Could trigger auto-extraction or template detection here
+    // if (autoExtractionEnabled) {
+    //   detectTemplate({ url: tab.url, domain: new URL(tab.url).hostname });
+    // }
+  }
+});
+
+/**
+ * Track tab activation for context awareness
+ */
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  console.log(`[Background] Tab ${activeInfo.tabId} activated`);
+  
+  // Store active tab for quick access
+  BACKGROUND_STATE.activeTabId = activeInfo.tabId;
+});
+
+// ============================================================================
+// STORAGE CHANGE LISTENER (Optional: for settings sync)
+// ============================================================================
+
+/**
+ * Listen for storage changes to update state
+ */
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'local') {
+    console.log('[Background] Storage changed:', Object.keys(changes));
+    
+    // Update API key state if changed
+    if (changes.geminiApiKey) {
+      BACKGROUND_STATE.apiKeyConfigured = !!changes.geminiApiKey.newValue;
+      console.log('[Background] API key configuration changed:', BACKGROUND_STATE.apiKeyConfigured);
+    }
+  }
+});
+
+// ============================================================================
+// ALARM HANDLERS (Optional: for scheduled tasks)
+// ============================================================================
+
+/**
+ * Create periodic cleanup alarm
+ */
+chrome.alarms.create('cleanup', {
+  periodInMinutes: 60 // Run every hour
+});
+
+/**
+ * Handle alarm events
+ */
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'cleanup') {
+    console.log('[Background] 🧹 Running periodic cleanup...');
+    
+    // Cleanup old extraction history
+    if (BACKGROUND_STATE.extractionHistory.length > 100) {
+      BACKGROUND_STATE.extractionHistory = BACKGROUND_STATE.extractionHistory.slice(-50);
+      console.log('[Background] Extraction history trimmed to last 50 entries');
+    }
+    
+    // Cleanup session state
+    BACKGROUND_STATE.sessionState.clear();
+    
+    console.log('[Background] ✅ Cleanup complete');
+  }
+});
+
+// ============================================================================
+// CONTEXT MENU (Optional: for right-click extraction)
+// ============================================================================
+
+/**
+ * Create context menu items (optional feature)
+ */
+chrome.runtime.onInstalled.addListener(() => {
+  // Uncomment to enable context menu extraction
+  /*
+  chrome.contextMenus.create({
+    id: 'extract-selection',
+    title: 'Extract with Web Weaver',
+    contexts: ['selection', 'page']
+  });
+  
+  chrome.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId === 'extract-selection') {
+      console.log('[Background] Context menu extraction triggered');
+      // Trigger extraction on current tab
+      handleExtraction({ extractionType: 'SINGLE' }, { tab });
+    }
+  });
+  */
+});
+
+// ============================================================================
+// KEEP-ALIVE MECHANISM (Service Worker Persistence)
+// ============================================================================
+
+/**
+ * Keep service worker alive by maintaining connection
+ * Chrome service workers auto-sleep after 30 seconds of inactivity
+ */
+let keepAliveInterval;
+
+function startKeepAlive() {
+  // Ping every 25 seconds to prevent sleep
+  keepAliveInterval = setInterval(() => {
+    chrome.runtime.getPlatformInfo(() => {
+      // Simple operation to keep worker alive
+      if (chrome.runtime.lastError) {
+        console.warn('[Background] Keep-alive ping failed');
+      }
+    });
+  }, 25000);
+}
+
+// Start keep-alive on initialization
+startKeepAlive();
+
+// ============================================================================
+// FINAL LOGGING & STATUS
 // ============================================================================
 
 console.log('[Background] ✅ All handlers registered and ready');
 console.log('[Background] 🎯 Web Weaver Lightning v4.2.0 MODULAR fully loaded');
+console.log('[Background] 📊 Total functions: 30');
+console.log('[Background] 🚀 Status:', {
+  initialized: BACKGROUND_STATE.initialized,
+  apiKeyConfigured: BACKGROUND_STATE.apiKeyConfigured,
+  chromeAIAvailable,
+  version: '4.2.0'
+});
+
+// ============================================================================
+// EXPORT FOR TESTING (if running in Node.js environment)
+// ============================================================================
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    // Core functions
+    initializeBackground,
+    checkChromeAIAvailability,
+    handleMessage,
+    handleExtraction,
+    handleSingleItemExtraction,
+    handleMultiItemExtraction,
+    
+    // Batch operations
+    handleBatchTranslation,
+    handleBatchSummarization,
+    
+    // AI operations
+    handleLanguageDetection,
+    handleTranslation,
+    handleSummarization,
+    handleInsightsGeneration,
+    
+    // Template operations
+    detectTemplate,
+    applyTemplate,
+    
+    // API operations
+    handleSaveApiKey,
+    validateApiKey,
+    callGeminiAPI,
+    performAIExtraction,
+    
+    // Classification & detection
+    classifyContent,
+    detectPageType,
+    detectChanges,
+    captureVisibleTab,
+    
+    // Utilities
+    escapeCSV,
+    flattenObject,
+    convertComplexJSONToCSV,
+    
+    // Arrow function helpers
+    errorData,
+    flatItems,
+    newItems,
+    previousIds,
+    row
+  };
+}

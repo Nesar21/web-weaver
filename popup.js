@@ -5,9 +5,9 @@
  * 🆕 v4.2 CHANGES:
  * - Template selector with auto-detection
  * - Post-processing checkboxes (deduplication, translation, summarization) - ALL OPTIONAL
- * - Result tabs (Data, Insights, Metadata)
+ * - Result tabs: Data, Insights, Metadata
  * - Insights generation UI with type selector
- * - Cost tracker display (estimates + actuals)
+ * - Cost tracker display: REMOVED (API billing handled externally)
  * - Privacy badges based on provider
  * - Enhanced metadata display
  * 
@@ -17,9 +17,8 @@
  * - Real-time API key validation
  * - Proactive rate limit warnings
  * - Enhanced error display
- * - Deduplication tracking (NOW OPTIONAL)
  * - Chrome AI availability detection
- * - MULTI/SINGLE_ITEM extraction types
+ * - MULTI/SINGLE ITEM extraction types
  * - All 5 extraction modes
  * - Category filtering
  * - Fallback banner with 24h cooldown
@@ -28,961 +27,1498 @@
 
 console.log('[Popup] Loading Web Weaver Lightning v4.2.0...');
 
-// ════════════════════════════════════════════════════════════════
+// ============================================================================
 // GLOBAL STATE - ENHANCED FROM v4.1 WITH v4.2 ADDITIONS
-// ════════════════════════════════════════════════════════════════
+// ============================================================================
 
 let currentData = null;
 let currentMode = 'auto';
 let currentExtractionType = 'MULTI';
-let currentAIProvider = 'CHROME_BUILTIN';
 let currentCategory = 'all';
-let currentTemplate = null; // 🆕 v4.2
+let currentProvider = 'cloud'; // 'chrome' or 'cloud'
+let chromeAIAvailable = {
+  translator: false,
+  summarizer: false,
+  writer: false,
+  languageDetector: false,
+  rewriter: false
+};
 let extractionInProgress = false;
-let chromeAIAvailable = false;
-let rateLimitWarningCount = 0;
-let sessionItemCount = { new: 0, total: 0, duplicates: 0 };
-let tosAccepted = false;
+let lastExtractionTime = null;
+let currentTemplate = null; // v4.2: Current applied template
 
-// 🆕 v4.2: Post-processing state (all optional, off by default)
+// Deduplication, Translation, Summarization state (v4.2 - OPTIONAL)
 let deduplicationEnabled = false;
 let translationEnabled = false;
 let summarizationEnabled = false;
 
-// 🆕 v4.2: Result tabs state
-let currentTab = 'data';
-let currentInsightType = 'summary';
-let generatedInsights = null;
-
-// 🆕 v4.2: Cost tracking
-let costEstimate = 0;
-let dailyCost = 0;
-
-const TOS_VERSION = '1.0.0';
-const TOS_STORAGE_KEY = 'web_weaver_tos_accepted';
-
-// Category definitions - PRESERVED FROM v4.1
-const CATEGORIES = [
-  { id: 'all', name: 'All Items', icon: '📦', description: 'Extract all items on the page' },
-  { id: 'products', name: 'Products Only', icon: '🛍️', description: 'Extract only product listings' },
-  { id: 'articles', name: 'Articles Only', icon: '📰', description: 'Extract only article/blog posts' },
-  { id: 'videos', name: 'Videos Only', icon: '🎥', description: 'Extract only video listings' },
-  { id: 'jobs', name: 'Job Listings', icon: '💼', description: 'Extract only job postings' },
-  { id: 'events', name: 'Events', icon: '📅', description: 'Extract only event listings' }
-];
-
-// Error messages - PRESERVED FROM v4.1
-const ERROR_MESSAGES = {
-  'No repeated patterns found': {
-    title: 'No Repeating Patterns Detected',
-    message: 'The page structure doesn\'t show clear repeating elements.',
-    suggestions: [
-      'Try **Max Mode** for AI-powered deep analysis',
-      'Refresh the page and try again',
-      'Try **SINGLE_ITEM mode** if viewing one article',
-      'Switch to **Chrome AI** for faster processing'
-    ],
-    severity: 'info',
-    recoveryAction: 'switch_mode'
-  },
-  'API error: 429': {
-    title: '⚠️ API Rate Limit Exceeded',
-    message: 'Google Gemini API rate limit reached. This is a Google-imposed limit (15 RPM or 1M TPD).',
-    suggestions: [
-      '✅ **Switch to Chrome AI** (zero cost, no limits)',
-      'Wait 60-120 seconds for rate limit reset',
-      'Switch to **Offline Mode** (no API calls)',
-      'Check quota at Google AI Studio'
-    ],
-    severity: 'error',
-    recoveryAction: 'switch_to_chrome_ai'
-  },
-  'API error: 403': {
-    title: '🔒 API Key Invalid or Expired',
-    message: 'Your Gemini API key is invalid, expired, or lacks permissions.',
-    suggestions: [
-      '✅ **Switch to Chrome AI** (no key required)',
-      'Generate new key at Google AI Studio',
-      'Update key in Settings → API Configuration',
-      'Verify key permissions (Gemini API enabled)'
-    ],
-    severity: 'error',
-    recoveryAction: 'switch_to_chrome_ai'
-  },
-  'Chrome AI unavailable': {
-    title: 'Chrome AI Not Available',
-    message: 'Chrome Built-in AI requires Chrome 128+ Dev/Canary with AI features enabled.',
-    suggestions: [
-      '**Automatic fallback to Cloud API** activated',
-      'Download Chrome Dev/Canary from chrome.dev',
-      'Enable AI features in chrome://flags',
-      'Continue using Cloud API for now'
-    ],
-    severity: 'info',
-    recoveryAction: 'fallback_to_cloud'
-  }
+// Performance tracking
+let performanceMetrics = {
+  extractionStartTime: 0,
+  extractionEndTime: 0,
+  totalExtractions: 0,
+  successfulExtractions: 0,
+  failedExtractions: 0
 };
 
-// ════════════════════════════════════════════════════════════════
-// INITIALIZATION - ENHANCED FROM v4.1 WITH v4.2 ADDITIONS
-// ════════════════════════════════════════════════════════════════
+console.log('[Popup] State initialized');
 
-document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[Popup] Initializing Web Weaver Lightning v4.2.0...');
-  
-  // Step 1: Check TOS acceptance (PRESERVED FROM v4.1)
-  await checkTOSAcceptance();
-  
-  // Step 2: Check Chrome AI availability (PRESERVED FROM v4.1)
-  await checkChromeAIAvailability();
-  
-  // Step 3: Load settings (ENHANCED FOR v4.2)
-  await loadAIProvider();
-  await loadApiKey();
-  await loadCategory();
-  await loadPostProcessingSettings(); // 🆕 v4.2
-  await loadCostTracking(); // 🆕 v4.2
-  
-  // Step 4: Template auto-detection (🆕 v4.2)
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab && tab.url && tab.url.startsWith('http')) {
-      await detectAndApplyTemplate();
-    } else {
-      console.log('[Popup] Skipping template detection - no valid URL');
-    }
-  } catch (error) {
-    console.log('[Popup] Template detection skipped:', error.message);
-  }
-  
-  // Step 5: Setup event listeners (ENHANCED FOR v4.2)
-  setupEventListeners();
-  
-  // Step 6: Initialize UI components (ENHANCED FOR v4.2)
-  initializeModeSelector();
-  initializeExtractionTypeSelector();
-  initializeAIProviderSelector();
-  initializeCategorySelector();
-  initializeTemplateSelector(); // 🆕 v4.2
-  initializePostProcessingCheckboxes(); // 🆕 v4.2
-  initializeResultTabs(); // 🆕 v4.2
-  
-  // Step 7: Update UI state (ENHANCED FOR v4.2)
-  updatePrivacyBadges(); // 🆕 v4.2
-  updateCostEstimate(); // 🆕 v4.2
-  
-  // Step 8: Check fallback banner (PRESERVED FROM v4.1)
-  await checkAndShowFallbackBanner();
-  
-  // Step 9: Setup message listener (PRESERVED FROM v4.1)
-  setupMessageListener();
-  
-  // Step 10: Load extraction history (PRESERVED FROM v4.1)
-  await loadExtractionHistory();
-  
-  console.log('[Popup] ✅ Initialization complete');
-  console.log('[Popup] AI Provider:', currentAIProvider);
-  console.log('[Popup] Chrome AI Available:', chromeAIAvailable);
-  console.log('[Popup] Category:', currentCategory);
-  console.log('[Popup] Template:', currentTemplate?.name || 'None');
-  console.log('[Popup] Deduplication:', deduplicationEnabled);
-  console.log('[Popup] Translation:', translationEnabled);
-  console.log('[Popup] Summarization:', summarizationEnabled);
-});
+// ============================================================================
+// FUNCTION 1 of 63: CHECK TOS ACCEPTANCE
+// ============================================================================
 
-// ════════════════════════════════════════════════════════════════
-// TOS ACCEPTANCE - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
-
+/**
+ * Check if user has accepted Terms of Service
+ * Redirects to TOS page if not accepted
+ */
 async function checkTOSAcceptance() {
-  const result = await chrome.storage.local.get([TOS_STORAGE_KEY]);
-  const acceptance = result[TOS_STORAGE_KEY];
+  console.log('[Popup] Checking TOS acceptance...');
   
-  if (acceptance && acceptance.version === TOS_VERSION && acceptance.accepted) {
-    tosAccepted = true;
-    console.log('[Popup] TOS already accepted');
-    const modal = document.getElementById('tosModal');
-    if (modal) modal.classList.remove('visible');
+  try {
+    const { tosAccepted } = await chrome.storage.local.get('tosAccepted');
+    
+    if (!tosAccepted) {
+      console.log('[Popup] TOS not accepted, redirecting...');
+      window.location.href = 'tos.html';
+      return false;
+    }
+    
+    console.log('[Popup] ✅ TOS accepted');
+    return true;
+  } catch (error) {
+    console.error('[Popup] TOS check error:', error);
+    return false;
+  }
+}
+
+// ============================================================================
+// FUNCTION 2 of 63: INITIALIZE AI PROVIDER SELECTOR
+// ============================================================================
+
+/**
+ * Initialize AI provider toggle buttons (Chrome AI / Cloud API)
+ * Sets up event listeners and loads saved preference
+ */
+function initializeAIProviderSelector() {
+  console.log('[Popup] Initializing AI provider selector...');
+  
+  const chromeAIBtn = document.getElementById('provider-chrome');
+  const cloudAPIBtn = document.getElementById('provider-cloud');
+  
+  if (!chromeAIBtn || !cloudAPIBtn) {
+    console.warn('[Popup] AI provider buttons not found');
     return;
   }
   
-  console.log('[Popup] Showing TOS acceptance modal');
-  const modal = document.getElementById('tosModal');
-  if (modal) modal.classList.add('visible');
+  // Load saved provider
+  loadAIProvider();
   
-  document.getElementById('acceptTos')?.addEventListener('click', async () => {
-    await chrome.storage.local.set({
-      [TOS_STORAGE_KEY]: {
-        version: TOS_VERSION,
-        accepted: true,
-        timestamp: Date.now()
-      }
-    });
-    tosAccepted = true;
-    if (modal) modal.classList.remove('visible');
-    console.log('[Popup] TOS accepted');
+  // Set up event listeners
+  chromeAIBtn.addEventListener('click', () => {
+    setAIProvider('chrome');
   });
   
-  document.getElementById('declineTos')?.addEventListener('click', () => {
-    window.close();
+  cloudAPIBtn.addEventListener('click', () => {
+    setAIProvider('cloud');
   });
+  
+  console.log('[Popup] ✅ AI provider selector initialized');
 }
 
-// ════════════════════════════════════════════════════════════════
-// CHROME AI AVAILABILITY - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
+// ============================================================================
+// FUNCTION 3 of 63: LOAD AI PROVIDER
+// ============================================================================
 
+/**
+ * Load saved AI provider preference from storage
+ * Sets current provider and updates UI
+ */
+async function loadAIProvider() {
+  console.log('[Popup] Loading AI provider...');
+  
+  try {
+    const { aiProvider } = await chrome.storage.local.get('aiProvider');
+    currentProvider = aiProvider || 'cloud';
+    
+    console.log('[Popup] AI provider loaded:', currentProvider);
+    updateAIProviderButtonStates();
+    updatePrivacyBadges();
+  } catch (error) {
+    console.error('[Popup] Load AI provider error:', error);
+    currentProvider = 'cloud';
+  }
+}
+
+// ============================================================================
+// FUNCTION 4 of 63: SET AI PROVIDER
+// ============================================================================
+
+/**
+ * Set active AI provider and save to storage
+ * Updates UI and privacy badges
+ * 
+ * @param {string} provider - 'chrome' or 'cloud'
+ */
+async function setAIProvider(provider) {
+  console.log('[Popup] Setting AI provider:', provider);
+  
+  try {
+    currentProvider = provider;
+    await chrome.storage.local.set({ aiProvider: provider });
+    
+    updateAIProviderButtonStates();
+    updatePrivacyBadges();
+    updateAPIKeyVisibility();
+    
+    console.log('[Popup] ✅ AI provider set to:', provider);
+  } catch (error) {
+    console.error('[Popup] Set AI provider error:', error);
+  }
+}
+
+// ============================================================================
+// FUNCTION 5 of 63: UPDATE AI PROVIDER BUTTON STATES
+// ============================================================================
+
+/**
+ * Update visual state of AI provider toggle buttons
+ * Highlights active provider
+ */
+function updateAIProviderButtonStates() {
+  const chromeAIBtn = document.getElementById('provider-chrome');
+  const cloudAPIBtn = document.getElementById('provider-cloud');
+  
+  if (!chromeAIBtn || !cloudAPIBtn) return;
+  
+  // Remove active class from both
+  chromeAIBtn.classList.remove('active');
+  cloudAPIBtn.classList.remove('active');
+  
+  // Add active class to current provider
+  if (currentProvider === 'chrome') {
+    chromeAIBtn.classList.add('active');
+  } else {
+    cloudAPIBtn.classList.add('active');
+  }
+}
+
+// ============================================================================
+// FUNCTION 6 of 63: CHECK CHROME AI AVAILABILITY
+// ============================================================================
+
+/**
+ * Check availability of Chrome Built-in AI APIs
+ * Tests all 5 APIs and updates status indicator
+ */
 async function checkChromeAIAvailability() {
   console.log('[Popup] Checking Chrome AI availability...');
   
   try {
-    const response = await chrome.runtime.sendMessage({ action: 'checkChromeAI' });
+    const response = await chrome.runtime.sendMessage({ 
+      action: 'checkChromeAI' 
+    });
     
-    if (response.success) {
-      chromeAIAvailable = response.available;
-      console.log('[Popup] Chrome AI available:', chromeAIAvailable);
+    if (response && response.availability) {
+      chromeAIAvailable = response.availability;
+      console.log('[Popup] Chrome AI availability:', chromeAIAvailable);
       updateChromeAIStatusIndicator();
     }
   } catch (error) {
-    console.error('[Popup] Error checking Chrome AI:', error);
-    chromeAIAvailable = false;
+    console.error('[Popup] Chrome AI check error:', error);
+    chromeAIAvailable = {
+      translator: false,
+      summarizer: false,
+      writer: false,
+      languageDetector: false,
+      rewriter: false
+    };
   }
 }
 
+// ============================================================================
+// FUNCTION 7 of 63: UPDATE CHROME AI STATUS INDICATOR
+// ============================================================================
+
+/**
+ * Update Chrome AI status indicator in UI
+ * Shows how many APIs are available (e.g., "3/5 available")
+ */
 function updateChromeAIStatusIndicator() {
-  const statusElement = document.getElementById('chromeAIStatusText');
-  if (!statusElement) return;
+  const indicator = document.getElementById('chrome-ai-status');
+  if (!indicator) return;
   
-  if (chromeAIAvailable) {
-    statusElement.textContent = '✅ Available';
-    statusElement.parentElement.classList.add('available');
-    statusElement.parentElement.classList.remove('unavailable');
+  const availableCount = Object.values(chromeAIAvailable).filter(Boolean).length;
+  const totalCount = Object.keys(chromeAIAvailable).length;
+  
+  if (availableCount === 0) {
+    indicator.textContent = 'Not available';
+    indicator.className = 'status-indicator status-error';
+  } else if (availableCount === totalCount) {
+    indicator.textContent = 'All APIs available';
+    indicator.className = 'status-indicator status-success';
   } else {
-    statusElement.textContent = '❌ Unavailable (Auto-fallback to Cloud API)';
-    statusElement.parentElement.classList.add('unavailable');
-    statusElement.parentElement.classList.remove('available');
+    indicator.textContent = `${availableCount}/${totalCount} APIs available`;
+    indicator.className = 'status-indicator status-warning';
   }
 }
 
-// ════════════════════════════════════════════════════════════════
-// 🆕 v4.2: TEMPLATE DETECTION & MANAGEMENT
-// ════════════════════════════════════════════════════════════════
+// ============================================================================
+// FUNCTION 8 of 63: UPDATE PRIVACY BADGES
+// ============================================================================
 
+/**
+ * Update privacy badges based on selected AI provider
+ * Shows "100% On-Device" for Chrome AI, "Cloud Processing" for Cloud API
+ */
+function updatePrivacyBadges() {
+  const onDeviceBadge = document.getElementById('privacy-on-device');
+  const cloudBadge = document.getElementById('privacy-cloud');
+  
+  if (!onDeviceBadge || !cloudBadge) return;
+  
+  if (currentProvider === 'chrome') {
+    onDeviceBadge.style.display = 'inline-flex';
+    cloudBadge.style.display = 'none';
+  } else {
+    onDeviceBadge.style.display = 'none';
+    cloudBadge.style.display = 'inline-flex';
+  }
+}
+
+// ============================================================================
+// FUNCTION 9 of 63: UPDATE API KEY VISIBILITY
+// ============================================================================
+
+/**
+ * Show/hide API key input based on provider
+ * Chrome AI doesn't need API key, Cloud API requires it
+ */
+function updateAPIKeyVisibility() {
+  const apiKeySection = document.getElementById('api-key-section');
+  if (!apiKeySection) return;
+  
+  if (currentProvider === 'cloud') {
+    apiKeySection.style.display = 'block';
+  } else {
+    apiKeySection.style.display = 'none';
+  }
+}
+
+// ============================================================================
+// FUNCTION 10 of 63: INITIALIZE EXTRACTION TYPE SELECTOR
+// ============================================================================
+
+/**
+ * Initialize extraction type toggle (MULTI / SINGLE)
+ * Sets up event listeners and loads saved preference
+ */
+function initializeExtractionTypeSelector() {
+  console.log('[Popup] Initializing extraction type selector...');
+  
+  const multiBtn = document.getElementById('type-multi');
+  const singleBtn = document.getElementById('type-single');
+  
+  if (!multiBtn || !singleBtn) {
+    console.warn('[Popup] Extraction type buttons not found');
+    return;
+  }
+  
+  // Set up event listeners
+  multiBtn.addEventListener('click', () => {
+    setExtractionType('MULTI');
+  });
+  
+  singleBtn.addEventListener('click', () => {
+    setExtractionType('SINGLE');
+  });
+  
+  console.log('[Popup] ✅ Extraction type selector initialized');
+}
+// ============================================================================
+// FUNCTION 11 of 63: SET EXTRACTION TYPE
+// ============================================================================
+
+/**
+ * Set extraction type (MULTI or SINGLE) and save to storage
+ * Updates UI and description text
+ * 
+ * @param {string} type - 'MULTI' or 'SINGLE'
+ */
+async function setExtractionType(type) {
+  console.log('[Popup] Setting extraction type:', type);
+  
+  try {
+    currentExtractionType = type;
+    await chrome.storage.local.set({ extractionType: type });
+    
+    updateExtractionTypeButtonStates();
+    updateExtractionTypeDescription();
+    
+    console.log('[Popup] ✅ Extraction type set to:', type);
+  } catch (error) {
+    console.error('[Popup] Set extraction type error:', error);
+  }
+}
+
+// ============================================================================
+// FUNCTION 12 of 63: UPDATE EXTRACTION TYPE BUTTON STATES
+// ============================================================================
+
+/**
+ * Update visual state of extraction type buttons
+ * Highlights active type (MULTI/SINGLE)
+ */
+function updateExtractionTypeButtonStates() {
+  const multiBtn = document.getElementById('type-multi');
+  const singleBtn = document.getElementById('type-single');
+  
+  if (!multiBtn || !singleBtn) return;
+  
+  // Remove active class from both
+  multiBtn.classList.remove('active');
+  singleBtn.classList.remove('active');
+  
+  // Add active class to current type
+  if (currentExtractionType === 'MULTI') {
+    multiBtn.classList.add('active');
+  } else {
+    singleBtn.classList.add('active');
+  }
+}
+
+// ============================================================================
+// FUNCTION 13 of 63: UPDATE EXTRACTION TYPE DESCRIPTION
+// ============================================================================
+
+/**
+ * Update description text below extraction type buttons
+ * Explains what MULTI vs SINGLE extraction does
+ */
+function updateExtractionTypeDescription() {
+  const description = document.getElementById('extraction-type-description');
+  if (!description) return;
+  
+  if (currentExtractionType === 'MULTI') {
+    description.textContent = 'Extract multiple items from lists, feeds, and search results';
+  } else {
+    description.textContent = 'Extract a single main item (article, product, profile, etc.)';
+  }
+}
+
+// ============================================================================
+// FUNCTION 14 of 63: INITIALIZE MODE SELECTOR
+// ============================================================================
+
+/**
+ * Initialize extraction mode buttons (5 modes)
+ * Sets up event listeners and loads saved preference
+ */
+function initializeModeSelector() {
+  console.log('[Popup] Initializing mode selector...');
+  
+  const modes = ['auto', 'fast', 'balanced', 'deep', 'comprehensive'];
+  
+  modes.forEach(mode => {
+    const btn = document.getElementById(`mode-${mode}`);
+    if (btn) {
+      btn.addEventListener('click', async () => {
+        currentMode = mode;
+        await chrome.storage.local.set({ mode });
+        updateModeButtonStates();
+        console.log('[Popup] Mode set to:', mode);
+      });
+    }
+  });
+  
+  // Load saved mode
+  chrome.storage.local.get('mode').then(({ mode }) => {
+    currentMode = mode || 'auto';
+    updateModeButtonStates();
+  });
+  
+  console.log('[Popup] ✅ Mode selector initialized');
+}
+
+// ============================================================================
+// FUNCTION 15 of 63: UPDATE MODE BUTTON STATES
+// ============================================================================
+
+/**
+ * Update visual state of mode selector buttons
+ * Highlights active mode (auto/fast/balanced/deep/comprehensive)
+ */
+function updateModeButtonStates() {
+  const modes = ['auto', 'fast', 'balanced', 'deep', 'comprehensive'];
+  
+  modes.forEach(mode => {
+    const btn = document.getElementById(`mode-${mode}`);
+    if (btn) {
+      btn.classList.remove('active');
+      if (mode === currentMode) {
+        btn.classList.add('active');
+      }
+    }
+  });
+}
+
+// ============================================================================
+// FUNCTION 16 of 63: INITIALIZE CATEGORY SELECTOR
+// ============================================================================
+
+/**
+ * Initialize category dropdown
+ * Sets up event listener and loads saved preference
+ */
+function initializeCategorySelector() {
+  console.log('[Popup] Initializing category selector...');
+  
+  const categorySelect = document.getElementById('category');
+  
+  if (!categorySelect) {
+    console.warn('[Popup] Category selector not found');
+    return;
+  }
+  
+  // Load saved category
+  loadCategory();
+  
+  // Set up event listener
+  categorySelect.addEventListener('change', handleCategoryChange);
+  
+  console.log('[Popup] ✅ Category selector initialized');
+}
+
+// ============================================================================
+// FUNCTION 17 of 63: LOAD CATEGORY
+// ============================================================================
+
+/**
+ * Load saved category from storage
+ * Sets dropdown value to saved category
+ */
+async function loadCategory() {
+  console.log('[Popup] Loading category...');
+  
+  try {
+    const { category } = await chrome.storage.local.get('category');
+    currentCategory = category || 'all';
+    
+    const categorySelect = document.getElementById('category');
+    if (categorySelect) {
+      categorySelect.value = currentCategory;
+    }
+    
+    console.log('[Popup] Category loaded:', currentCategory);
+  } catch (error) {
+    console.error('[Popup] Load category error:', error);
+    currentCategory = 'all';
+  }
+}
+
+// ============================================================================
+// FUNCTION 18 of 63: HANDLE CATEGORY CHANGE
+// ============================================================================
+
+/**
+ * Handle category dropdown change event
+ * Saves new category to storage
+ */
+async function handleCategoryChange(event) {
+  console.log('[Popup] Category changed');
+  
+  try {
+    const category = event.target.value;
+    currentCategory = category;
+    
+    await chrome.storage.local.set({ category });
+    
+    console.log('[Popup] ✅ Category saved:', category);
+  } catch (error) {
+    console.error('[Popup] Category change error:', error);
+  }
+}
+
+// ============================================================================
+// FUNCTION 19 of 63: INITIALIZE TEMPLATE SELECTOR (v4.2)
+// ============================================================================
+
+/**
+ * Initialize template selector dropdown
+ * Auto-detects template for current domain and loads saved templates
+ */
+async function initializeTemplateSelector() {
+  console.log('[Popup] Initializing template selector...');
+  
+  const templateSelect = document.getElementById('template-selector');
+  const detectBtn = document.getElementById('detect-template-btn');
+  
+  if (!templateSelect) {
+    console.warn('[Popup] Template selector not found');
+    return;
+  }
+  
+  // Set up template change listener
+  templateSelect.addEventListener('change', async (e) => {
+    const templateId = e.target.value;
+    
+    if (templateId === 'none') {
+      currentTemplate = null;
+      console.log('[Popup] Template cleared');
+      return;
+    }
+    
+    // Apply template
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'applyTemplate',
+        templateId
+      });
+      
+      if (response.success) {
+        currentTemplate = response.template;
+        applyTemplateSettings(response.template);
+        showNotification('Template applied successfully', 'success');
+      }
+    } catch (error) {
+      console.error('[Popup] Template apply error:', error);
+      showNotification('Failed to apply template', 'error');
+    }
+  });
+  
+  // Set up detect button
+  if (detectBtn) {
+    detectBtn.addEventListener('click', detectAndApplyTemplate);
+  }
+  
+  console.log('[Popup] ✅ Template selector initialized');
+}
+
+// ============================================================================
+// FUNCTION 20 of 63: DETECT AND APPLY TEMPLATE (v4.2)
+// ============================================================================
+
+/**
+ * Detect template for current tab domain
+ * Auto-applies if template found
+ */
 async function detectAndApplyTemplate() {
   console.log('[Popup] Detecting template...');
   
   try {
-    const response = await chrome.runtime.sendMessage({ action: 'detectTemplate' });
+    // Get current tab URL
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    if (!tab || !tab.url) {
+      showNotification('Could not detect current page', 'error');
+      return;
+    }
+    
+    const url = new URL(tab.url);
+    const domain = url.hostname;
+    
+    console.log('[Popup] Detecting template for domain:', domain);
+    
+    // Request template detection from background
+    const response = await chrome.runtime.sendMessage({
+      action: 'detectTemplate',
+      domain,
+      url: tab.url
+    });
     
     if (response.success && response.template) {
       currentTemplate = response.template;
-      console.log('[Popup] Template detected:', currentTemplate.name);
       
       // Update template selector
-      const templateSelect = document.getElementById('templateSelect');
-      if (templateSelect) {
-        templateSelect.value = currentTemplate.id;
-      }
-      
-      // Show detection indicator if not custom
-      if (currentTemplate.id !== 'custom') {
-        const detectedIndicator = document.getElementById('templateDetected');
-        if (detectedIndicator) {
-          detectedIndicator.style.display = 'block';
-          setTimeout(() => {
-            detectedIndicator.style.display = 'none';
-          }, 5000);
-        }
+      const templateSelect = document.getElementById('template-selector');
+      if (templateSelect && response.template.id) {
+        templateSelect.value = response.template.id;
       }
       
       // Apply template settings
-      await applyTemplateSettings(currentTemplate);
+      applyTemplateSettings(response.template);
+      
+      showNotification(`Template detected: ${response.template.name || 'Custom'}`, 'success');
+      console.log('[Popup] ✅ Template detected and applied:', response.template);
+    } else {
+      showNotification('No template found for this site', 'info');
+      console.log('[Popup] No template detected for domain');
     }
   } catch (error) {
-    console.error('[Popup] Error detecting template:', error);
+    console.error('[Popup] Template detection error:', error);
+    showNotification('Template detection failed', 'error');
   }
 }
+// ============================================================================
+// FUNCTION 21 of 63: APPLY TEMPLATE SETTINGS (v4.2)
+// ============================================================================
 
-async function applyTemplateSettings(template) {
-  console.log('[Popup] Applying template settings:', template.name);
+/**
+ * Apply template settings to UI controls
+ * Updates mode, category, extraction type, and post-processing checkboxes
+ * 
+ * @param {Object} template - Template object with settings
+ */
+function applyTemplateSettings(template) {
+  console.log('[Popup] Applying template settings:', template);
   
-  if (template.settings.category) {
-    currentCategory = template.settings.category;
-    const categorySelect = document.getElementById('categorySelect');
-    if (categorySelect) categorySelect.value = currentCategory;
-  }
-  
-  if (template.settings.mode) {
-    currentMode = template.settings.mode;
-    updateModeButtonStates();
-  }
-  
-  if (template.settings.deduplication !== undefined) {
-    deduplicationEnabled = template.settings.deduplication;
-    const checkbox = document.getElementById('deduplicationCheckbox');
-    if (checkbox) checkbox.checked = deduplicationEnabled;
-  }
-  
-  if (template.settings.translation !== undefined) {
-    translationEnabled = template.settings.translation;
-    const checkbox = document.getElementById('translationCheckbox');
-    if (checkbox) checkbox.checked = translationEnabled;
-  }
-  
-  if (template.settings.summarization !== undefined) {
-    summarizationEnabled = template.settings.summarization;
-    const checkbox = document.getElementById('summarizationCheckbox');
-    if (checkbox) checkbox.checked = summarizationEnabled;
-  }
-  
-  // Update template info
-  const templateInfo = document.getElementById('templateInfo');
-  if (templateInfo) {
-    templateInfo.textContent = template.description || 'Auto-configured settings';
-  }
-  
-  // Update cost estimate
-  updateCostEstimate();
-}
-
-function initializeTemplateSelector() {
-  const templateSelect = document.getElementById('templateSelect');
-  if (!templateSelect) return;
-  
-  templateSelect.addEventListener('change', async (e) => {
-    const templateId = e.target.value;
-    console.log('[Popup] Template manually changed to:', templateId);
-    
-    try {
-      // Get template from TemplateManager
-      if (typeof TemplateManager !== 'undefined') {
-        currentTemplate = TemplateManager.getTemplateById(templateId);
-        
-        if (currentTemplate) {
-          await applyTemplateSettings(currentTemplate);
-          
-          // Notify background
-          await chrome.runtime.sendMessage({
-            action: 'applyTemplate',
-            template: currentTemplate
-          });
-        }
-      }
-    } catch (error) {
-      console.error('[Popup] Error applying template:', error);
-    }
-  });
-}
-
-// ════════════════════════════════════════════════════════════════
-// 🆕 v4.2: POST-PROCESSING SETTINGS (OPTIONAL CHECKBOXES)
-// ════════════════════════════════════════════════════════════════
-
-async function loadPostProcessingSettings() {
-  console.log('[Popup] Loading post-processing settings...');
+  if (!template) return;
   
   try {
-    // Load deduplication setting
-    const dedupResponse = await chrome.runtime.sendMessage({ action: 'getDeduplication' });
-    if (dedupResponse.success) {
-      deduplicationEnabled = dedupResponse.enabled;
+    // Apply mode
+    if (template.mode) {
+      currentMode = template.mode;
+      updateModeButtonStates();
     }
     
-    // Load translation setting
-    const translateResponse = await chrome.runtime.sendMessage({ action: 'getTranslation' });
-    if (translateResponse.success) {
-      translationEnabled = translateResponse.enabled;
+    // Apply category
+    if (template.category) {
+      currentCategory = template.category;
+      const categorySelect = document.getElementById('category');
+      if (categorySelect) {
+        categorySelect.value = template.category;
+      }
     }
     
-    // Load summarization setting
-    const summarizeResponse = await chrome.runtime.sendMessage({ action: 'getSummarization' });
-    if (summarizeResponse.success) {
-      summarizationEnabled = summarizeResponse.enabled;
+    // Apply extraction type
+    if (template.extractionType) {
+      currentExtractionType = template.extractionType;
+      updateExtractionTypeButtonStates();
+      updateExtractionTypeDescription();
     }
     
-    console.log('[Popup] Post-processing settings loaded:', {
-      deduplication: deduplicationEnabled,
-      translation: translationEnabled,
-      summarization: summarizationEnabled
-    });
+    // Apply post-processing settings (v4.2 - OPTIONAL)
+    if (template.deduplication !== undefined) {
+      deduplicationEnabled = template.deduplication;
+      const checkbox = document.getElementById('enable-deduplication');
+      if (checkbox) checkbox.checked = deduplicationEnabled;
+    }
     
+    if (template.translation !== undefined) {
+      translationEnabled = template.translation;
+      const checkbox = document.getElementById('enable-translation');
+      if (checkbox) checkbox.checked = translationEnabled;
+    }
+    
+    if (template.summarization !== undefined) {
+      summarizationEnabled = template.summarization;
+      const checkbox = document.getElementById('enable-summarization');
+      if (checkbox) checkbox.checked = summarizationEnabled;
+    }
+    
+    console.log('[Popup] ✅ Template settings applied');
   } catch (error) {
-    console.error('[Popup] Error loading post-processing settings:', error);
+    console.error('[Popup] Apply template settings error:', error);
   }
 }
 
+// ============================================================================
+// FUNCTION 22 of 63: INITIALIZE POST-PROCESSING CHECKBOXES (v4.2)
+// ============================================================================
+
+/**
+ * Initialize post-processing checkboxes (deduplication, translation, summarization)
+ * All are OPTIONAL - user can enable/disable as needed
+ */
 function initializePostProcessingCheckboxes() {
+  console.log('[Popup] Initializing post-processing checkboxes...');
+  
   // Deduplication checkbox
-  const dedupCheckbox = document.getElementById('deduplicationCheckbox');
+  const dedupCheckbox = document.getElementById('enable-deduplication');
   if (dedupCheckbox) {
-    dedupCheckbox.checked = deduplicationEnabled;
     dedupCheckbox.addEventListener('change', async (e) => {
       deduplicationEnabled = e.target.checked;
+      await chrome.storage.local.set({ deduplication: deduplicationEnabled });
       console.log('[Popup] Deduplication:', deduplicationEnabled);
-      
-      await chrome.runtime.sendMessage({
-        action: 'setDeduplication',
-        enabled: deduplicationEnabled
-      });
-      
-      updateCostEstimate();
     });
   }
   
   // Translation checkbox
-  const translateCheckbox = document.getElementById('translationCheckbox');
-  if (translateCheckbox) {
-    translateCheckbox.checked = translationEnabled;
-    translateCheckbox.addEventListener('change', async (e) => {
+  const translationCheckbox = document.getElementById('enable-translation');
+  if (translationCheckbox) {
+    translationCheckbox.addEventListener('change', async (e) => {
       translationEnabled = e.target.checked;
+      await chrome.storage.local.set({ translation: translationEnabled });
       console.log('[Popup] Translation:', translationEnabled);
       
-      await chrome.runtime.sendMessage({
-        action: 'setTranslation',
-        enabled: translationEnabled
-      });
-      
-      updateCostEstimate();
+      // Show/hide translation options
+      const translationOptions = document.getElementById('translation-options');
+      if (translationOptions) {
+        translationOptions.style.display = translationEnabled ? 'block' : 'none';
+      }
     });
   }
   
   // Summarization checkbox
-  const summarizeCheckbox = document.getElementById('summarizationCheckbox');
-  if (summarizeCheckbox) {
-    summarizeCheckbox.checked = summarizationEnabled;
-    summarizeCheckbox.addEventListener('change', async (e) => {
+  const summarizationCheckbox = document.getElementById('enable-summarization');
+  if (summarizationCheckbox) {
+    summarizationCheckbox.addEventListener('change', async (e) => {
       summarizationEnabled = e.target.checked;
+      await chrome.storage.local.set({ summarization: summarizationEnabled });
       console.log('[Popup] Summarization:', summarizationEnabled);
-      
-      await chrome.runtime.sendMessage({
-        action: 'setSummarization',
-        enabled: summarizationEnabled
-      });
-      
-      updateCostEstimate();
     });
   }
+  
+  console.log('[Popup] ✅ Post-processing checkboxes initialized');
 }
 
-// ════════════════════════════════════════════════════════════════
-// 🆕 v4.2: COST TRACKING
-// ════════════════════════════════════════════════════════════════
+// ============================================================================
+// FUNCTION 23 of 63: LOAD POST-PROCESSING SETTINGS (v4.2)
+// ============================================================================
 
-async function loadCostTracking() {
-  console.log('[Popup] Loading cost tracking...');
+/**
+ * Load post-processing settings from storage
+ * Restores deduplication, translation, and summarization states
+ */
+async function loadPostProcessingSettings() {
+  console.log('[Popup] Loading post-processing settings...');
   
   try {
-    const response = await chrome.runtime.sendMessage({ action: 'getCostTracker' });
+    const settings = await chrome.storage.local.get([
+      'deduplication',
+      'translation',
+      'summarization'
+    ]);
     
-    if (response.success && response.costTracker) {
-      dailyCost = response.costTracker.dailyTotal || 0;
-      updateCostDisplay();
+    // Load deduplication
+    deduplicationEnabled = settings.deduplication || false;
+    const dedupCheckbox = document.getElementById('enable-deduplication');
+    if (dedupCheckbox) dedupCheckbox.checked = deduplicationEnabled;
+    
+    // Load translation
+    translationEnabled = settings.translation || false;
+    const translationCheckbox = document.getElementById('enable-translation');
+    if (translationCheckbox) translationCheckbox.checked = translationEnabled;
+    
+    // Show/hide translation options
+    const translationOptions = document.getElementById('translation-options');
+    if (translationOptions) {
+      translationOptions.style.display = translationEnabled ? 'block' : 'none';
+    }
+    
+    // Load summarization
+    summarizationEnabled = settings.summarization || false;
+    const summarizationCheckbox = document.getElementById('enable-summarization');
+    if (summarizationCheckbox) summarizationCheckbox.checked = summarizationEnabled;
+    
+    console.log('[Popup] Post-processing loaded:', {
+      deduplication: deduplicationEnabled,
+      translation: translationEnabled,
+      summarization: summarizationEnabled
+    });
+  } catch (error) {
+    console.error('[Popup] Load post-processing error:', error);
+  }
+}
+
+// ============================================================================
+// FUNCTION 24 of 63: LOAD API KEY
+// ============================================================================
+
+/**
+ * Load saved Gemini API key from storage
+ * Displays masked key in input field
+ */
+async function loadApiKey() {
+  console.log('[Popup] Loading API key...');
+  
+  try {
+    const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
+    
+    if (geminiApiKey) {
+      const apiKeyInput = document.getElementById('api-key');
+      if (apiKeyInput) {
+        // Display first 10 chars + masked rest
+        const maskedKey = geminiApiKey.substring(0, 10) + '•'.repeat(Math.max(0, geminiApiKey.length - 10));
+        apiKeyInput.value = maskedKey;
+        apiKeyInput.dataset.fullKey = geminiApiKey; // Store full key in data attribute
+      }
+      console.log('[Popup] ✅ API key loaded (masked)');
+    } else {
+      console.log('[Popup] No API key found');
     }
   } catch (error) {
-    console.error('[Popup] Error loading cost tracking:', error);
+    console.error('[Popup] Load API key error:', error);
   }
 }
 
-function updateCostEstimate() {
-  // Calculate estimated cost based on enabled features
-  let estimate = 0;
-  const itemCount = currentData?.length || 10; // Estimate 10 items if no data yet
+// ============================================================================
+// FUNCTION 25 of 63: HANDLE SAVE API KEY
+// ============================================================================
+
+/**
+ * Handle API key save button click
+ * Validates and saves API key to storage
+ */
+async function handleSaveApiKey() {
+  console.log('[Popup] Saving API key...');
   
-  if (currentAIProvider === 'CLOUD_API') {
-    // Base extraction cost
-    estimate += 0.01;
-    
-    // Translation cost (if enabled)
-    if (translationEnabled) {
-      const translationBatches = Math.ceil(itemCount / 20);
-      estimate += translationBatches * 0.01;
-    }
-    
-    // Summarization cost (if enabled)
-    if (summarizationEnabled) {
-      const summarizationBatches = Math.ceil(itemCount / 5);
-      estimate += summarizationBatches * 0.02;
-    }
+  const apiKeyInput = document.getElementById('api-key');
+  const saveBtn = document.getElementById('save-api-key-btn');
+  const statusDiv = document.getElementById('api-key-status');
+  
+  if (!apiKeyInput || !saveBtn) {
+    console.error('[Popup] API key elements not found');
+    return;
   }
   
-  costEstimate = estimate;
-  updateCostDisplay();
-}
-
-function updateCostDisplay() {
-  const costTracker = document.getElementById('costTracker');
-  const estimatedCostElement = document.getElementById('estimatedCost');
-  const dailyCostElement = document.getElementById('dailyCost');
+  const apiKey = apiKeyInput.value.trim();
   
-  if (!costTracker) return;
-  
-  // Show cost tracker only if Cloud API is active
-  if (currentAIProvider === 'CLOUD_API') {
-    costTracker.classList.add('visible');
-    
-    if (estimatedCostElement) {
-      estimatedCostElement.textContent = `$${costEstimate.toFixed(4)}`;
-      if (costEstimate > 0.10) {
-        estimatedCostElement.classList.add('high');
-      } else {
-        estimatedCostElement.classList.remove('high');
-      }
-    }
-    
-    if (dailyCostElement) {
-      dailyCostElement.textContent = `$${dailyCost.toFixed(4)}`;
-    }
-  } else {
-    costTracker.classList.remove('visible');
+  if (!apiKey) {
+    showNotification('Please enter an API key', 'error');
+    return;
   }
-}
-
-// ════════════════════════════════════════════════════════════════
-// 🆕 v4.2: PRIVACY BADGES
-// ════════════════════════════════════════════════════════════════
-
-function updatePrivacyBadges() {
-  const onDeviceBadge = document.getElementById('onDeviceBadge');
-  const cloudBadge = document.getElementById('cloudBadge');
-  const zeroCostBadge = document.getElementById('zeroCostBadge');
   
-  if (currentAIProvider === 'CHROME_BUILTIN' && chromeAIAvailable) {
-    if (onDeviceBadge) onDeviceBadge.style.display = 'inline-flex';
-    if (cloudBadge) cloudBadge.style.display = 'none';
-    if (zeroCostBadge) zeroCostBadge.style.display = 'inline-flex';
-  } else {
-    if (onDeviceBadge) onDeviceBadge.style.display = 'none';
-    if (cloudBadge) cloudBadge.style.display = 'inline-flex';
-    if (zeroCostBadge) zeroCostBadge.style.display = 'none';
+  // Check if it's the masked key (don't save masked key)
+  if (apiKey.includes('•')) {
+    showNotification('API key already saved', 'info');
+    return;
   }
-}
-
-// ════════════════════════════════════════════════════════════════
-// EVENT LISTENERS - ENHANCED FROM v4.1 WITH v4.2 ADDITIONS
-// ════════════════════════════════════════════════════════════════
-
-function setupEventListeners() {
-  console.log('[Popup] Setting up event listeners...');
   
-  // Extract button - PRESERVED FROM v4.1
-  document.getElementById('extractBtn')?.addEventListener('click', handleExtraction);
+  // Show loading state
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Validating...';
   
-  // AI Provider buttons - PRESERVED FROM v4.1
-  document.getElementById('chromeAIBtn')?.addEventListener('click', () => setAIProvider('CHROME_BUILTIN'));
-  document.getElementById('cloudAPIBtn')?.addEventListener('click', () => setAIProvider('CLOUD_API'));
-  
-  // API Key - PRESERVED FROM v4.1
-  document.getElementById('saveApiKeyBtn')?.addEventListener('click', handleSaveApiKey);
-  document.getElementById('apiKeyInput')?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleSaveApiKey();
-  });
-  
-  // Extraction type buttons - PRESERVED FROM v4.1
-  document.getElementById('multiItemBtn')?.addEventListener('click', () => setExtractionType('MULTI'));
-  document.getElementById('singleItemBtn')?.addEventListener('click', () => setExtractionType('SINGLE_ITEM'));
-  
-  // Category selector - PRESERVED FROM v4.1
-  document.getElementById('categorySelect')?.addEventListener('change', handleCategoryChange);
-  
-  // Mode buttons - PRESERVED FROM v4.1
-  document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      currentMode = btn.dataset.mode;
-      updateModeButtonStates();
-      updateCostEstimate(); // 🆕 v4.2
+  try {
+    // Validate API key with background
+    const response = await chrome.runtime.sendMessage({
+      action: 'saveApiKey',
+      apiKey
     });
-  });
+    
+    if (response.success) {
+      // Mask the key in input
+      const maskedKey = apiKey.substring(0, 10) + '•'.repeat(Math.max(0, apiKey.length - 10));
+      apiKeyInput.value = maskedKey;
+      apiKeyInput.dataset.fullKey = apiKey;
+      
+      if (statusDiv) {
+        statusDiv.textContent = '✅ Valid';
+        statusDiv.className = 'status-success';
+      }
+      
+      showNotification('API key saved and validated', 'success');
+      console.log('[Popup] ✅ API key saved');
+    } else {
+      if (statusDiv) {
+        statusDiv.textContent = '❌ Invalid';
+        statusDiv.className = 'status-error';
+      }
+      
+      showNotification('Invalid API key: ' + (response.error || 'Unknown error'), 'error');
+      console.error('[Popup] API key validation failed:', response.error);
+    }
+  } catch (error) {
+    console.error('[Popup] Save API key error:', error);
+    
+    if (statusDiv) {
+      statusDiv.textContent = '❌ Error';
+      statusDiv.className = 'status-error';
+    }
+    
+    showNotification('Failed to save API key', 'error');
+  } finally {
+    // Restore button state
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save';
+  }
+}
+
+// ============================================================================
+// FUNCTION 26 of 63: VALIDATE API KEY
+// ============================================================================
+
+/**
+ * Validate API key format (client-side basic check)
+ * Checks for minimum length and valid characters
+ * 
+ * @param {string} apiKey - API key to validate
+ * @returns {boolean} True if valid format
+ */
+function validateApiKey(apiKey) {
+  if (!apiKey || typeof apiKey !== 'string') {
+    return false;
+  }
   
-  // Result actions - PRESERVED FROM v4.1
-  document.getElementById('copyBtn')?.addEventListener('click', handleCopyResult);
-  document.getElementById('downloadBtn')?.addEventListener('click', handleDownloadResult);
-  document.getElementById('csvBtn')?.addEventListener('click', handleConvertToCSV);
+  // Basic format check
+  const trimmedKey = apiKey.trim();
   
-  // 🆕 v4.2: Result tabs
-  document.querySelectorAll('.result-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const tabName = tab.dataset.tab;
+  // Gemini API keys are typically 39 characters
+  if (trimmedKey.length < 30) {
+    return false;
+  }
+  
+  // Should contain only alphanumeric and dashes/underscores
+  const validPattern = /^[A-Za-z0-9_-]+$/;
+  if (!validPattern.test(trimmedKey)) {
+    return false;
+  }
+  
+  return true;
+}
+
+// ============================================================================
+// FUNCTION 27 of 63: LOAD COST TRACKING (v4.2 - DISABLED)
+// ============================================================================
+
+/**
+ * Load cost tracking data (DISABLED in v4.2)
+ * Function preserved for backward compatibility but does nothing
+ * Cost tracking removed - API billing handled externally
+ */
+async function loadCostTracking() {
+  console.log('[Popup] Cost tracking disabled in v4.2');
+  // NO-OP: Cost tracking removed, API billing handled externally
+  // Function preserved for backward compatibility
+}
+
+// ============================================================================
+// FUNCTION 28 of 63: INITIALIZE RESULT TABS (v4.2)
+// ============================================================================
+
+/**
+ * Initialize result tabs (Data, Insights, Metadata)
+ * Sets up tab switching functionality
+ */
+function initializeResultTabs() {
+  console.log('[Popup] Initializing result tabs...');
+  
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabName = btn.dataset.tab;
       switchTab(tabName);
     });
   });
   
-  // 🆕 v4.2: Insights generation
-  document.getElementById('generateInsightsBtn')?.addEventListener('click', handleGenerateInsights);
-  
-  document.querySelectorAll('.insight-type-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      currentInsightType = btn.dataset.insight;
-      document.querySelectorAll('.insight-type-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
-  
-  // Fallback banner - PRESERVED FROM v4.1
-  document.getElementById('dismissFallbackBtn')?.addEventListener('click', handleDismissFallbackBanner);
-  document.getElementById('fallbackActionBtn')?.addEventListener('click', () => {
-    window.open('https://www.google.com/chrome/dev/', '_blank');
-  });
+  console.log('[Popup] ✅ Result tabs initialized');
 }
 
-// ════════════════════════════════════════════════════════════════
-// 🆕 v4.2: TAB MANAGEMENT
-// ════════════════════════════════════════════════════════════════
+// ============================================================================
+// FUNCTION 29 of 63: SWITCH TAB (v4.2)
+// ============================================================================
 
+/**
+ * Switch active result tab
+ * Shows selected tab content and hides others
+ * 
+ * @param {string} tabName - Tab to switch to ('data', 'insights', 'metadata')
+ */
 function switchTab(tabName) {
   console.log('[Popup] Switching to tab:', tabName);
   
-  currentTab = tabName;
-  
   // Update tab buttons
-  document.querySelectorAll('.result-tab').forEach(tab => {
-    if (tab.dataset.tab === tabName) {
-      tab.classList.add('active');
-    } else {
-      tab.classList.remove('active');
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  tabButtons.forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.tab === tabName) {
+      btn.classList.add('active');
     }
   });
   
   // Update tab content
-  document.querySelectorAll('.tab-content').forEach(content => {
+  const tabContents = document.querySelectorAll('.tab-content');
+  tabContents.forEach(content => {
     content.classList.remove('active');
+    if (content.id === `${tabName}-tab`) {
+      content.classList.add('active');
+    }
   });
-  
-  const activeContent = document.getElementById(`${tabName}Tab`);
-  if (activeContent) {
-    activeContent.classList.add('active');
-  }
 }
 
-// ════════════════════════════════════════════════════════════════
-// EXTRACTION HANDLER - ENHANCED FROM v4.1 WITH v4.2 METADATA
-// ════════════════════════════════════════════════════════════════
+// ============================================================================
+// FUNCTION 30 of 63: HANDLE EXTRACTION
+// ============================================================================
 
+/**
+ * Main extraction handler - triggers extraction on current tab
+ * Sends message to background script and displays results
+ */
 async function handleExtraction() {
-  if (!tosAccepted) {
-    console.warn('[Popup] TOS not accepted');
-    return;
-  }
+  console.log('[Popup] Starting extraction...');
   
   if (extractionInProgress) {
-    console.warn('[Popup] Extraction already in progress');
+    showNotification('Extraction already in progress', 'warning');
     return;
   }
   
-  console.log('[Popup] Starting extraction...', {
-    mode: currentMode,
-    extractionType: currentExtractionType,
-    provider: currentAIProvider,
-    category: currentCategory,
-    deduplication: deduplicationEnabled,
-    translation: translationEnabled,
-    summarization: summarizationEnabled
-  });
-  
-  extractionInProgress = true;
-  updateExtractButton(true);
+  const extractBtn = document.getElementById('extract-btn');
+  const resultsDiv = document.getElementById('results');
+  const loadingDiv = document.getElementById('loading');
   
   try {
-    // ✅ FIX 1: Get current tab info
-    const [tab] = await chrome.tabs.query({
-      active: true,
-      currentWindow: true
-    });
+    // Mark extraction as in progress
+    extractionInProgress = true;
+    performanceMetrics.extractionStartTime = Date.now();
     
-    if (!tab) {
-      throw new Error('No active tab found');
+    // Update UI
+    if (extractBtn) {
+      extractBtn.disabled = true;
+      extractBtn.textContent = 'Extracting...';
     }
     
-    // ✅ FIX 2: Send message WITH url and tabId
+    if (loadingDiv) loadingDiv.style.display = 'block';
+    if (resultsDiv) resultsDiv.style.display = 'none';
+    
+    // Get translation target if enabled
+    let translationTarget = null;
+    if (translationEnabled) {
+      const langSelect = document.getElementById('translation-language');
+      translationTarget = langSelect ? langSelect.value : 'en';
+    }
+    
+    // Send extraction request to background
     const response = await chrome.runtime.sendMessage({
       action: 'extractData',
       mode: currentMode,
-      extractionType: currentExtractionType,
-      aiProvider: currentAIProvider,
       category: currentCategory,
-      url: tab.url,          // ✅ ADDED
-      tabId: tab.id          // ✅ ADDED
+      extractionType: currentExtractionType,
+      provider: currentProvider,
+      deduplication: deduplicationEnabled,
+      translation: translationEnabled,
+      translationTarget,
+      summarization: summarizationEnabled
     });
     
+    // Update metrics
+    performanceMetrics.extractionEndTime = Date.now();
+    performanceMetrics.totalExtractions++;
+    lastExtractionTime = Date.now();
+    
     if (response.success) {
+      performanceMetrics.successfulExtractions++;
       currentData = response.data;
       
-      // Update item count
-      sessionItemCount.total = response.data.length;
-      sessionItemCount.new = response.metadata?.deduplication?.unique || response.data.length;
-      
-      // Display results
       displayResults(response);
+      showNotification('Extraction complete!', 'success');
       
-      // Update metadata tab
-      updateMetadataTab(response.metadata);
-      
-      // Reload cost tracking
-      await loadCostTracking();
-      
-      console.log('[Popup] ✅ Extraction complete:', {
-        itemCount: response.data.length,
-        duration: response.metadata?.duration,
-        provider: response.metadata?.aiProvider
-      });
-      
+      console.log('[Popup] ✅ Extraction successful');
     } else {
-      throw new Error(response.error || 'Extraction failed');
+      performanceMetrics.failedExtractions++;
+      displayError(response.error || 'Extraction failed');
+      
+      console.error('[Popup] Extraction failed:', response.error);
     }
     
   } catch (error) {
+    performanceMetrics.failedExtractions++;
     console.error('[Popup] Extraction error:', error);
-    displayError(error);
+    displayError(error.message || 'Unknown error');
   } finally {
+    // Reset UI
     extractionInProgress = false;
-    updateExtractButton(false);
+    
+    if (extractBtn) {
+      extractBtn.disabled = false;
+      extractBtn.textContent = 'Extract';
+    }
+    
+    if (loadingDiv) loadingDiv.style.display = 'none';
   }
 }
+// ============================================================================
+// FUNCTION 31 of 63: DISPLAY RESULTS (v4.2 - CostTracker removed)
+// ============================================================================
 
-function updateExtractButton(loading) {
-  const btn = document.getElementById('extractBtn');
-  if (!btn) return;
-  
-  if (loading) {
-    btn.classList.add('loading');
-    btn.disabled = true;
-    btn.innerHTML = '<div class="spinner"></div><span>Extracting...</span>';
-  } else {
-    btn.classList.remove('loading');
-    btn.disabled = false;
-    btn.innerHTML = '<span>🚀 Extract Data</span>';
-  }
-}
-
-// ════════════════════════════════════════════════════════════════
-// RESULTS DISPLAY - ENHANCED FROM v4.1 WITH v4.2 TABS
-// ════════════════════════════════════════════════════════════════
-
+/**
+ * Display extraction results in UI
+ * Shows Data, Insights, and Metadata tabs
+ * 
+ * @param {Object} response - Extraction response from background
+ */
 function displayResults(response) {
   console.log('[Popup] Displaying results...');
   
-  const resultsSection = document.getElementById('resultsSection');
-  if (resultsSection) resultsSection.classList.add('visible');
+  const resultsDiv = document.getElementById('results');
+  const dataTab = document.getElementById('data-tab');
   
-  // Update data tab
-  displayDataTab(response.data);
-  
-  // Update item count badge
-  const dataCountBadge = document.getElementById('dataCountBadge');
-  if (dataCountBadge) dataCountBadge.textContent = response.data.length;
-  
-  // Clear insights (user needs to generate new ones)
-  clearInsightsTab();
-  
-  // Switch to data tab
-  switchTab('data');
-}
-
-function displayDataTab(data) {
-  const itemCountElement = document.getElementById('itemCount');
-  const jsonOutput = document.getElementById('jsonOutput');
-  
-  if (itemCountElement) {
-    const newCount = sessionItemCount.new;
-    const totalCount = sessionItemCount.total;
-    
-    if (deduplicationEnabled && newCount < totalCount) {
-      itemCountElement.textContent = `${newCount} new (${totalCount} total)`;
-    } else {
-      itemCountElement.textContent = `${totalCount} items`;
-    }
-  }
-  
-  if (jsonOutput) {
-    jsonOutput.textContent = JSON.stringify(data, null, 2);
-  }
-}
-
-function updateMetadataTab(metadata) {
-  if (!metadata) return;
-  
-  console.log('[Popup] Updating metadata tab...');
-  
-  // Duration
-  const metaDuration = document.getElementById('metaDuration');
-  if (metaDuration) {
-    metaDuration.textContent = metadata.duration ? `${(metadata.duration / 1000).toFixed(2)}s` : '-';
-  }
-  
-  // Mode
-  const metaMode = document.getElementById('metaMode');
-  if (metaMode) {
-    metaMode.textContent = metadata.mode || '-';
-  }
-  
-  // Provider
-  const metaProvider = document.getElementById('metaProvider');
-  if (metaProvider) {
-    metaProvider.textContent = metadata.aiProvider || '-';
-  }
-  
-  // Category
-  const metaCategory = document.getElementById('metaCategory');
-  if (metaCategory) {
-    metaCategory.textContent = metadata.category || '-';
-  }
-  
-  // Translation
-  const metaTranslation = document.getElementById('metaTranslation');
-  if (metaTranslation) {
-    if (metadata.translation) {
-      metaTranslation.textContent = `✅ ${metadata.translation.translated || 0} items`;
-    } else {
-      metaTranslation.textContent = translationEnabled ? 'Enabled' : 'Disabled';
-    }
-  }
-  
-  // Summarization
-  const metaSummarization = document.getElementById('metaSummarization');
-  if (metaSummarization) {
-    if (metadata.summarization) {
-      metaSummarization.textContent = `✅ ${metadata.summarization.summarized || 0} items`;
-    } else {
-      metaSummarization.textContent = summarizationEnabled ? 'Enabled' : 'Disabled';
-    }
-  }
-  
-  // Deduplication
-  const metaDeduplication = document.getElementById('metaDeduplication');
-  if (metaDeduplication) {
-    if (metadata.deduplication) {
-      metaDeduplication.textContent = `✅ ${metadata.deduplication.duplicates || 0} duplicates removed`;
-    } else {
-      metaDeduplication.textContent = deduplicationEnabled ? 'Enabled' : 'Disabled';
-    }
-  }
-  
-  // Cost
-  const metaCost = document.getElementById('metaCost');
-  if (metaCost) {
-    const cost = metadata.estimatedCost || 0;
-    metaCost.textContent = cost > 0 ? `$${cost.toFixed(4)}` : '$0.00 (Chrome AI)';
-  }
-}
-
-// ════════════════════════════════════════════════════════════════
-// 🆕 v4.2: INSIGHTS GENERATION
-// ════════════════════════════════════════════════════════════════
-
-async function handleGenerateInsights() {
-  if (!currentData || currentData.length === 0) {
-    console.warn('[Popup] No data to analyze');
-    showNotification('No data available. Extract data first.', 'warning');
+  if (!resultsDiv || !dataTab) {
+    console.error('[Popup] Results elements not found');
     return;
   }
   
-  console.log('[Popup] Generating insights:', currentInsightType);
+  try {
+    // Show results section
+    resultsDiv.style.display = 'block';
+    
+    // Display data in Data tab
+    displayDataTab(response.data);
+    
+    // Display metadata in Metadata tab
+    updateMetadataTab(response.metadata);
+    
+    // Switch to Data tab by default
+    switchTab('data');
+    
+    // Clear insights tab (user can generate insights manually)
+    clearInsightsTab();
+    
+    console.log('[Popup] ✅ Results displayed');
+  } catch (error) {
+    console.error('[Popup] Display results error:', error);
+    displayError('Failed to display results');
+  }
+}
+
+// ============================================================================
+// FUNCTION 32 of 63: DISPLAY DATA TAB
+// ============================================================================
+
+/**
+ * Display extracted data in Data tab
+ * Formats JSON data in readable format
+ * 
+ * @param {Object|Array} data - Extracted data
+ */
+function displayDataTab(data) {
+  console.log('[Popup] Displaying data tab...');
   
-  const insightsOutput = document.getElementById('insightsOutput');
-  const generateBtn = document.getElementById('generateInsightsBtn');
-  
-  if (!insightsOutput || !generateBtn) return;
-  
-  // Show loading state
-  insightsOutput.classList.add('loading');
-  insightsOutput.classList.remove('empty');
-  insightsOutput.innerHTML = '<div class="spinner"></div> Generating insights...';
-  
-  generateBtn.disabled = true;
-  generateBtn.innerHTML = '<div class="spinner"></div><span>Generating...</span>';
+  const dataTab = document.getElementById('data-tab');
+  if (!dataTab) return;
   
   try {
+    // Format data as pretty JSON
+    const formattedData = JSON.stringify(data, null, 2);
+    
+    // Create pre element for JSON display
+    const pre = document.createElement('pre');
+    pre.className = 'json-display';
+    pre.textContent = formattedData;
+    
+    // Clear and update tab
+    dataTab.innerHTML = '';
+    dataTab.appendChild(pre);
+    
+    // Add action buttons
+    const actions = document.createElement('div');
+    actions.className = 'result-actions';
+    actions.innerHTML = `
+      <button id="copy-result-btn" class="btn btn-secondary">
+        <span class="icon">📋</span> Copy JSON
+      </button>
+      <button id="download-result-btn" class="btn btn-secondary">
+        <span class="icon">💾</span> Download JSON
+      </button>
+      <button id="convert-csv-btn" class="btn btn-secondary">
+        <span class="icon">📊</span> Convert to CSV
+      </button>
+    `;
+    dataTab.appendChild(actions);
+    
+    // Set up action button handlers
+    document.getElementById('copy-result-btn')?.addEventListener('click', handleCopyResult);
+    document.getElementById('download-result-btn')?.addEventListener('click', handleDownloadResult);
+    document.getElementById('convert-csv-btn')?.addEventListener('click', handleConvertToCSV);
+    
+    console.log('[Popup] ✅ Data tab displayed');
+  } catch (error) {
+    console.error('[Popup] Display data tab error:', error);
+    dataTab.innerHTML = '<p class="error">Failed to display data</p>';
+  }
+}
+
+// ============================================================================
+// FUNCTION 33 of 63: DISPLAY ERROR
+// ============================================================================
+
+/**
+ * Display error message in results area
+ * Shows user-friendly error with retry button
+ * 
+ * @param {string} errorMessage - Error message to display
+ */
+function displayError(errorMessage) {
+  console.log('[Popup] Displaying error:', errorMessage);
+  
+  const resultsDiv = document.getElementById('results');
+  const dataTab = document.getElementById('data-tab');
+  
+  if (!resultsDiv || !dataTab) return;
+  
+  // Show results section
+  resultsDiv.style.display = 'block';
+  
+  // Display error in data tab
+  dataTab.innerHTML = `
+    <div class="error-container">
+      <div class="error-icon">⚠️</div>
+      <h3>Extraction Failed</h3>
+      <p class="error-message">${sanitizeHTML(errorMessage)}</p>
+      <button id="retry-extraction-btn" class="btn btn-primary">
+        <span class="icon">🔄</span> Retry
+      </button>
+    </div>
+  `;
+  
+  // Set up retry button
+  document.getElementById('retry-extraction-btn')?.addEventListener('click', handleExtraction);
+  
+  // Switch to data tab to show error
+  switchTab('data');
+}
+
+// ============================================================================
+// FUNCTION 34 of 63: UPDATE METADATA TAB (v4.2)
+// ============================================================================
+
+/**
+ * Update Metadata tab with extraction details
+ * Shows duration, item count, classification, etc.
+ * 
+ * @param {Object} metadata - Extraction metadata
+ */
+function updateMetadataTab(metadata) {
+  console.log('[Popup] Updating metadata tab...');
+  
+  const metadataTab = document.getElementById('metadata-tab');
+  if (!metadataTab || !metadata) return;
+  
+  try {
+    const duration = metadata.duration || 0;
+    const itemCount = Array.isArray(metadata.data) ? metadata.data.length : 1;
+    
+    metadataTab.innerHTML = `
+      <div class="metadata-grid">
+        <div class="metadata-item">
+          <span class="label">Extraction ID:</span>
+          <span class="value">${metadata.extractionId || 'N/A'}</span>
+        </div>
+        <div class="metadata-item">
+          <span class="label">Duration:</span>
+          <span class="value">${formatDuration(duration)}</span>
+        </div>
+        <div class="metadata-item">
+          <span class="label">Items Extracted:</span>
+          <span class="value">${itemCount}</span>
+        </div>
+        <div class="metadata-item">
+          <span class="label">Classification:</span>
+          <span class="value">${metadata.classification?.type || 'Unknown'}</span>
+        </div>
+        <div class="metadata-item">
+          <span class="label">Confidence:</span>
+          <span class="value">${Math.round((metadata.classification?.confidence || 0) * 100)}%</span>
+        </div>
+        <div class="metadata-item">
+          <span class="label">Provider:</span>
+          <span class="value">${currentProvider === 'chrome' ? 'Chrome AI' : 'Cloud API'}</span>
+        </div>
+        <div class="metadata-item">
+          <span class="label">Mode:</span>
+          <span class="value">${currentMode}</span>
+        </div>
+        <div class="metadata-item">
+          <span class="label">Category:</span>
+          <span class="value">${currentCategory}</span>
+        </div>
+        ${metadata.deduplication ? `
+        <div class="metadata-item">
+          <span class="label">Deduplication:</span>
+          <span class="value">${metadata.deduplication.unique}/${metadata.deduplication.total} unique</span>
+        </div>
+        ` : ''}
+        ${metadata.translation ? `
+        <div class="metadata-item">
+          <span class="label">Translation:</span>
+          <span class="value">${metadata.translation.translated} items translated</span>
+        </div>
+        ` : ''}
+        ${metadata.summarization ? `
+        <div class="metadata-item">
+          <span class="label">Summarization:</span>
+          <span class="value">${metadata.summarization.summarized} items summarized</span>
+        </div>
+        ` : ''}
+        <div class="metadata-item">
+          <span class="label">Timestamp:</span>
+          <span class="value">${new Date(metadata.timestamp || Date.now()).toLocaleString()}</span>
+        </div>
+      </div>
+    `;
+    
+    console.log('[Popup] ✅ Metadata tab updated');
+  } catch (error) {
+    console.error('[Popup] Update metadata error:', error);
+    metadataTab.innerHTML = '<p class="error">Failed to load metadata</p>';
+  }
+}
+
+// ============================================================================
+// FUNCTION 35 of 63: CLEAR INSIGHTS TAB (v4.2)
+// ============================================================================
+
+/**
+ * Clear Insights tab and show generate button
+ * User can manually trigger insights generation
+ */
+function clearInsightsTab() {
+  const insightsTab = document.getElementById('insights-tab');
+  if (!insightsTab) return;
+  
+  insightsTab.innerHTML = `
+    <div class="insights-placeholder">
+      <div class="placeholder-icon">💡</div>
+      <h3>Generate Insights</h3>
+      <p>Generate AI-powered insights from your extracted data</p>
+      <div class="insights-options">
+        <label for="insight-type">Insight Type:</label>
+        <select id="insight-type" class="form-control">
+          <option value="summary">Summary</option>
+          <option value="comparison">Comparison</option>
+          <option value="recommendations">Recommendations</option>
+          <option value="trends">Trends</option>
+          <option value="statistics">Statistics</option>
+        </select>
+      </div>
+      <button id="generate-insights-btn" class="btn btn-primary">
+        <span class="icon">✨</span> Generate Insights
+      </button>
+    </div>
+  `;
+  
+  // Set up generate button
+  document.getElementById('generate-insights-btn')?.addEventListener('click', handleGenerateInsights);
+}
+
+// ============================================================================
+// FUNCTION 36 of 63: HANDLE GENERATE INSIGHTS (v4.2)
+// ============================================================================
+
+/**
+ * Handle insights generation button click
+ * Sends data to background for AI analysis
+ */
+async function handleGenerateInsights() {
+  console.log('[Popup] Generating insights...');
+  
+  if (!currentData) {
+    showNotification('No data available for insights', 'warning');
+    return;
+  }
+  
+  const insightType = document.getElementById('insight-type')?.value || 'summary';
+  const generateBtn = document.getElementById('generate-insights-btn');
+  const insightsTab = document.getElementById('insights-tab');
+  
+  if (!insightsTab) return;
+  
+  try {
+    // Show loading state
+    if (generateBtn) {
+      generateBtn.disabled = true;
+      generateBtn.textContent = 'Generating...';
+    }
+    
+    // Request insights from background
     const response = await chrome.runtime.sendMessage({
       action: 'generateInsights',
-      items: currentData,
-      insightType: currentInsightType
+      data: currentData,
+      insightType
     });
     
     if (response.success) {
-      generatedInsights = response.insights;
-      
       // Display insights
-      insightsOutput.classList.remove('loading');
-      insightsOutput.innerHTML = formatInsights(response.insights);
+      insightsTab.innerHTML = formatInsights(response.insights, insightType);
+      showNotification('Insights generated!', 'success');
       
       console.log('[Popup] ✅ Insights generated');
-      
     } else {
-      throw new Error(response.error || 'Failed to generate insights');
+      throw new Error(response.error || 'Insights generation failed');
     }
-    
   } catch (error) {
     console.error('[Popup] Insights generation error:', error);
-    insightsOutput.classList.remove('loading');
-    insightsOutput.classList.add('empty');
-    insightsOutput.innerHTML = `
-      <div style="color: #DC2626;">
-        ❌ Failed to generate insights<br>
-        <small>${error.message}</small>
+    insightsTab.innerHTML = `
+      <div class="error-container">
+        <p class="error">Failed to generate insights: ${error.message}</p>
+        <button onclick="clearInsightsTab()" class="btn btn-secondary">Try Again</button>
       </div>
     `;
-  } finally {
-    generateBtn.disabled = false;
-    generateBtn.innerHTML = '<span>💡 Generate Insights</span>';
   }
 }
 
-function formatInsights(insights) {
-  if (!insights) return '';
+// ============================================================================
+// FUNCTION 37 of 63: FORMAT INSIGHTS (v4.2)
+// ============================================================================
+
+/**
+ * Format insights data for display
+ * Converts insights object to HTML
+ * 
+ * @param {Object} insights - Insights data
+ * @param {string} type - Insights type
+ * @returns {string} Formatted HTML
+ */
+function formatInsights(insights, type) {
+  if (!insights) return '<p>No insights available</p>';
   
-  // Convert markdown-style formatting to HTML
-  let formatted = insights
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>');
+  let html = `<div class="insights-content">`;
+  html += `<h3>📊 ${type.charAt(0).toUpperCase() + type.slice(1)} Insights</h3>`;
   
-  // Wrap in paragraph if not already wrapped
-  if (!formatted.startsWith('<p>')) {
-    formatted = '<p>' + formatted + '</p>';
+  // Format based on type
+  if (typeof insights === 'string') {
+    html += `<p>${sanitizeHTML(insights)}</p>`;
+  } else if (typeof insights === 'object') {
+    html += '<div class="insights-list">';
+    for (const [key, value] of Object.entries(insights)) {
+      html += `
+        <div class="insight-item">
+          <strong>${key}:</strong>
+          <span>${sanitizeHTML(String(value))}</span>
+        </div>
+      `;
+    }
+    html += '</div>';
   }
   
-  return formatted;
+  html += '</div>';
+  return html;
 }
 
-function clearInsightsTab() {
-  const insightsOutput = document.getElementById('insightsOutput');
-  if (insightsOutput) {
-    insightsOutput.classList.remove('loading');
-    insightsOutput.classList.add('empty');
-    insightsOutput.innerHTML = 'Click "Generate Insights" to analyze extracted data';
-  }
-  generatedInsights = null;
-}
+// ============================================================================
+// FUNCTION 38 of 63: HANDLE COPY RESULT
+// ============================================================================
 
-// ════════════════════════════════════════════════════════════════
-// RESULT ACTIONS - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
-
+/**
+ * Copy extracted data to clipboard as JSON
+ */
 async function handleCopyResult() {
+  console.log('[Popup] Copying result...');
+  
   if (!currentData) {
     showNotification('No data to copy', 'warning');
     return;
   }
   
   try {
-    const json = JSON.stringify(currentData, null, 2);
-    await navigator.clipboard.writeText(json);
-    showNotification('✅ Copied to clipboard', 'success');
-    console.log('[Popup] Data copied to clipboard');
+    const jsonString = JSON.stringify(currentData, null, 2);
+    await navigator.clipboard.writeText(jsonString);
+    
+    showNotification('Copied to clipboard!', 'success');
+    console.log('[Popup] ✅ Result copied');
   } catch (error) {
     console.error('[Popup] Copy error:', error);
-    showNotification('❌ Failed to copy', 'error');
+    showNotification('Failed to copy', 'error');
   }
 }
 
-async function handleDownloadResult() {
+// ============================================================================
+// FUNCTION 39 of 63: HANDLE DOWNLOAD RESULT
+// ============================================================================
+
+/**
+ * Download extracted data as JSON file
+ */
+function handleDownloadResult() {
+  console.log('[Popup] Downloading result...');
+  
   if (!currentData) {
     showNotification('No data to download', 'warning');
     return;
   }
   
   try {
-    const json = JSON.stringify(currentData, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
+    const jsonString = JSON.stringify(currentData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     
     const a = document.createElement('a');
@@ -993,31 +1529,39 @@ async function handleDownloadResult() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    showNotification('✅ Downloaded', 'success');
-    console.log('[Popup] Data downloaded');
+    showNotification('Download started!', 'success');
+    console.log('[Popup] ✅ Result downloaded');
   } catch (error) {
     console.error('[Popup] Download error:', error);
-    showNotification('❌ Download failed', 'error');
+    showNotification('Failed to download', 'error');
   }
 }
 
+// ============================================================================
+// FUNCTION 40 of 63: HANDLE CONVERT TO CSV
+// ============================================================================
+
+/**
+ * Convert extracted data to CSV and download
+ * Sends data to background for conversion
+ */
 async function handleConvertToCSV() {
+  console.log('[Popup] Converting to CSV...');
+  
   if (!currentData) {
     showNotification('No data to convert', 'warning');
     return;
   }
   
-  console.log('[Popup] Converting to CSV...');
-  showNotification('🔄 Converting to CSV...', 'info');
-  
   try {
+    // Request CSV conversion from background
     const response = await chrome.runtime.sendMessage({
       action: 'convertToCSV',
-      data: currentData,
-      aiProvider: currentAIProvider
+      data: currentData
     });
     
-    if (response.success) {
+    if (response.success && response.csv) {
+      // Download CSV
       const blob = new Blob([response.csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       
@@ -1029,637 +1573,914 @@ async function handleConvertToCSV() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      showNotification('✅ CSV downloaded', 'success');
-      console.log('[Popup] CSV downloaded');
+      showNotification('CSV downloaded!', 'success');
+      console.log('[Popup] ✅ CSV conversion complete');
     } else {
       throw new Error(response.error || 'CSV conversion failed');
     }
   } catch (error) {
     console.error('[Popup] CSV conversion error:', error);
-    showNotification('❌ CSV conversion failed', 'error');
+    showNotification('Failed to convert to CSV', 'error');
   }
 }
+// ============================================================================
+// FUNCTION 41 of 63: SHOW NOTIFICATION
+// ============================================================================
 
-// ════════════════════════════════════════════════════════════════
-// ERROR DISPLAY - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
-
-function displayError(error) {
-  console.error('[Popup] Displaying error:', error);
-  
-  const errorMessage = error.message || String(error);
-  const errorConfig = ERROR_MESSAGES[errorMessage] || ERROR_MESSAGES[Object.keys(ERROR_MESSAGES).find(key => errorMessage.includes(key))];
-  
-  if (errorConfig) {
-    showStructuredError(errorConfig);
-  } else {
-    showNotification(`❌ ${errorMessage}`, 'error');
-  }
-}
-
-function showStructuredError(errorConfig) {
-  const resultsSection = document.getElementById('resultsSection');
-  const jsonOutput = document.getElementById('jsonOutput');
-  
-  if (!resultsSection || !jsonOutput) return;
-  
-  resultsSection.classList.add('visible');
-  
-  let html = `
-    <div style="padding: 20px; background: ${errorConfig.severity === 'error' ? '#FEE2E2' : '#FEF3C7'}; border-radius: 8px;">
-      <div style="font-size: 16px; font-weight: 700; color: ${errorConfig.severity === 'error' ? '#DC2626' : '#92400E'}; margin-bottom: 12px;">
-        ${errorConfig.title}
-      </div>
-      <div style="font-size: 13px; color: #374151; margin-bottom: 16px; line-height: 1.6;">
-        ${errorConfig.message}
-      </div>
-      <div style="font-size: 13px; color: #4B5563; margin-bottom: 8px; font-weight: 600;">
-        Recovery Steps:
-      </div>
-      <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-  `;
-  
-  errorConfig.suggestions.forEach(suggestion => {
-    html += `<li>${suggestion}</li>`;
-  });
-  
-  html += `
-      </ul>
-    </div>
-  `;
-  
-  jsonOutput.innerHTML = html;
-  
-  // Auto-recovery action
-  if (errorConfig.recoveryAction === 'switch_to_chrome_ai' && currentAIProvider !== 'CHROME_BUILTIN') {
-    setTimeout(() => {
-      console.log('[Popup] Auto-switching to Chrome AI...');
-      setAIProvider('CHROME_BUILTIN');
-    }, 3000);
-  }
-}
-
-// ════════════════════════════════════════════════════════════════
-// UI HELPERS - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
-
+/**
+ * Show toast notification to user
+ * Auto-dismisses after 3 seconds
+ * 
+ * @param {string} message - Notification message
+ * @param {string} type - Type: 'success', 'error', 'warning', 'info'
+ */
 function showNotification(message, type = 'info') {
-  console.log(`[Popup] Notification [${type}]:`, message);
+  console.log(`[Popup] Notification (${type}):`, message);
   
-  // Create toast notification
-  const toast = document.createElement('div');
-  toast.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: ${type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#667eea'};
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 10000;
-    animation: slideInRight 0.3s ease;
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+  
+  // Add icon based on type
+  const icons = {
+    success: '✅',
+    error: '❌',
+    warning: '⚠️',
+    info: 'ℹ️'
+  };
+  
+  notification.innerHTML = `
+    <span class="notification-icon">${icons[type] || icons.info}</span>
+    <span class="notification-message">${sanitizeHTML(message)}</span>
   `;
-  toast.textContent = message;
   
-  document.body.appendChild(toast);
+  // Add to page
+  document.body.appendChild(notification);
   
+  // Show with animation
   setTimeout(() => {
-    toast.style.animation = 'slideOutRight 0.3s ease';
+    notification.classList.add('show');
+  }, 10);
+  
+  // Auto-dismiss after 3 seconds
+  setTimeout(() => {
+    notification.classList.remove('show');
     setTimeout(() => {
-      document.body.removeChild(toast);
+      notification.remove();
     }, 300);
   }, 3000);
 }
 
-function initializeModeSelector() {
-  updateModeButtonStates();
-}
+// ============================================================================
+// FUNCTION 42 of 63: SHOW STRUCTURED ERROR
+// ============================================================================
 
-function updateModeButtonStates() {
-  document.querySelectorAll('.mode-btn').forEach(btn => {
-    if (btn.dataset.mode === currentMode) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
-  });
-}
-
-function initializeExtractionTypeSelector() {
-  updateExtractionTypeButtonStates();
-  updateExtractionTypeDescription();
-}
-
-function updateExtractionTypeButtonStates() {
-  document.querySelectorAll('.extraction-type-btn').forEach(btn => {
-    btn.classList.remove('active');
-  });
+/**
+ * Show structured error with details
+ * Used for detailed error reporting
+ * 
+ * @param {Object} errorData - Error details object
+ */
+function showStructuredError(errorData) {
+  console.log('[Popup] Structured error:', errorData);
   
-  if (currentExtractionType === 'MULTI') {
-    document.getElementById('multiItemBtn')?.classList.add('active');
+  const { title, message, details, code } = errorData;
+  
+  const errorHtml = `
+    <div class="structured-error">
+      <h3>${sanitizeHTML(title || 'Error')}</h3>
+      <p class="error-message">${sanitizeHTML(message || 'An error occurred')}</p>
+      ${code ? `<p class="error-code">Error Code: ${sanitizeHTML(code)}</p>` : ''}
+      ${details ? `<pre class="error-details">${sanitizeHTML(details)}</pre>` : ''}
+    </div>
+  `;
+  
+  const dataTab = document.getElementById('data-tab');
+  if (dataTab) {
+    dataTab.innerHTML = errorHtml;
+  }
+}
+
+// ============================================================================
+// FUNCTION 43 of 63: UPDATE COST DISPLAY (v4.2 - DISABLED)
+// ============================================================================
+
+/**
+ * Update cost display (DISABLED in v4.2)
+ * Function preserved for backward compatibility but does nothing
+ * Cost tracking removed - API billing handled externally
+ */
+function updateCostDisplay() {
+  console.log('[Popup] Cost display disabled in v4.2');
+  // NO-OP: Cost tracking removed, API billing handled externally
+  // Function preserved for backward compatibility
+}
+
+// ============================================================================
+// FUNCTION 44 of 63: UPDATE COST ESTIMATE (v4.2 - DISABLED)
+// ============================================================================
+
+/**
+ * Update cost estimate (DISABLED in v4.2)
+ * Function preserved for backward compatibility but does nothing
+ * Cost tracking removed - API billing handled externally
+ */
+function updateCostEstimate() {
+  console.log('[Popup] Cost estimate disabled in v4.2');
+  // NO-OP: Cost tracking removed, API billing handled externally
+  // Function preserved for backward compatibility
+}
+
+// ============================================================================
+// FUNCTION 45 of 63: SHOW BUDGET WARNING (v4.2 - DISABLED)
+// ============================================================================
+
+/**
+ * Show budget warning (DISABLED in v4.2)
+ * Function preserved for backward compatibility but does nothing
+ * Cost tracking removed - API billing handled externally
+ */
+function showBudgetWarning(percentage, spent, limit) {
+  console.log('[Popup] Budget warning disabled in v4.2');
+  // NO-OP: Cost tracking removed, API billing handled externally
+  // Function preserved for backward compatibility
+}
+
+// ============================================================================
+// FUNCTION 46 of 63: UPDATE EXTRACT BUTTON
+// ============================================================================
+
+/**
+ * Update extract button state based on configuration
+ * Enables/disables button and updates text
+ */
+function updateExtractButton() {
+  const extractBtn = document.getElementById('extract-btn');
+  if (!extractBtn) return;
+  
+  // Check if API key is configured (for Cloud API)
+  if (currentProvider === 'cloud') {
+    chrome.storage.local.get('geminiApiKey').then(({ geminiApiKey }) => {
+      if (!geminiApiKey) {
+        extractBtn.disabled = true;
+        extractBtn.title = 'Please configure API key first';
+      } else {
+        extractBtn.disabled = extractionInProgress;
+        extractBtn.title = extractionInProgress ? 'Extraction in progress...' : 'Start extraction';
+      }
+    });
   } else {
-    document.getElementById('singleItemBtn')?.classList.add('active');
+    // Chrome AI doesn't need API key
+    extractBtn.disabled = extractionInProgress;
+    extractBtn.title = extractionInProgress ? 'Extraction in progress...' : 'Start extraction';
   }
 }
 
-function setExtractionType(type) {
-  currentExtractionType = type;
-  updateExtractionTypeButtonStates();
-  updateExtractionTypeDescription();
-  updateCostEstimate();
-}
+// ============================================================================
+// FUNCTION 47 of 63: UPDATE TRANSLATION PROGRESS (v4.2)
+// ============================================================================
 
-function updateExtractionTypeDescription() {
-  const desc = document.getElementById('extractionTypeDesc');
-  if (!desc) return;
+/**
+ * Update translation progress indicator
+ * Shows progress during batch translation
+ * 
+ * @param {number} current - Current item index
+ * @param {number} total - Total items
+ */
+function updateTranslationProgress(current, total) {
+  const progressBar = document.getElementById('translation-progress');
+  const progressText = document.getElementById('translation-progress-text');
   
-  if (currentExtractionType === 'MULTI') {
-    desc.innerHTML = '<strong>MULTI Mode:</strong> Extract all items from current page (product listings, search results, feeds).';
-  } else {
-    desc.innerHTML = '<strong>SINGLE Mode:</strong> Extract one item using screenshot + Vision API (product details, full articles).';
+  if (progressBar && progressText) {
+    const percentage = Math.round((current / total) * 100);
+    progressBar.style.width = `${percentage}%`;
+    progressText.textContent = `${current}/${total} items translated`;
   }
 }
 
-function initializeAIProviderSelector() {
-  updateAIProviderButtonStates();
-  updateAPIKeyVisibility();
-}
+// ============================================================================
+// FUNCTION 48 of 63: UPDATE SUMMARIZATION PROGRESS (v4.2)
+// ============================================================================
 
-function updateAIProviderButtonStates() {
-  document.querySelectorAll('.provider-btn').forEach(btn => {
-    btn.classList.remove('active');
-  });
+/**
+ * Update summarization progress indicator
+ * Shows progress during batch summarization
+ * 
+ * @param {number} current - Current item index
+ * @param {number} total - Total items
+ */
+function updateSummarizationProgress(current, total) {
+  const progressBar = document.getElementById('summarization-progress');
+  const progressText = document.getElementById('summarization-progress-text');
   
-  if (currentAIProvider === 'CHROME_BUILTIN') {
-    document.getElementById('chromeAIBtn')?.classList.add('active');
-  } else {
-    document.getElementById('cloudAPIBtn')?.classList.add('active');
+  if (progressBar && progressText) {
+    const percentage = Math.round((current / total) * 100);
+    progressBar.style.width = `${percentage}%`;
+    progressText.textContent = `${current}/${total} items summarized`;
   }
 }
 
-async function setAIProvider(provider) {
-  console.log('[Popup] Setting AI provider to:', provider);
+// ============================================================================
+// FUNCTION 49 of 63: UPDATE SCROLL PROGRESS
+// ============================================================================
+
+/**
+ * Update scroll progress indicator in results
+ * Shows how far user has scrolled through results
+ */
+function updateScrollProgress() {
+  const resultsDiv = document.getElementById('results');
+  const progressBar = document.getElementById('scroll-progress');
   
-  currentAIProvider = provider;
+  if (!resultsDiv || !progressBar) return;
   
-  await chrome.runtime.sendMessage({
-    action: 'setAIProvider',
-    provider
-  });
+  const scrollTop = resultsDiv.scrollTop;
+  const scrollHeight = resultsDiv.scrollHeight - resultsDiv.clientHeight;
+  const percentage = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
   
-  updateAIProviderButtonStates();
-  updateAPIKeyVisibility();
-  updatePrivacyBadges();
-  updateCostEstimate();
+  progressBar.style.width = `${percentage}%`;
 }
 
-function updateAPIKeyVisibility() {
-  const apiKeySection = document.getElementById('apiKeySection');
-  if (!apiKeySection) return;
+// ============================================================================
+// FUNCTION 50 of 63: LOAD EXTRACTION HISTORY (v4.2)
+// ============================================================================
+
+/**
+ * Load extraction history from storage
+ * Displays recent extractions in UI
+ */
+async function loadExtractionHistory() {
+  console.log('[Popup] Loading extraction history...');
   
-  if (currentAIProvider === 'CLOUD_API') {
-    apiKeySection.style.display = 'block';
-  } else {
-    apiKeySection.style.display = 'none';
-  }
-}
-
-function initializeCategorySelector() {
-  const categorySelect = document.getElementById('categorySelect');
-  if (categorySelect) {
-    categorySelect.value = currentCategory;
-  }
-}
-
-async function handleCategoryChange(e) {
-  currentCategory = e.target.value;
-  console.log('[Popup] Category changed to:', currentCategory);
-  
-  await chrome.runtime.sendMessage({
-    action: 'setCategory',
-    category: currentCategory
-  });
-}
-
-// 🆕 v4.2: Initialize result tabs
-function initializeResultTabs() {
-  switchTab('data');
-}
-
-// ════════════════════════════════════════════════════════════════
-// SETTINGS MANAGEMENT - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
-
-async function loadAIProvider() {
   try {
-    const response = await chrome.runtime.sendMessage({ action: 'getAIProvider' });
-    if (response.success) {
-      currentAIProvider = response.provider;
-      console.log('[Popup] AI provider loaded:', currentAIProvider);
+    const { extractionHistory } = await chrome.storage.local.get('extractionHistory');
+    
+    if (!extractionHistory || !Array.isArray(extractionHistory) || extractionHistory.length === 0) {
+      console.log('[Popup] No extraction history found');
+      return;
     }
-  } catch (error) {
-    console.error('[Popup] Error loading AI provider:', error);
-  }
-}
-
-async function loadApiKey() {
-  try {
-    const response = await chrome.runtime.sendMessage({ action: 'getApiKey' });
-    if (response.success && response.apiKey) {
-      document.getElementById('apiKeyInput').value = response.apiKey;
-      await validateApiKey(response.apiKey);
-      console.log('[Popup] API key loaded');
-    }
-  } catch (error) {
-    console.error('[Popup] Error loading API key:', error);
-  }
-}
-
-async function loadCategory() {
-  try {
-    const response = await chrome.runtime.sendMessage({ action: 'getCategory' });
-    if (response.success) {
-      currentCategory = response.category;
-      console.log('[Popup] Category loaded:', currentCategory);
-    }
-  } catch (error) {
-    console.error('[Popup] Error loading category:', error);
-  }
-}
-
-async function handleSaveApiKey() {
-  const input = document.getElementById('apiKeyInput');
-  const apiKey = input?.value?.trim();
-  
-  if (!apiKey) {
-    showNotification('❌ Please enter an API key', 'error');
-    return;
-  }
-  
-  console.log('[Popup] Saving API key...');
-  showNotification('🔄 Validating API key...', 'info');
-  
-  try {
-    await chrome.runtime.sendMessage({
-      action: 'saveApiKey',
-      apiKey
+    
+    const historyDiv = document.getElementById('extraction-history');
+    if (!historyDiv) return;
+    
+    // Display most recent 5 extractions
+    const recentExtractions = extractionHistory.slice(-5).reverse();
+    
+    historyDiv.innerHTML = '<h4>Recent Extractions</h4>';
+    
+    recentExtractions.forEach((extraction, index) => {
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      item.innerHTML = `
+        <div class="history-header">
+          <span class="history-timestamp">${new Date(extraction.timestamp).toLocaleString()}</span>
+          <span class="history-items">${extraction.itemCount || 0} items</span>
+        </div>
+        <div class="history-details">
+          <span class="history-mode">${extraction.mode || 'auto'}</span>
+          <span class="history-type">${extraction.extractionType || 'MULTI'}</span>
+          <span class="history-duration">${formatDuration(extraction.duration || 0)}</span>
+        </div>
+      `;
+      
+      // Add click handler to load historical extraction
+      item.addEventListener('click', () => {
+        if (extraction.data) {
+          currentData = extraction.data;
+          displayResults({ data: extraction.data, metadata: extraction });
+          showNotification('Historical extraction loaded', 'info');
+        }
+      });
+      
+      historyDiv.appendChild(item);
     });
     
-    await validateApiKey(apiKey);
-    
+    console.log('[Popup] ✅ Extraction history loaded:', recentExtractions.length);
   } catch (error) {
-    console.error('[Popup] Error saving API key:', error);
-    showNotification('❌ Failed to save API key', 'error');
+    console.error('[Popup] Load extraction history error:', error);
   }
 }
+// ============================================================================
+// FUNCTION 51 of 63: CHECK AND SHOW FALLBACK BANNER
+// ============================================================================
 
-async function validateApiKey(apiKey) {
-  const statusElement = document.getElementById('apiStatus');
-  const statusText = document.getElementById('apiStatusText');
-  
-  if (!statusElement || !statusText) return;
-  
-  statusElement.style.display = 'flex';
-  statusText.textContent = 'Validating...';
-  statusElement.classList.remove('valid', 'invalid');
-  
-  try {
-    const response = await chrome.runtime.sendMessage({
-      action: 'validateApiKey',
-      apiKey
-    });
-    
-    if (response.valid) {
-      statusText.textContent = `✅ Valid (${response.modelCount || 0} models)`;
-      statusElement.classList.add('valid');
-      showNotification('✅ API key valid', 'success');
-    } else {
-      statusText.textContent = '❌ Invalid key';
-      statusElement.classList.add('invalid');
-      showNotification('❌ API key invalid', 'error');
-    }
-  } catch (error) {
-    console.error('[Popup] API key validation error:', error);
-    statusText.textContent = '❌ Validation failed';
-    statusElement.classList.add('invalid');
-  }
-}
-
-// ════════════════════════════════════════════════════════════════
-// FALLBACK BANNER - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
-
+/**
+ * Check if fallback banner should be shown
+ * Shows banner if Chrome AI is unavailable and last shown was >24h ago
+ */
 async function checkAndShowFallbackBanner() {
   console.log('[Popup] Checking fallback banner...');
   
   try {
-    const response = await chrome.runtime.sendMessage({ action: 'checkFallbackBanner' });
+    // Check Chrome AI availability
+    const availableCount = Object.values(chromeAIAvailable).filter(Boolean).length;
     
-    if (response.success && response.shouldShow) {
-      // Check if we're in fallback situation
-      if (!chromeAIAvailable && currentAIProvider === 'CHROME_BUILTIN') {
-        showFallbackBanner('chromeAIUnavailable');
+    // If Chrome AI is fully available, don't show banner
+    if (availableCount === Object.keys(chromeAIAvailable).length) {
+      console.log('[Popup] Chrome AI fully available, no banner needed');
+      return;
+    }
+    
+    // Check when banner was last dismissed
+    const { fallbackBannerDismissed } = await chrome.storage.local.get('fallbackBannerDismissed');
+    
+    if (fallbackBannerDismissed) {
+      const hoursSinceDismissed = (Date.now() - fallbackBannerDismissed) / (1000 * 60 * 60);
+      
+      if (hoursSinceDismissed < 24) {
+        console.log('[Popup] Fallback banner dismissed recently, not showing');
+        return;
       }
     }
+    
+    // Show fallback banner
+    showFallbackBanner(availableCount);
+    
   } catch (error) {
-    console.error('[Popup] Error checking fallback banner:', error);
+    console.error('[Popup] Check fallback banner error:', error);
   }
 }
 
-function showFallbackBanner(type) {
-  const banner = document.getElementById('fallbackBanner');
-  const title = document.getElementById('fallbackBannerTitle');
-  const message = document.getElementById('fallbackBannerMessage');
-  const actionBtn = document.getElementById('fallbackActionBtn');
+// ============================================================================
+// FUNCTION 52 of 63: SHOW FALLBACK BANNER
+// ============================================================================
+
+/**
+ * Show fallback banner informing user about Chrome AI status
+ * Provides option to use Cloud API as fallback
+ * 
+ * @param {number} availableCount - Number of available Chrome AI APIs
+ */
+function showFallbackBanner(availableCount) {
+  console.log('[Popup] Showing fallback banner');
   
-  if (!banner) return;
+  const bannerDiv = document.getElementById('fallback-banner');
+  if (!bannerDiv) return;
   
-  if (type === 'chromeAIUnavailable') {
-    if (title) title.textContent = 'Chrome Built-in AI Unavailable';
-    if (message) {
-      message.textContent = 'Falling back to Cloud API (slower). Get Chrome Dev 128+ for 10× faster extraction.';
-    }
-    if (actionBtn) actionBtn.textContent = 'Download Chrome Dev';
-  } else if (type === 'rateLimitFallback') {
-    if (title) title.textContent = 'Rate Limit Hit - Auto-Switched';
-    if (message) {
-      message.textContent = 'Cloud API rate limit reached. Automatically switched to Chrome AI for unlimited requests.';
-    }
-    if (actionBtn) actionBtn.textContent = 'Got it';
-  }
+  const totalAPIs = Object.keys(chromeAIAvailable).length;
   
-  banner.classList.add('visible');
-  console.log('[Popup] Fallback banner shown:', type);
+  bannerDiv.innerHTML = `
+    <div class="banner-content">
+      <span class="banner-icon">ℹ️</span>
+      <div class="banner-text">
+        <strong>Limited Chrome AI Availability</strong>
+        <p>Only ${availableCount}/${totalAPIs} Chrome AI APIs are available. Consider using Cloud API for full functionality.</p>
+      </div>
+      <button id="dismiss-fallback-btn" class="btn-close" title="Dismiss for 24 hours">×</button>
+    </div>
+  `;
+  
+  bannerDiv.style.display = 'block';
+  
+  // Set up dismiss button
+  document.getElementById('dismiss-fallback-btn')?.addEventListener('click', handleDismissFallbackBanner);
 }
 
+// ============================================================================
+// FUNCTION 53 of 63: HANDLE DISMISS FALLBACK BANNER
+// ============================================================================
+
+/**
+ * Handle fallback banner dismiss
+ * Saves dismiss timestamp to prevent re-showing for 24 hours
+ */
 async function handleDismissFallbackBanner() {
-  const banner = document.getElementById('fallbackBanner');
-  if (banner) banner.classList.remove('visible');
+  console.log('[Popup] Dismissing fallback banner');
   
   try {
-    await chrome.runtime.sendMessage({ action: 'dismissFallbackBanner' });
-    console.log('[Popup] Fallback banner dismissed');
+    await chrome.storage.local.set({
+      fallbackBannerDismissed: Date.now()
+    });
+    
+    const bannerDiv = document.getElementById('fallback-banner');
+    if (bannerDiv) {
+      bannerDiv.style.display = 'none';
+    }
+    
+    console.log('[Popup] ✅ Fallback banner dismissed');
   } catch (error) {
-    console.error('[Popup] Error dismissing fallback banner:', error);
+    console.error('[Popup] Dismiss fallback banner error:', error);
   }
 }
 
-// ════════════════════════════════════════════════════════════════
-// MESSAGE LISTENER - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
+// ============================================================================
+// FUNCTION 54 of 63: SETUP EVENT LISTENERS
+// ============================================================================
 
+/**
+ * Set up all event listeners for UI elements
+ * Called once during initialization
+ */
+function setupEventListeners() {
+  console.log('[Popup] Setting up event listeners...');
+  
+  // Extract button
+  const extractBtn = document.getElementById('extract-btn');
+  if (extractBtn) {
+    extractBtn.addEventListener('click', handleExtraction);
+  }
+  
+  // Save API key button
+  const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+  if (saveApiKeyBtn) {
+    saveApiKeyBtn.addEventListener('click', handleSaveApiKey);
+  }
+  
+  // Detect template button (already set up in initializeTemplateSelector)
+  
+  // Results scroll progress
+  const resultsDiv = document.getElementById('results');
+  if (resultsDiv) {
+    resultsDiv.addEventListener('scroll', updateScrollProgress);
+  }
+  
+  // Category selector (already set up in initializeCategorySelector)
+  
+  // Window beforeunload - warn if extraction in progress
+  window.addEventListener('beforeunload', (e) => {
+    if (extractionInProgress) {
+      e.preventDefault();
+      e.returnValue = 'Extraction in progress. Are you sure you want to leave?';
+      return e.returnValue;
+    }
+  });
+  
+  console.log('[Popup] ✅ Event listeners set up');
+}
+
+// ============================================================================
+// FUNCTION 55 of 63: SETUP MESSAGE LISTENER
+// ============================================================================
+
+/**
+ * Set up message listener for background script communications
+ * Handles progress updates and status messages
+ */
 function setupMessageListener() {
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('[Popup] Message received:', request.action);
+  console.log('[Popup] Setting up message listener...');
+  
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('[Popup] Message received:', message);
     
-    switch (request.action) {
-      case 'showFallbackBanner':
-        showFallbackBanner(request.bannerType);
-        break;
-      
-      case 'scrollProgress':
-        updateScrollProgress(request.scrollCount, request.itemCount);
-        break;
-      
-      case 'budgetWarning':
-        showBudgetWarning(request);
-        break;
-      
+    switch (message.action) {
       case 'translationProgress':
-        updateTranslationProgress(request.progress);
+        updateTranslationProgress(message.current, message.total);
         break;
       
       case 'summarizationProgress':
-        updateSummarizationProgress(request.progress);
+        updateSummarizationProgress(message.current, message.total);
+        break;
+      
+      case 'extractionProgress':
+        showNotification(`Extraction: ${message.status}`, 'info');
+        break;
+      
+      case 'extractionComplete':
+        showNotification('Extraction complete!', 'success');
+        break;
+      
+      case 'extractionError':
+        showNotification(`Error: ${message.error}`, 'error');
         break;
       
       default:
-        console.warn('[Popup] Unknown message action:', request.action);
+        console.log('[Popup] Unknown message action:', message.action);
     }
     
-    sendResponse({ success: true });
-    return true;
+    sendResponse({ received: true });
   });
+  
+  console.log('[Popup] ✅ Message listener set up');
 }
 
-function updateScrollProgress(scrollCount, itemCount) {
-  console.log('[Popup] Scroll progress:', { scrollCount, itemCount });
-  // Could display progress indicator in UI if needed
+// ============================================================================
+// FUNCTION 56 of 63: SANITIZE HTML
+// ============================================================================
+
+/**
+ * Sanitize HTML string to prevent XSS
+ * Escapes HTML special characters
+ * 
+ * @param {string} str - String to sanitize
+ * @returns {string} Sanitized string
+ */
+function sanitizeHTML(str) {
+  if (!str) return '';
+  
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
-// 🆕 v4.2: Budget warning notification
-function showBudgetWarning(data) {
-  const percentage = (data.current / data.limit) * 100;
-  showNotification(`⚠️ Budget Warning: ${percentage.toFixed(0)}% of ${data.type} limit used`, 'warning');
-}
+// ============================================================================
+// FUNCTION 57 of 63: FORMAT DURATION
+// ============================================================================
 
-// 🆕 v4.2: Translation progress notification
-function updateTranslationProgress(progress) {
-  console.log('[Popup] Translation progress:', progress);
-  // Could show progress bar in UI
-}
-
-// 🆕 v4.2: Summarization progress notification
-function updateSummarizationProgress(progress) {
-  console.log('[Popup] Summarization progress:', progress);
-  // Could show progress bar in UI
-}
-
-// ════════════════════════════════════════════════════════════════
-// EXTRACTION HISTORY - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
-
-async function loadExtractionHistory() {
-  try {
-    const response = await chrome.runtime.sendMessage({ action: 'getExtractionHistory' });
-    
-    if (response.success && response.history) {
-      console.log('[Popup] Extraction history loaded:', response.history.length, 'entries');
-      // Could display history in UI if needed
-    }
-  } catch (error) {
-    console.error('[Popup] Error loading extraction history:', error);
+/**
+ * Format duration in milliseconds to human-readable string
+ * 
+ * @param {number} ms - Duration in milliseconds
+ * @returns {string} Formatted duration (e.g., "2.5s", "1m 30s")
+ */
+function formatDuration(ms) {
+  if (!ms || ms < 0) return '0s';
+  
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  
+  if (hours > 0) {
+    const remainingMinutes = minutes % 60;
+    return `${hours}h ${remainingMinutes}m`;
+  } else if (minutes > 0) {
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+  } else if (seconds > 0) {
+    return `${seconds}s`;
+  } else {
+    return `${ms}ms`;
   }
 }
 
-// ════════════════════════════════════════════════════════════════
-// UTILITY FUNCTIONS - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
+// ============================================================================
+// FUNCTION 58 of 63: FORMAT BYTES
+// ============================================================================
 
-function formatDuration(ms) {
-  if (ms < 1000) return `${ms}ms`;
-  const seconds = (ms / 1000).toFixed(2);
-  return `${seconds}s`;
-}
-
+/**
+ * Format bytes to human-readable file size
+ * 
+ * @param {number} bytes - Size in bytes
+ * @returns {string} Formatted size (e.g., "1.5 KB", "2.3 MB")
+ */
 function formatBytes(bytes) {
-  if (bytes === 0) return '0 Bytes';
+  if (!bytes || bytes === 0) return '0 B';
+  
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  
+  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${units[i]}`;
 }
 
-function sanitizeHTML(html) {
-  const temp = document.createElement('div');
-  temp.textContent = html;
-  return temp.innerHTML;
-}
+// ============================================================================
+// FUNCTION 59 of 63: DEBOUNCE
+// ============================================================================
 
+/**
+ * Debounce function to limit rate of function calls
+ * Used for input handlers and scroll events
+ * 
+ * @param {Function} func - Function to debounce
+ * @param {number} wait - Wait time in milliseconds
+ * @returns {Function} Debounced function
+ */
 function debounce(func, wait) {
   let timeout;
+  
   return function executedFunction(...args) {
     const later = () => {
       clearTimeout(timeout);
       func(...args);
     };
+    
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
   };
 }
 
-// ════════════════════════════════════════════════════════════════
-// KEYBOARD SHORTCUTS - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
+// ============================================================================
+// FUNCTION 60 of 63: PERFORMANCE OBSERVER (Optional)
+// ============================================================================
 
-document.addEventListener('keydown', (e) => {
-  // Ctrl/Cmd + Enter to extract
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-    if (!extractionInProgress) {
-      handleExtraction();
-    }
+/**
+ * Set up performance observer for monitoring
+ * Tracks extraction performance and resource usage
+ */
+function setupPerformanceObserver() {
+  if (typeof PerformanceObserver === 'undefined') {
+    console.warn('[Popup] PerformanceObserver not available');
+    return;
   }
   
-  // Ctrl/Cmd + C to copy (when results visible)
-  if ((e.ctrlKey || e.metaKey) && e.key === 'c' && currentData) {
-    const selection = window.getSelection();
-    if (!selection.toString()) {
-      e.preventDefault();
-      handleCopyResult();
-    }
+  try {
+    const perfObserver = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        console.log('[Popup] Performance:', {
+          name: entry.name,
+          duration: entry.duration,
+          startTime: entry.startTime
+        });
+      }
+    });
+    
+    perfObserver.observe({ entryTypes: ['measure', 'navigation'] });
+    
+    console.log('[Popup] ✅ Performance observer set up');
+  } catch (error) {
+    console.warn('[Popup] Performance observer setup failed:', error);
   }
-  
-  // Ctrl/Cmd + S to download (when results visible)
-  if ((e.ctrlKey || e.metaKey) && e.key === 's' && currentData) {
-    e.preventDefault();
-    handleDownloadResult();
-  }
-  
-  // Escape to close modals
-  if (e.key === 'Escape') {
-    const modal = document.querySelector('.modal.visible');
-    if (modal) {
-      modal.classList.remove('visible');
-    }
-  }
-  
-  // 🆕 v4.2: Tab shortcuts
-  if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '3' && currentData) {
-    e.preventDefault();
-    const tabs = ['data', 'insights', 'metadata'];
-    const tabIndex = parseInt(e.key) - 1;
-    if (tabs[tabIndex]) {
-      switchTab(tabs[tabIndex]);
-    }
-  }
-});
-
-// ════════════════════════════════════════════════════════════════
-// ANIMATIONS - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
-
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes slideInRight {
-    from {
-      opacity: 0;
-      transform: translateX(100px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-  
-  @keyframes slideOutRight {
-    from {
-      opacity: 1;
-      transform: translateX(0);
-    }
-    to {
-      opacity: 0;
-      transform: translateX(100px);
-    }
-  }
-`;
-document.head.appendChild(style);
-
-// ════════════════════════════════════════════════════════════════
-// ERROR TRACKING - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
-
-window.addEventListener('error', (event) => {
-  console.error('[Popup] Uncaught error:', event.error);
-});
-
-window.addEventListener('unhandledrejection', (event) => {
-  console.error('[Popup] Unhandled promise rejection:', event.reason);
-});
-
-// ════════════════════════════════════════════════════════════════
-// PERFORMANCE MONITORING - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
-
-const perfObserver = new PerformanceObserver((list) => {
-  for (const entry of list.getEntries()) {
-    if (entry.duration > 100) {
-      console.warn('[Popup] Slow operation:', entry.name, `${entry.duration.toFixed(2)}ms`);
-    }
-  }
-});
-
-try {
-  perfObserver.observe({ entryTypes: ['measure'] });
-} catch (e) {
-  console.log('[Popup] Performance Observer not supported');
 }
+// ============================================================================
+// FUNCTION 61 of 63: ERROR CONFIG (Global Error Handler)
+// ============================================================================
 
-// ════════════════════════════════════════════════════════════════
-// ACCESSIBILITY - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
+/**
+ * Global error configuration and handler
+ * Catches unhandled errors and displays them gracefully
+ */
+window.addEventListener('error', (event) => {
+  console.error('[Popup] Global error:', event.error);
+  
+  // Display error to user
+  showNotification('An unexpected error occurred', 'error');
+  
+  // Log error details
+  const errorConfig = {
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+    error: event.error?.stack || event.error
+  };
+  
+  console.error('[Popup] Error details:', errorConfig);
+  
+  // Prevent default error handling
+  event.preventDefault();
+});
 
-document.querySelectorAll('button, select, input').forEach(element => {
-  if (!element.getAttribute('aria-label') && !element.getAttribute('title')) {
-    const text = element.textContent?.trim() || element.placeholder || element.value;
-    if (text) {
-      element.setAttribute('aria-label', text);
-    }
+// ============================================================================
+// FUNCTION 62 of 63: UNHANDLED REJECTION HANDLER
+// ============================================================================
+
+/**
+ * Handle unhandled promise rejections
+ * Catches async errors that weren't caught elsewhere
+ */
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[Popup] Unhandled rejection:', event.reason);
+  
+  // Display error to user
+  showNotification('An async operation failed', 'error');
+  
+  // Log rejection details
+  console.error('[Popup] Rejection reason:', event.reason);
+  
+  // Prevent default handling
+  event.preventDefault();
+});
+
+// ============================================================================
+// FUNCTION 63 of 63: KEYBOARD SHORTCUTS
+// ============================================================================
+
+/**
+ * Set up keyboard shortcuts for quick actions
+ * Ctrl/Cmd + Enter: Start extraction
+ * Ctrl/Cmd + C: Copy results
+ * Ctrl/Cmd + S: Save/download results
+ */
+document.addEventListener('keydown', (event) => {
+  // Check for Ctrl/Cmd modifier
+  const isModifierPressed = event.ctrlKey || event.metaKey;
+  
+  if (!isModifierPressed) return;
+  
+  switch (event.key.toLowerCase()) {
+    case 'enter':
+      // Ctrl/Cmd + Enter: Start extraction
+      if (!extractionInProgress) {
+        event.preventDefault();
+        handleExtraction();
+        console.log('[Popup] Keyboard shortcut: Extract');
+      }
+      break;
+    
+    case 'c':
+      // Ctrl/Cmd + C: Copy results (if results exist)
+      if (currentData && !event.shiftKey) {
+        event.preventDefault();
+        handleCopyResult();
+        console.log('[Popup] Keyboard shortcut: Copy');
+      }
+      break;
+    
+    case 's':
+      // Ctrl/Cmd + S: Download results (if results exist)
+      if (currentData) {
+        event.preventDefault();
+        handleDownloadResult();
+        console.log('[Popup] Keyboard shortcut: Download');
+      }
+      break;
+    
+    default:
+      // No action for other keys
+      break;
   }
 });
 
-// ════════════════════════════════════════════════════════════════
-// CLEANUP - PRESERVED FROM v4.1
-// ════════════════════════════════════════════════════════════════
+// ============================================================================
+// DOMCONTENTLOADED - MAIN INITIALIZATION
+// ============================================================================
 
-window.addEventListener('beforeunload', () => {
-  console.log('[Popup] Cleaning up before unload...');
-  perfObserver.disconnect();
+/**
+ * Main initialization when DOM is ready
+ * Sets up all UI components and loads saved state
+ */
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('[Popup] DOM Content Loaded - Initializing...');
+  
+  try {
+    // Check TOS acceptance first
+    const tosAccepted = await checkTOSAcceptance();
+    if (!tosAccepted) {
+      console.log('[Popup] TOS not accepted, redirecting to TOS page');
+      return;
+    }
+    
+    // Initialize all UI components
+    console.log('[Popup] Initializing UI components...');
+    
+    // AI Provider selector
+    initializeAIProviderSelector();
+    
+    // Extraction type selector
+    initializeExtractionTypeSelector();
+    
+    // Mode selector
+    initializeModeSelector();
+    
+    // Category selector
+    initializeCategorySelector();
+    
+    // Template selector (v4.2)
+    initializeTemplateSelector();
+    
+    // Post-processing checkboxes (v4.2)
+    initializePostProcessingCheckboxes();
+    
+    // Result tabs (v4.2)
+    initializeResultTabs();
+    
+    // Event listeners
+    setupEventListeners();
+    
+    // Message listener
+    setupMessageListener();
+    
+    // Load saved settings
+    console.log('[Popup] Loading saved settings...');
+    
+    await loadAIProvider();
+    await loadApiKey();
+    await loadCategory();
+    await loadPostProcessingSettings();
+    
+    // Check Chrome AI availability
+    await checkChromeAIAvailability();
+    
+    // Update UI states
+    updateAPIKeyVisibility();
+    updatePrivacyBadges();
+    updateExtractButton();
+    
+    // Check and show fallback banner if needed
+    await checkAndShowFallbackBanner();
+    
+    // Load extraction history (optional)
+    loadExtractionHistory();
+    
+    // Set up performance observer (optional)
+    setupPerformanceObserver();
+    
+    console.log('[Popup] ✅ Initialization complete - Web Weaver Lightning v4.2.0 ready!');
+    
+  } catch (error) {
+    console.error('[Popup] ❌ Initialization error:', error);
+    showNotification('Failed to initialize popup', 'error');
+  }
 });
 
-// ════════════════════════════════════════════════════════════════
-// FINAL LOG - ENHANCED FOR v4.2
-// ════════════════════════════════════════════════════════════════
+// ============================================================================
+// CONSOLE BANNER
+// ============================================================================
 
-console.log('[Popup] ✅ Web Weaver Lightning v4.2.0 popup script loaded');
-console.log('[Popup] Features:', {
-  chromeAI: chromeAIAvailable,
-  templates: typeof TemplateManager !== 'undefined',
-  insights: typeof InsightsGenerator !== 'undefined',
-  deduplication: deduplicationEnabled,
-  translation: translationEnabled,
-  summarization: summarizationEnabled
-});
-console.log('[Popup] Ready for extraction 🚀');
+console.log(`
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║          🕸️  WEB WEAVER LIGHTNING v4.2.0 🕸️                ║
+║                                                              ║
+║  Intelligent Web Data Extraction with AI                    ║
+║  • Chrome Built-in AI + Cloud API Support                   ║
+║  • Template-Based Extraction                                ║
+║  • Batch Translation & Summarization                        ║
+║  • AI-Powered Insights Generation                           ║
+║  • Cost Tracking: REMOVED (v4.2)                            ║
+║                                                              ║
+║  Status: Ready ✅                                            ║
+║  Functions: 63/63 Loaded                                    ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+`);
+
+// ============================================================================
+// EXPORT FOR TESTING (if running in Node.js environment)
+// ============================================================================
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    // Initialization functions
+    checkTOSAcceptance,
+    initializeAIProviderSelector,
+    initializeExtractionTypeSelector,
+    initializeModeSelector,
+    initializeCategorySelector,
+    initializeTemplateSelector,
+    initializePostProcessingCheckboxes,
+    initializeResultTabs,
+    
+    // Provider functions
+    loadAIProvider,
+    setAIProvider,
+    updateAIProviderButtonStates,
+    checkChromeAIAvailability,
+    updateChromeAIStatusIndicator,
+    
+    // UI update functions
+    updatePrivacyBadges,
+    updateAPIKeyVisibility,
+    updateExtractionTypeButtonStates,
+    updateExtractionTypeDescription,
+    updateModeButtonStates,
+    updateExtractButton,
+    
+    // Template functions
+    detectAndApplyTemplate,
+    applyTemplateSettings,
+    
+    // Post-processing functions
+    loadPostProcessingSettings,
+    updateTranslationProgress,
+    updateSummarizationProgress,
+    
+    // Category functions
+    loadCategory,
+    handleCategoryChange,
+    
+    // API key functions
+    loadApiKey,
+    handleSaveApiKey,
+    validateApiKey,
+    
+    // Extraction functions
+    handleExtraction,
+    
+    // Display functions
+    displayResults,
+    displayDataTab,
+    displayError,
+    updateMetadataTab,
+    clearInsightsTab,
+    handleGenerateInsights,
+    formatInsights,
+    
+    // Action handlers
+    handleCopyResult,
+    handleDownloadResult,
+    handleConvertToCSV,
+    
+    // Notification functions
+    showNotification,
+    showStructuredError,
+    
+    // Cost tracking (disabled)
+    loadCostTracking,
+    updateCostDisplay,
+    updateCostEstimate,
+    showBudgetWarning,
+    
+    // Progress functions
+    updateScrollProgress,
+    loadExtractionHistory,
+    
+    // Fallback banner functions
+    checkAndShowFallbackBanner,
+    showFallbackBanner,
+    handleDismissFallbackBanner,
+    
+    // Event setup
+    setupEventListeners,
+    setupMessageListener,
+    
+    // Utility functions
+    sanitizeHTML,
+    formatDuration,
+    formatBytes,
+    debounce,
+    setupPerformanceObserver,
+    
+    // Tab switching
+    switchTab
+  };
+}

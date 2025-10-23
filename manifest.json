@@ -2,37 +2,19 @@
   "manifest_version": 3,
   "name": "Web Weaver Lightning",
   "version": "4.2.0",
-  "description": "Privacy-first Visual AI extraction: multimodal analysis (images, audio), batch translation/summarization, accessibility alt-text, extraction templates, AI insights—100% on-device with Chrome Built-in AI + Cloud fallback",
+  "description": "AI-powered web data extraction with Chrome's built-in AI",
   "permissions": [
     "activeTab",
     "storage",
     "scripting",
-    "notifications"
+    "alarms"
   ],
-  "optional_permissions": [
-    "tabs"
-  ],
-  "host_permissions": [],
-  "optional_host_permissions": [
-    "http://*/*",
-    "https://*/*"
+  "host_permissions": [
+    "<all_urls>"
   ],
   "background": {
-    "service_worker": "background.js",
-    "type": "classic"
+    "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": [
-        "src/config.js",
-        "src/utils/chrome-ai.js",
-        "src/classifier.js",
-        "content.js"
-      ],
-      "run_at": "document_idle"
-    }
-  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -46,18 +28,11 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "web_accessible_resources": [
+  "content_scripts": [
     {
-      "resources": [
-        "prompts/*",
-        "config/*",
-        "src/*.js",
-        "src/utils/*.js"
-      ],
-      "matches": ["<all_urls>"]
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
     }
-  ],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  }
+  ]
 }
