@@ -5,8 +5,8 @@ console.log('[AI-Extractor] Day 10 AI ENGINE v1 loading - 80% Accuracy Target wi
 // ============================================================================
 
 const DAY10_CONFIG = {
-  version: 'day10-ai-engine-v1-gemini-2.0-fix-v4.2.1',
-  model: 'gemini-2.0-flash-lite',
+  version: 'day10-ai-engine-v1-gemini-2.0-fix-v4.2.3',
+  model: 'gemini-2.0-flash-exp',
   apiVersion: 'v1',
   maxRetries: 3,
   confidenceThreshold: 50,
@@ -27,7 +27,6 @@ const DAY10_CONFIG = {
 // DAY 10 UTILITY FUNCTIONS
 // ============================================================================
 
-// Day 10: PII Stripping
 function stripPIIDay10(text) {
   if (!text || typeof text !== 'string') return text;
   return text
@@ -37,7 +36,6 @@ function stripPIIDay10(text) {
     .replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[CARD_REDACTED]');
 }
 
-// Day 10: Date Standardization
 function standardizeDateDay10(dateString) {
   if (!dateString || typeof dateString !== 'string') return null;
   try {
@@ -52,13 +50,11 @@ function standardizeDateDay10(dateString) {
   }
 }
 
-// Day 10: Token Limit Enforcement
 function enforceTokenLimitsDay10(text, maxLength) {
   if (!text || typeof text !== 'string') return text;
   return text.substring(0, maxLength);
 }
 
-// Day 10: Confidence Validation
 function validateConfidenceDay10(extractedData) {
   const confidence = extractedData?.confidence_score;
   if (!confidence || typeof confidence !== 'number') {
@@ -86,7 +82,6 @@ function validateConfidenceDay10(extractedData) {
   };
 }
 
-// Day 10: Post-Processing Pipeline
 function postProcessDay10(extractedData) {
   if (!extractedData || typeof extractedData !== 'object') {
     return extractedData;
@@ -94,7 +89,6 @@ function postProcessDay10(extractedData) {
 
   const processed = { ...extractedData };
 
-  // Date standardization
   const dateFields = ['publication_date', 'publishdate', 'publish_date', 'date'];
   dateFields.forEach(field => {
     if (processed[field]) {
@@ -105,7 +99,6 @@ function postProcessDay10(extractedData) {
     }
   });
 
-  // PII stripping
   if (DAY10_CONFIG.enablePIIStripping) {
     Object.keys(processed).forEach(key => {
       const value = processed[key];
@@ -119,7 +112,6 @@ function postProcessDay10(extractedData) {
     });
   }
 
-  // Token limits enforcement
   if (processed.title) {
     processed.title = enforceTokenLimitsDay10(processed.title, DAY10_CONFIG.tokenLimits.title);
   }
@@ -150,17 +142,13 @@ function postProcessDay10(extractedData) {
 // DAY 10: GEMINI 2.0 API EXTRACTOR WITH RETRY LOGIC
 // ============================================================================
 
-// Enhanced robust JSON extractor function handling trailing commas and non-JSON characters after JSON content
 function extractJsonObject(text) {
-  // Try parsing entire text as JSON directly
   try {
     return JSON.parse(text);
   } catch {
-    // Extract JSON array
     const arrayMatch = text.match(/\[[\s\S]*\]/);
     if (arrayMatch) {
       let jsonString = arrayMatch[0];
-      // Remove trailing commas before array end
       jsonString = jsonString.replace(/,(\s*])/, '$1');
       try {
         return JSON.parse(jsonString);
@@ -170,11 +158,10 @@ function extractJsonObject(text) {
       }
     }
 
-    // Extract multiple adjacent JSON objects and wrap in array
     const objectMatches = text.match(/\{[\s\S]*?\}(?=(,|\s|$))/g);
     if (objectMatches && objectMatches.length > 1) {
       let combined = `[${objectMatches.join(',')}]`;
-      combined = combined.replace(/,(\s*])/, '$1'); // Remove trailing comma if any
+      combined = combined.replace(/,(\s*])/, '$1');
       try {
         return JSON.parse(combined);
       } catch (err) {
@@ -183,7 +170,6 @@ function extractJsonObject(text) {
       }
     }
 
-    // Fallback single JSON object extraction
     const singleMatch = text.match(/\{[\s\S]*?\}/);
     if (singleMatch) {
       try {
@@ -292,10 +278,8 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
       model: DAY10_CONFIG.model
     });
 
-    // Use improved robust JSON extraction here
     const extractedData = extractJsonObject(textContent);
 
-    // Day 10: Confidence validation
     const confidenceCheck = validateConfidenceDay10(extractedData);
     if (!confidenceCheck.valid) {
       console.warn('[AI-Extractor] Low confidence extraction discarded', {
@@ -305,7 +289,6 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
       throw new Error(`Low confidence extraction: ${confidenceCheck.confidence}`);
     }
 
-    // Day 10: Post-processing
     const processedData = postProcessDay10(extractedData);
 
     console.log('[AI-Extractor] ✅ Day 10 extraction successful', {
@@ -355,10 +338,9 @@ async function extractWithGeminiDay10(prompt, apiKey, options = {}) {
 }
 
 // ============================================================================
-// EXPORTS - v4.2.1 FIX: DUAL BROWSER + SERVICE WORKER SUPPORT
+// EXPORTS - v4.2.3 FIX: DUAL BROWSER + SERVICE WORKER SUPPORT
 // ============================================================================
 
-// Export for browser (popup.js)
 if (typeof window !== 'undefined') {
   window.AIExtractor = {
     extractWithGeminiDay10,
@@ -368,9 +350,9 @@ if (typeof window !== 'undefined') {
     postProcessDay10,
     DAY10_CONFIG
   };
+  console.log('[AI-Extractor] ✅ Browser export created (window.AIExtractor)');
 }
 
-// 🆕 v4.2.1 FIX: Export for Service Worker (background.js)
 if (typeof self !== 'undefined' && typeof importScripts === 'function') {
   self.AIExtractor = {
     extractWithGeminiDay10,
@@ -380,6 +362,7 @@ if (typeof self !== 'undefined' && typeof importScripts === 'function') {
     postProcessDay10,
     DAY10_CONFIG
   };
+  console.log('[AI-Extractor] ✅ Service Worker export created (self.AIExtractor)');
 }
 
 console.log('[AI-Extractor] ✅ Day 10 AI-Extractor loaded', {
@@ -387,5 +370,6 @@ console.log('[AI-Extractor] ✅ Day 10 AI-Extractor loaded', {
   model: DAY10_CONFIG.model,
   apiVersion: DAY10_CONFIG.apiVersion,
   confidenceThreshold: DAY10_CONFIG.confidenceThreshold,
-  serviceWorkerSupport: typeof importScripts === 'function'
+  serviceWorkerSupport: typeof importScripts === 'function',
+  browserSupport: typeof window !== 'undefined'
 });
